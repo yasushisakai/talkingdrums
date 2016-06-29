@@ -5,9 +5,7 @@
 unsigned int  numValueSequence =  8;
 unsigned long intervalRecord   = 40;
 unsigned long intervalPlay     = 50;
-unsigned long intervalHalft    = 25;
-
-
+unsigned long intervalHalf     = 25;
 
 unsigned int timeMax = numValueSequence * intervalPlay;
 
@@ -18,6 +16,8 @@ unsigned int sequenceStart[]   = {1, 1};
 
 unsigned int indexRecord  = 0;
 unsigned int indexPlay = 0;
+
+unsigned int turnSolenoid = 0;
 
 unsigned long prevTimeRecord = 0;
 unsigned long prevTimePlay = 0;
@@ -89,18 +89,46 @@ void loop()
       break;
     case 3: // play sequence
 
-     //play the sequence in a given timestep
-     if(indexPlay <  numValueSequence){
-      unsigned int  playValue = sequencePlay[indexPlay];
+      //play the sequence in a given timestep
+      if (indexPlay <  numValueSequence) {
+        unsigned int  playValue = sequencePlay[indexPlay];
 
-      if(timer(currentTime, prevTimePlay, intervalPlay)){
-        indexPlay++;
+        if (turnSolenoid == 0) {
+          if (timer(currentTime, prevTimePlay, intervalHalf)) {
+            prevTimePlay = currentTime;
+            turnSolenoid = 1;
+          }
+        }
+
+        if (turnSolenoid == 1) {
+
+          if (playValue == 0) {
+            digitalWrite(SOLENOID_PIN, LOW);
+          }
+          else {
+            digitalWrite(SOLENOID_PIN, HIGH);
+          }
+
+          if (timer(currentTime, prevTimePlay, intervalHalf)) {
+            indexPlay++;
+            prevTimePlay = currentTime;
+            turnSolenoid = 0;
+          }
+
+        }
+
+
       }
 
-     }
-    
       break;
   }
+}
+
+
+//hit solenoid action
+void hitSolenoid(){
+
+  
 }
 
 unsigned int analyzeSignal(unsigned int micValue, unsigned long currtimer, unsigned long previousTime, unsigned long interval) {

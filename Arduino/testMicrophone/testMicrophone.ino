@@ -62,8 +62,6 @@ void loop()
   double volts = (peakToPeak * voltage) / 1024;  // convert to volts
 
   
-
-
   Serial.println(volts);
   if (volts >= voltsThres)
   {
