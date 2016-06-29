@@ -3,35 +3,42 @@
 #define MICROPHONE_PIN A0
 
 unsigned int  numValueSequence =  8;
-unsigned long intervalRecord   = 40;
-unsigned long intervalPlay     = 50;
-unsigned long intervalHalf     = 25;
+unsigned int  numValueInit     =  4;
+
+unsigned long intervalRecord   = 500;
+unsigned long intervalPlay     = 500;
+unsigned long intervalHit      = 50;
+unsigned long intervalInit     = 250;
 
 unsigned int timeMax = numValueSequence * intervalPlay;
 
 //sequence values
-unsigned int sequencePlay[]    = {1, 1, 0, 1, 0, 1, 1, 0};
+unsigned int sequencePlay[]    = {1, 0, 1, 1, 1, 0, 1, 0};
 unsigned int sequenceRecord[]  = {0, 0, 0, 0, 0, 0, 0, 0};
-unsigned int sequenceStart[]   = {1, 1};
+unsigned int sequenceInit[]    = {1, 0, 1, 1};
 
 unsigned int indexRecord  = 0;
-unsigned int indexPlay = 0;
-
-unsigned int turnSolenoid = 0;
+unsigned int indexPlay    = 0;
+unsigned int indexInit    = 0;
 
 unsigned long prevTimeRecord = 0;
-unsigned long prevTimePlay = 0;
+unsigned long prevTimePlay   = 0;
+unsigned long prevTimeInit   = 0;
 
 unsigned int signalMax = 0;
 unsigned int signalMin = 1024;
 
 //Signal values
-
 float voltage        = 3.3;
 float voltsThreshold = 1.5;
 
-unsigned events = 0;
+//Events
+unsigned int events   = 2;
+boolean   startEvents = false;
 
+//hit solenoid actions and events
+unsigned long prevTimeHit = 0;
+boolean actionHit = false;
 
 
 void setup()
@@ -40,7 +47,6 @@ void setup()
   pinMode(LED_PIN, OUTPUT);
   pinMode(SOLENOID_PIN, OUTPUT);
 
-
   digitalWrite(LED_PIN, HIGH);
   digitalWrite(SOLENOID_PIN, HIGH);
   delay(500);
@@ -48,19 +54,22 @@ void setup()
   digitalWrite(LED_PIN, LOW);
   digitalWrite(SOLENOID_PIN, LOW);
 
-
   prevTimeRecord = millis();
+  prevTimeInit   =  millis();
 }
 
 void loop()
 {
-  unsigned long currentTime = millis(); // Start time
-  unsigned int  peakToPeak = 0;   // peak-to-peak level
-
+  unsigned long currentTime     = millis(); // Start time
+  unsigned int  peakToPeak      = 0;   // peak-to-peak level
   unsigned int  microphoneValue = analogRead(MICROPHONE_PIN);
+  unsigned int  signalValue     = analyzeSignal(microphoneValue, currentTime, prevTimeRecord, intervalRecord);
 
-  unsigned int  signalValue = analyzeSignal(microphoneValue, currentTime, prevTimeRecord, intervalRecord);
-
+  if (startEvents) {
+    prevTimeRecord = currentTime;
+    prevTimeInit   =  currentTime;
+    startEvents    = false;
+  }
 
   switch (events) {
 
@@ -85,38 +94,69 @@ void loop()
       }
 
       break;
-    case 2: // hear final protocol
+    case 2: // play start sequence
+      if (indexInit  < numValueInit) {
+
+        unsigned int  initValue = sequenceInit[indexInit];
+
+        if (timer(currentTime, prevTimeInit, intervalInit)) {
+          indexInit++;
+
+          prevTimeInit  = currentTime;
+          prevTimeHit   =  currentTime;
+          actionHit = true;
+
+          if (indexInit  >= numValueInit) {
+            break;
+          }
+
+        }
+
+
+        if (initValue == 1) {
+          int state = hitSolenoid(currentTime, prevTimeHit, intervalHit);
+
+          if (state == 1) {
+            digitalWrite(SOLENOID_PIN, HIGH);
+          } else {
+            digitalWrite(SOLENOID_PIN, LOW);
+          }
+
+        } else {
+          digitalWrite(SOLENOID_PIN, LOW);
+        }
+        Serial.print(indexInit);
+        Serial.print(" ");
+        Serial.println(prevTimeInit);
+      }
       break;
     case 3: // play sequence
 
       //play the sequence in a given timestep
-      if (indexPlay <  numValueSequence) {
+      if (indexPlay < numValueSequence) {
         unsigned int  playValue = sequencePlay[indexPlay];
 
-        if (turnSolenoid == 0) {
-          if (timer(currentTime, prevTimePlay, intervalHalf)) {
-            prevTimePlay = currentTime;
-            turnSolenoid = 1;
-          }
+        if (timer(currentTime, prevTimePlay, intervalPlay)) {
+          indexPlay++;
+
+          prevTimeHit  = currentTime;
+          prevTimePlay = currentTime;
+          actionHit = true;
         }
 
-        if (turnSolenoid == 1) {
+        if ( playValue == 1) {
 
-          if (playValue == 0) {
+          int state = hitSolenoid(currentTime, prevTimeHit, intervalHit);
+
+          if (state == 1) {
+            digitalWrite(SOLENOID_PIN, HIGH);
+          } else {
             digitalWrite(SOLENOID_PIN, LOW);
           }
-          else {
-            digitalWrite(SOLENOID_PIN, HIGH);
-          }
 
-          if (timer(currentTime, prevTimePlay, intervalHalf)) {
-            indexPlay++;
-            prevTimePlay = currentTime;
-            turnSolenoid = 0;
-          }
-
+        } else {
+          digitalWrite(SOLENOID_PIN, LOW);
         }
-
 
       }
 
@@ -126,12 +166,21 @@ void loop()
 
 
 //hit solenoid action
-void hitSolenoid(){
+int hitSolenoid( unsigned long currTimer, unsigned long prevTime, unsigned long interval) {
+  int state = -1;
+  if (actionHit == true) {
+    state = 1;
+    if (timer(currTimer, prevTime, interval)) {
+      actionHit = false;
+    }
+  } else {
+    state = 0;
+  }
 
-  
+  return state;
 }
 
-unsigned int analyzeSignal(unsigned int micValue, unsigned long currtimer, unsigned long previousTime, unsigned long interval) {
+unsigned int analyzeSignal(unsigned int micValue, unsigned long currTimer, unsigned long previousTime, unsigned long interval) {
 
   double volts = 0;
   unsigned int outputValue = -1;
@@ -148,19 +197,16 @@ unsigned int analyzeSignal(unsigned int micValue, unsigned long currtimer, unsig
     }
   }
 
-
-
   // collect data for 40 miliseconds
-  if (timer(currtimer, prevTimeRecord, intervalRecord))
+  if (timer(currTimer, prevTimeRecord, intervalRecord))
   {
     unsigned int peak = signalMax - signalMin;  // max - min = peak-peak amplitude
     volts = (peak * voltage) / 1024.0;  // convert to volts
 
-
     //reset values;
     signalMax  = 0;
     signalMin  = 1024;
-    prevTimeRecord = currtimer;
+    prevTimeRecord = currTimer;
 
     if (volts > voltsThreshold) {
       digitalWrite(LED_PIN, HIGH);
