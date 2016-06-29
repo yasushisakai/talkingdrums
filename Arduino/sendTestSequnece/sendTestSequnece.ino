@@ -1,88 +1,156 @@
-/*
-   The Circuit:
-   Connect AUD to analog input 0
-   Connect GND to GND
-   Connect VCC to 3.3V (3.3V yields the best results)
+#define LED_PIN        3
+#define SOLENOID_PIN   4
+#define MICROPHONE_PIN A0
 
-    To adjust when the LED turns on based on audio input:
-    Open up the serial com port (Top right hand corner of the Arduino IDE)
-    It looks like a magnifying glass. Perform several experiments
-    clapping, snapping, blowing, door slamming, knocking etc and see where the
-    resting noise level is and where the loud noises are. Adjust the if statement
-    according to your findings.
+unsigned int  numValueSequence =  8;
+unsigned long intervalRecord   = 40;
+unsigned long intervalPlay     = 50;
+unsigned long intervalHalft    = 25;
 
-    You can also adjust how long you take samples for by updating the "SampleWindow"
 
-   This code has been adapted from the
-   Example Sound Level Sketch for the
-   Adafruit Microphone Amplifier
 
-*/
+unsigned int timeMax = numValueSequence * intervalPlay;
 
-const int sampleWindow = 50; // Sample window width in mS (250 mS = 4Hz)
-unsigned int knock;
-int ledPin = 3;
-int solenoidPin = 4;
-float voltage = 3.3;
-float voltsThres = 1.5;
+//sequence values
+unsigned int sequencePlay[]    = {1, 1, 0, 1, 0, 1, 1, 0};
+unsigned int sequenceRecord[]  = {0, 0, 0, 0, 0, 0, 0, 0};
+unsigned int sequenceStart[]   = {1, 1};
 
-int sequenceIn[]  = {1, 1, 0, 1, 0, 1, 1, 0, 1};
-int sequenceOut[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+unsigned int indexRecord  = 0;
+unsigned int indexPlay = 0;
+
+unsigned long prevTimeRecord = 0;
+unsigned long prevTimePlay = 0;
+
+unsigned int signalMax = 0;
+unsigned int signalMin = 1024;
+
+//Signal values
+
+float voltage        = 3.3;
+float voltsThreshold = 1.5;
+
+unsigned events = 0;
+
+
 
 void setup()
 {
   Serial.begin(9600);
-  pinMode(ledPin, OUTPUT);
-  pinMode(solenoidPin, OUTPUT);
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(SOLENOID_PIN, OUTPUT);
+
+
+  digitalWrite(LED_PIN, HIGH);
+  digitalWrite(SOLENOID_PIN, HIGH);
+  delay(500);
+
+  digitalWrite(LED_PIN, LOW);
+  digitalWrite(SOLENOID_PIN, LOW);
+
+
+  prevTimeRecord = millis();
 }
 
 void loop()
 {
-  unsigned long start = millis(); // Start of sample window
-  unsigned int peakToPeak = 0;   // peak-to-peak level
+  unsigned long currentTime = millis(); // Start time
+  unsigned int  peakToPeak = 0;   // peak-to-peak level
 
-  unsigned int signalMax = 0;
-  unsigned int signalMin = 1024;
+  unsigned int  microphoneValue = analogRead(MICROPHONE_PIN);
 
-  // collect data for 250 miliseconds
-  while (millis() - start < sampleWindow)
-  {
-    knock = analogRead(0);
-    if (knock < 1024)  //This is the max of the 10-bit ADC so this loop will include all readings
-    {
-      if (knock > signalMax)
-      {
-        signalMax = knock;  // save just the max levels
+  unsigned int  signalValue = analyzeSignal(microphoneValue, currentTime, prevTimeRecord, intervalRecord);
+
+
+  switch (events) {
+
+    case 0: // hear start protocol
+      break;
+    case 1: // hear sequence
+      if (signalValue != -1) {
+        if (indexRecord < numValueSequence) {
+          sequenceRecord[indexRecord] = signalValue;
+          indexRecord++;
+        } else {
+          //when done reading the sequence print out the values
+          Serial.print("done reading: ");
+          Serial.println(indexRecord);
+
+          for (int i = 0; i < numValueSequence; i++) {
+            Serial.print(sequenceRecord[i]);
+            Serial.print(", ");
+          }
+          Serial.println("");
+        }
       }
-      else if (knock < signalMin)
-      {
-        signalMin = knock;  // save just the min levels
+
+      break;
+    case 2: // hear final protocol
+      break;
+    case 3: // play sequence
+
+     //play the sequence in a given timestep
+     if(indexPlay <  numValueSequence){
+      unsigned int  playValue = sequencePlay[indexPlay];
+
+      if(timer(currentTime, prevTimePlay, intervalPlay)){
+        indexPlay++;
       }
-    }
-  }
-  peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
-  double volts = (peakToPeak * voltage) / 1024;  // convert to volts
 
-  
-
-
-  Serial.println(volts);
-  if (volts >= voltsThres)
-  {
-
+     }
     
-
-    
-    //turn on LED
-    digitalWrite(ledPin, HIGH);
-    digitalWrite(solenoidPin, HIGH);
-    delay(500);
-    Serial.println("Knock Knock");
-  }
-  else
-  {
-    //turn LED off
-    digitalWrite(ledPin, LOW);
-    digitalWrite(solenoidPin, LOW);
+      break;
   }
 }
+
+unsigned int analyzeSignal(unsigned int micValue, unsigned long currtimer, unsigned long previousTime, unsigned long interval) {
+
+  double volts = 0;
+  unsigned int outputValue = -1;
+
+  if (micValue < 1024)  //This is the max of the 10-bit ADC so this loop will include all readings
+  {
+    if (micValue > signalMax)
+    {
+      signalMax = micValue;  // save just the max levels
+    }
+    else if (micValue < signalMin)
+    {
+      signalMin = micValue;  // save just the min levels
+    }
+  }
+
+
+
+  // collect data for 40 miliseconds
+  if (timer(currtimer, prevTimeRecord, intervalRecord))
+  {
+    unsigned int peak = signalMax - signalMin;  // max - min = peak-peak amplitude
+    volts = (peak * voltage) / 1024.0;  // convert to volts
+
+
+    //reset values;
+    signalMax  = 0;
+    signalMin  = 1024;
+    prevTimeRecord = currtimer;
+
+    if (volts > voltsThreshold) {
+      digitalWrite(LED_PIN, HIGH);
+      outputValue = 1;
+    } else {
+      digitalWrite(LED_PIN, LOW);
+      outputValue = 0;
+    }
+
+  }
+
+  return outputValue;
+}
+
+boolean timer(unsigned long currTime, unsigned long previousTime, unsigned long interval) {
+  if (currTime - previousTime >= interval) {
+    return true;
+  }
+  return false;
+}
+

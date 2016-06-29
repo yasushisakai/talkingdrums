@@ -26,8 +26,6 @@ int solenoidPin = 4;
 float voltage = 3.3;
 float voltsThres = 1.5;
 
-int sequenceIn[]  = {1, 1, 0, 1, 0, 1, 1, 0, 1};
-int sequenceOut[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 void setup()
 {
