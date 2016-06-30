@@ -8,7 +8,7 @@ unsigned int  numValueInit     =  4;
 unsigned long intervalRecord   = 500;
 unsigned long intervalPlay     = 500;
 unsigned long intervalHit      = 30;
-unsigned long intervalInit     = 250;
+unsigned long intervalInit     = 1000;
 
 unsigned int sequenceMaxTime = numValueSequence * intervalPlay;
 unsigned int intMaxTime = numValueInit * intervalInit;
@@ -32,11 +32,11 @@ unsigned int signalMax = 0;
 unsigned int signalMin = 1024;
 
 //Signal values
-float voltage        = 3.3;
+float voltage        = 5.0;
 float voltsThreshold = 1.5;
 
 //Events
-unsigned int events   = 0;  //0 hear start 2 play start
+unsigned int events   = 4;  //0 hear start 2 play start
 boolean   startEvents = false;
 
 //hit solenoid actions and events
@@ -217,7 +217,16 @@ void loop()
         }
 
       }
+      break;
 
+    case 4:
+      {
+        unsigned int  signalValue   = analyzeSignal(microphoneValue, currentTime, prevTimeInit, intervalInit);
+
+        if (signalValue != 2) {
+          Serial.println(signalValue);
+        }
+      }
       break;
   }
 }
@@ -238,7 +247,7 @@ int hitSolenoid( unsigned long currTimer, unsigned long prevTime, unsigned long 
   return state;
 }
 
-unsigned int analyzeSignal(unsigned int micValue, unsigned long currTimer, unsigned long previousTime, unsigned long interval) {
+unsigned int analyzeSignal(unsigned int micValue, unsigned long currTimer, unsigned long & previousTime, unsigned long interval) {
 
   double volts = 0;
   unsigned int outputValue = 2;
@@ -260,6 +269,18 @@ unsigned int analyzeSignal(unsigned int micValue, unsigned long currTimer, unsig
   {
     unsigned int peak = signalMax - signalMin;  // max - min = peak-peak amplitude
     volts = (peak * voltage) / 1024.0;  // convert to volts
+
+    Serial.print(signalMax);
+    Serial.print(" ");
+    Serial.print(signalMin);
+    Serial.print(" ");
+    Serial.print(micValue);
+    Serial.print(" ");
+    Serial.print(currTimer);
+    Serial.print(" ");
+    Serial.print(previousTime);
+    Serial.print(" ");
+    Serial.println(volts);
 
     //reset values;
     signalMax  = 0;
