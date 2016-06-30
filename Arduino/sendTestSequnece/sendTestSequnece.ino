@@ -7,19 +7,22 @@ unsigned int  numValueInit     =  4;
 
 unsigned long intervalRecord   = 500;
 unsigned long intervalPlay     = 500;
-unsigned long intervalHit      = 50;
+unsigned long intervalHit      = 30;
 unsigned long intervalInit     = 250;
 
-unsigned int timeMax = numValueSequence * intervalPlay;
+unsigned int sequenceMaxTime = numValueSequence * intervalPlay;
+unsigned int intMaxTime = numValueInit * intervalInit;
 
 //sequence values
-unsigned int sequencePlay[]    = {1, 0, 1, 1, 1, 0, 1, 0};
-unsigned int sequenceRecord[]  = {0, 0, 0, 0, 0, 0, 0, 0};
-unsigned int sequenceInit[]    = {1, 0, 1, 1};
+unsigned int sequencePlay[]      = {1, 0, 1, 1, 1, 0, 1, 0};
+unsigned int sequenceRecord[]    = {0, 0, 0, 0, 0, 0, 0, 0};
+unsigned int sequenceInit[]      = {1, 0, 0, 1};
+unsigned int sequenceInitCheck[] = { -1, -1, -1, -1};
 
 unsigned int indexRecord  = 0;
 unsigned int indexPlay    = 0;
 unsigned int indexInit    = 0;
+unsigned int indexInitCheck = 0;
 
 unsigned long prevTimeRecord = 0;
 unsigned long prevTimePlay   = 0;
@@ -33,7 +36,7 @@ float voltage        = 3.3;
 float voltsThreshold = 1.5;
 
 //Events
-unsigned int events   = 2;
+unsigned int events   = 0;  //0 hear start 2 play start
 boolean   startEvents = false;
 
 //hit solenoid actions and events
@@ -47,15 +50,17 @@ void setup()
   pinMode(LED_PIN, OUTPUT);
   pinMode(SOLENOID_PIN, OUTPUT);
 
-  digitalWrite(LED_PIN, HIGH);
-  digitalWrite(SOLENOID_PIN, HIGH);
-  delay(500);
+  //digitalWrite(LED_PIN, HIGH);
+  //digitalWrite(SOLENOID_PIN, HIGH);
+  //delay(500);
 
-  digitalWrite(LED_PIN, LOW);
-  digitalWrite(SOLENOID_PIN, LOW);
+  //digitalWrite(LED_PIN, LOW);
+  //digitalWrite(SOLENOID_PIN, LOW);
 
   prevTimeRecord = millis();
   prevTimeInit   =  millis();
+
+  Serial.println("starting module");
 }
 
 void loop()
@@ -63,36 +68,89 @@ void loop()
   unsigned long currentTime     = millis(); // Start time
   unsigned int  peakToPeak      = 0;   // peak-to-peak level
   unsigned int  microphoneValue = analogRead(MICROPHONE_PIN);
-  unsigned int  signalValue     = analyzeSignal(microphoneValue, currentTime, prevTimeRecord, intervalRecord);
+
 
   if (startEvents) {
     prevTimeRecord = currentTime;
-    prevTimeInit   =  currentTime;
+    prevTimeInit   = currentTime;
     startEvents    = false;
   }
 
   switch (events) {
 
     case 0: // hear start protocol
-      break;
-    case 1: // hear sequence
-      if (signalValue != -1) {
-        if (indexRecord < numValueSequence) {
-          sequenceRecord[indexRecord] = signalValue;
-          indexRecord++;
-        } else {
-          //when done reading the sequence print out the values
-          Serial.print("done reading: ");
-          Serial.println(indexRecord);
+      {
+        unsigned int  signalValue   = analyzeSignal(microphoneValue, currentTime, prevTimeInit, intervalInit);
 
-          for (int i = 0; i < numValueSequence; i++) {
-            Serial.print(sequenceRecord[i]);
-            Serial.print(", ");
+        if (signalValue != 2) {
+          Serial.println(signalValue);
+
+          if (indexInit < numValueInit) {
+
+            //always the first one is 1
+            if (signalValue == 1 || indexInit >= 1) {
+              sequenceInitCheck[indexInit] = signalValue;
+              indexInit++;
+              prevTimeInit =  currentTime;
+
+              Serial.print("read first hit: ");
+              Serial.print(signalValue);
+              Serial.print(indexInit);
+              Serial.print(" ");
+              Serial.println(prevTimeInit);
+            }
+
+
+          } else {
+            //when done reading the sequence print out the values
+            Serial.print("done reading init: ");
+            Serial.println(indexInit);
+
+            for (int i = 0; i < numValueInit; i++) {
+              Serial.print(sequenceInitCheck[i]);
+              Serial.print(", ");
+            }
+            Serial.println("");
+
+
+            //check if the sequence heard is the same as the input
+            boolean checkInit = true;
+            for (int i = 0; i < numValueInit; i++) {
+              if (sequenceInitCheck[i] != sequenceInit[i]) {
+                checkInit = false;
+              }
+            }
+            if (checkInit == true) {
+              Serial.print("Same init Sequence!!");
+
+            }
           }
-          Serial.println("");
+
+
         }
       }
+      break;
+    case 1: // hear sequence
+      {
+        unsigned int  signalValue     = analyzeSignal(microphoneValue, currentTime, prevTimeRecord, intervalRecord);
 
+        if (signalValue != -1) {
+          if (indexRecord < numValueSequence) {
+            sequenceRecord[indexRecord] = signalValue;
+            indexRecord++;
+          } else {
+            //when done reading the sequence print out the values
+            Serial.print("done reading: ");
+            Serial.println(indexRecord);
+
+            for (int i = 0; i < numValueSequence; i++) {
+              Serial.print(sequenceRecord[i]);
+              Serial.print(", ");
+            }
+            Serial.println("");
+          }
+        }
+      }
       break;
     case 2: // play start sequence
       if (indexInit  < numValueInit) {
@@ -125,7 +183,7 @@ void loop()
         } else {
           digitalWrite(SOLENOID_PIN, LOW);
         }
-        Serial.print(indexInit);
+        Serial.print(initValue);
         Serial.print(" ");
         Serial.println(prevTimeInit);
       }
@@ -183,7 +241,7 @@ int hitSolenoid( unsigned long currTimer, unsigned long prevTime, unsigned long 
 unsigned int analyzeSignal(unsigned int micValue, unsigned long currTimer, unsigned long previousTime, unsigned long interval) {
 
   double volts = 0;
-  unsigned int outputValue = -1;
+  unsigned int outputValue = 2;
 
   if (micValue < 1024)  //This is the max of the 10-bit ADC so this loop will include all readings
   {
@@ -198,7 +256,7 @@ unsigned int analyzeSignal(unsigned int micValue, unsigned long currTimer, unsig
   }
 
   // collect data for 40 miliseconds
-  if (timer(currTimer, prevTimeRecord, intervalRecord))
+  if (timer(currTimer, previousTime, interval))
   {
     unsigned int peak = signalMax - signalMin;  // max - min = peak-peak amplitude
     volts = (peak * voltage) / 1024.0;  // convert to volts
@@ -206,7 +264,7 @@ unsigned int analyzeSignal(unsigned int micValue, unsigned long currTimer, unsig
     //reset values;
     signalMax  = 0;
     signalMin  = 1024;
-    prevTimeRecord = currTimer;
+    previousTime = currTimer;
 
     if (volts > voltsThreshold) {
       digitalWrite(LED_PIN, HIGH);
