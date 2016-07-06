@@ -7,8 +7,9 @@ unsigned int  numValueInit     =  4;
 
 unsigned long intervalRecord   = 500;
 unsigned long intervalPlay     = 500;
-unsigned long intervalHit      = 30;
-unsigned long intervalInit     = 1000;
+unsigned long intervalHit      = 20;
+unsigned long intervalInit     = 400;
+unsigned long intervalTmp      = 1000;
 
 unsigned int sequenceMaxTime = numValueSequence * intervalPlay;
 unsigned int intMaxTime = numValueInit * intervalInit;
@@ -16,7 +17,7 @@ unsigned int intMaxTime = numValueInit * intervalInit;
 //sequence values
 unsigned int sequencePlay[]      = {1, 0, 1, 1, 1, 0, 1, 0};
 unsigned int sequenceRecord[]    = {0, 0, 0, 0, 0, 0, 0, 0};
-unsigned int sequenceInit[]      = {1, 0, 0, 1};
+unsigned int sequenceInit[]      = {1, 1, 1, 0};
 unsigned int sequenceInitCheck[] = { -1, -1, -1, -1};
 
 unsigned int indexRecord  = 0;
@@ -27,22 +28,28 @@ unsigned int indexInitCheck = 0;
 unsigned long prevTimeRecord = 0;
 unsigned long prevTimePlay   = 0;
 unsigned long prevTimeInit   = 0;
+unsigned long prevTimeTmp    = 0;
 
-unsigned int signalMax = 0;
-unsigned int signalMin = 1024;
+///Signal processing
+unsigned int  signalMax   = 0;
+unsigned int  signalMin   = 1024;
+float         signalSum   = 0;
+unsigned int  signalCount = 0;
 
 //Signal values
-float voltage        = 5.0;
-float voltsThreshold = 1.5;
+float voltageIn        = 5.0;
+float voltsThreshold   = 1.8;
+float prevVoltage      = 0.0;
+float voltage          = 0;
 
 //Events
-unsigned int events   = 4;  //0 hear start 2 play start
+unsigned int events   = 0;  //0 hear start 2 play start
 boolean   startEvents = false;
 
 //hit solenoid actions and events
 unsigned long prevTimeHit = 0;
 boolean actionHit = false;
-
+boolean startHearing = false;
 
 void setup()
 {
@@ -66,67 +73,77 @@ void setup()
 void loop()
 {
   unsigned long currentTime     = millis(); // Start time
-  unsigned int  peakToPeak      = 0;   // peak-to-peak level
-  unsigned int  microphoneValue = analogRead(MICROPHONE_PIN);
-
 
   if (startEvents) {
     prevTimeRecord = currentTime;
     prevTimeInit   = currentTime;
+    prevTimeTmp    = currentTime;
     startEvents    = false;
   }
+
+  unsigned int  peakToPeak      = 0;   // peak-to-peak level
+  unsigned int  microphoneValue = analogRead(MICROPHONE_PIN);
 
   switch (events) {
 
     case 0: // hear start protocol
       {
-        unsigned int  signalValue   = analyzeSignal(microphoneValue, currentTime, prevTimeInit, intervalInit);
-
-        if (signalValue != 2) {
-          Serial.println(signalValue);
-
-          if (indexInit < numValueInit) {
-
-            //always the first one is 1
-            if (signalValue == 1 || indexInit >= 1) {
-              sequenceInitCheck[indexInit] = signalValue;
-              indexInit++;
-              prevTimeInit =  currentTime;
-
-              Serial.print("read first hit: ");
-              Serial.print(signalValue);
-              Serial.print(indexInit);
-              Serial.print(" ");
-              Serial.println(prevTimeInit);
-            }
+        unsigned int  signalValue  = analyzeSignal(microphoneValue, currentTime, prevTimeInit, intervalInit);
 
 
-          } else {
-            //when done reading the sequence print out the values
-            Serial.print("done reading init: ");
-            Serial.println(indexInit);
+        if (!startHearing) {
+          if (timer(currentTime, prevTimeTmp, intervalTmp)) {
+            startHearing = true;
+            Serial.println("start");
+          }
+        }
 
-            for (int i = 0; i < numValueInit; i++) {
-              Serial.print(sequenceInitCheck[i]);
-              Serial.print(", ");
-            }
-            Serial.println("");
+        if (startHearing) {
+          if (signalValue != 2) {
+            Serial.println(signalValue);
+
+            if (indexInit < numValueInit) {
+
+              //always the first one is 1
+              if (signalValue == 1 || indexInit >= 1) {
+                sequenceInitCheck[indexInit] = signalValue;
+                indexInit++;
+                prevTimeInit =  currentTime;
+
+                Serial.print("read first hit: ");
+                Serial.print(signalValue);
+                Serial.print(indexInit);
+                Serial.print(" ");
+                Serial.println(prevTimeInit);
+              }
 
 
-            //check if the sequence heard is the same as the input
-            boolean checkInit = true;
-            for (int i = 0; i < numValueInit; i++) {
-              if (sequenceInitCheck[i] != sequenceInit[i]) {
-                checkInit = false;
+            } else {
+              //when done reading the sequence print out the values
+              Serial.print("done reading init: ");
+              Serial.println(indexInit);
+
+              for (int i = 0; i < numValueInit; i++) {
+                Serial.print(sequenceInitCheck[i]);
+                Serial.print(", ");
+              }
+              Serial.println("");
+
+
+              //check if the sequence heard is the same as the input
+              boolean checkInit = true;
+              for (int i = 0; i < numValueInit; i++) {
+                if (sequenceInitCheck[i] != sequenceInit[i]) {
+                  checkInit = false;
+                  break;
+                }
+              }
+              if (checkInit == true) {
+                Serial.print("Same init Sequence!!");
+
               }
             }
-            if (checkInit == true) {
-              Serial.print("Same init Sequence!!");
-
-            }
           }
-
-
         }
       }
       break;
@@ -167,9 +184,7 @@ void loop()
           if (indexInit  >= numValueInit) {
             break;
           }
-
         }
-
 
         if (initValue == 1) {
           int state = hitSolenoid(currentTime, prevTimeHit, intervalHit);
@@ -247,47 +262,68 @@ int hitSolenoid( unsigned long currTimer, unsigned long prevTime, unsigned long 
   return state;
 }
 
-unsigned int analyzeSignal(unsigned int micValue, unsigned long currTimer, unsigned long & previousTime, unsigned long interval) {
+unsigned int analyzeSignal(unsigned int & micValue, unsigned long currTimer, unsigned long & previousTime, unsigned long interval) {
 
-  double volts = 0;
   unsigned int outputValue = 2;
 
-  if (micValue < 1024)  //This is the max of the 10-bit ADC so this loop will include all readings
-  {
-    if (micValue > signalMax)
+  signalSum += micValue;
+  signalCount++;
+
+  if (signalCount  >= 5 ) {
+    float signalAvrg = signalSum / signalCount;
+
+    if (signalAvrg < 1024)  //This is the max of the 10-bit ADC so this loop will include all readings
     {
-      signalMax = micValue;  // save just the max levels
+      if (signalAvrg > signalMax)
+      {
+        signalMax = signalAvrg;  // save just the max levels
+      }
+      else if (signalSum < signalMin)
+      {
+        signalMin = signalAvrg;  // save just the min levels
+      }
     }
-    else if (micValue < signalMin)
-    {
-      signalMin = micValue;  // save just the min levels
+
+    if (signalMin == 1024) {
+      signalMin = 0;
     }
+
+    signalSum = 0;
+    signalCount = 0;
   }
+
+
 
   // collect data for 40 miliseconds
   if (timer(currTimer, previousTime, interval))
   {
-    unsigned int peak = signalMax - signalMin;  // max - min = peak-peak amplitude
-    volts = (peak * voltage) / 1024.0;  // convert to volts
+    prevVoltage = voltage;
+    float peak = abs(signalMax - signalMin);  // max - min = peak-peak amplitude
+    voltage = (peak * voltageIn) / 1024.0;  // convert to volts
 
-    Serial.print(signalMax);
+    /*
+        Serial.print(signalMax);
+        Serial.print(" ");
+        Serial.print(signalMin);
+        Serial.print(" ");
+        Serial.print(micValue);
+        Serial.print(" ");
+        Serial.print(currTimer);
+        Serial.print(" ");
+        Serial.print(previousTime);
+        Serial.print(", ");
+    */
+
+    Serial.print(prevVoltage);
     Serial.print(" ");
-    Serial.print(signalMin);
-    Serial.print(" ");
-    Serial.print(micValue);
-    Serial.print(" ");
-    Serial.print(currTimer);
-    Serial.print(" ");
-    Serial.print(previousTime);
-    Serial.print(" ");
-    Serial.println(volts);
+    Serial.println(voltage);
 
     //reset values;
     signalMax  = 0;
-    signalMin  = 1024;
+    signalMin  = 0;
     previousTime = currTimer;
 
-    if (volts > voltsThreshold) {
+    if (voltage -  prevVoltage > 0.5) {
       digitalWrite(LED_PIN, HIGH);
       outputValue = 1;
     } else {
@@ -296,6 +332,7 @@ unsigned int analyzeSignal(unsigned int micValue, unsigned long currTimer, unsig
     }
 
   }
+
 
   return outputValue;
 }
