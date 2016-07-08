@@ -10,7 +10,7 @@ RH_NRF24 nrf24;
 int LED_PIN = 3;
 
 unsigned long pTime     = 0;
-unsigned long duration = 300;
+unsigned long duration = 500;
 
 int LED_STATE = HIGH;
 boolean sendActivation = false;
