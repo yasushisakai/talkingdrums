@@ -18,6 +18,7 @@ int SOLENOID_STATE = LOW;
 //play sequence
 int numSequence = 8;
 int playIndex   = 0;
+int playRecordCount = 0;
 
 //Sequence to play once is finish recording the sequence
 int sequencePlay[]      =  { -1, -1, -1, -1, -1, -1, -1, -1};
@@ -310,7 +311,7 @@ void loop()
         }
       case 3:
         {
-          //play the recorded sequence
+          //play the recorded sequence three times
 
           int value  = sequencePlay[playIndex];
 
@@ -343,9 +344,23 @@ void loop()
           timerMsgCounter++;
           if (timerMsgCounter == stepWait) {
             timerMsgCounter = 0;
-            sequenceState = 1;
-            Serial.println("4: Go to Listen recording");
+
+            //play again the recorded sequence
+            sequenceState = 3;
+            playRecordCount++;
+            Serial.println("4: Go to Play recording");
+
+            if (playRecordCount == 3) {
+              playRecordCount = 0;
+              sequenceState = 1;
+              Serial.println("5: Go to Listen");
+            }
           }
+
+        }
+        break;
+      case 5:
+        {
 
         }
         break;
