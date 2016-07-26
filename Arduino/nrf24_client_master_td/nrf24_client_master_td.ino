@@ -14,13 +14,15 @@ RH_NRF24 nrf24;
 int STATE_SOL = LOW;
 
 //play sequence
-int numSequence =  12;
+int numSequence =  8;
 int playIndex   = 0;
 
-unsigned int sequencePlay[]      = {1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1};
-unsigned int sequenceRecord[]    = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+unsigned int sequencePlay[]      = {1, 0, 0, 1, 1, 0, 0, 1};
+unsigned int sequenceRecord[]    = {0, 0, 0, 0, 0, 0, 0, 0};
 
 int timerCounter = 0;
+int numReplays = 3;
+int replaysCounter = 0;
 boolean delayTimer = false;
 
 
@@ -130,13 +132,21 @@ void loop()
   }
 
   if (delayTimer) {
-    /*
-        timerCounter++;
-        if (timerCounter >= 6) {
-          timerCounter = 0;
-          delayTimer = false;
-        }
-    */
+
+    timerCounter++;
+    if (timerCounter == 2) {
+      timerCounter = 0;
+      replaysCounter++;
+
+      if ( numReplays == replaysCounter) {
+
+      } else {
+        //continue play
+        delayTimer = false;
+      }
+
+    }
+
   }
 
   if ( !lockInMsg) {

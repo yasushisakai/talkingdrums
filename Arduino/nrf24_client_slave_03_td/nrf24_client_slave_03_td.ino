@@ -37,8 +37,9 @@ int sequenceState = 0;
 boolean recordSequence = false;
 boolean playSequence  = false;
 int recordIndex = 0;
-int sequenceIndex= 0;
+int sequenceIndex = 0;
 int timerMsgCounter = 0;
+int stepWait = 2;
 
 //Times
 unsigned long clockInterval = 0;
@@ -186,7 +187,7 @@ void loop()
           //wait 3 clock steps to recorded sequence from the microphone
 
           timerMsgCounter++;
-          if (timerMsgCounter > 2) {
+          if (timerMsgCounter == stepWait) {
             timerMsgCounter = 0;
             sequenceState = 1;
             Serial.println("0: waiting 3 clock");
@@ -236,8 +237,51 @@ void loop()
               Serial.println();
               for (int i = 0; i < numSequence; i++) {
                 Serial.print(sequenceRecord[sequenceIndex][i] );
-                sequencePlay[i] = sequenceRecord[sequenceIndex][i];
               }
+              Serial.println();
+
+            }
+
+            Serial.print(diffTime);
+            Serial.print(" ");
+            Serial.println(volts);
+
+            signalMax   = 0;
+            signalMin   = 1024;
+
+          }
+          break;
+        case 2:
+          {
+
+            //wait 3 clock steps to play the recorded sequence
+            timerMsgCounter++;
+            if (timerMsgCounter == stepWait) {
+              timerMsgCounter = 0;
+              sequenceState = 1;
+              sequenceIndex++;
+              Serial.print("Next Sequence Index: ");
+              Serial.println(sequenceIndex);
+            }
+
+            if (sequenceIndex == 3) {
+
+              Serial.println("Avg values");
+              //calculate average between each recorder sequence
+              for (int i = 0; i < numSequence; i++) {
+                float avgValue  = 0.0;
+                for (int j = 0; j < 3; i++) {
+                  avgValue += sequenceRecord[j][i];
+                }
+                avgValue /= 3.0;
+                if (avgValue >= 0.6) {
+                  sequencePlay[i] = 1;
+                } else {
+                  sequencePlay[i] = 0;
+                }
+                Serial.print(sequencePlay[i]);
+              }
+
               Serial.println();
 
               //check if its the same sequence
@@ -255,26 +299,12 @@ void loop()
               }
             }
 
+            sequenceState = 3;
+            sequenceIndex = 0;
+
           }
 
-          Serial.print(diffTime);
-          Serial.print(" ");
-          Serial.println(volts);
 
-          signalMax   = 0;
-          signalMin   = 1024;
-
-        }
-        break;
-      case 2:
-        {
-
-          //wait 3 clock steps to play the recorded sequence
-          timerMsgCounter++;
-          if (timerMsgCounter > 2) {
-            timerMsgCounter = 0;
-            sequenceState = 1;
-          }
 
 
         }
@@ -311,7 +341,7 @@ void loop()
         {
 
           timerMsgCounter++;
-          if (timerMsgCounter > 5) {
+          if (timerMsgCounter == stepWait) {
             timerMsgCounter = 0;
             sequenceState = 1;
             Serial.println("4: Go to Listen recording");
@@ -320,20 +350,6 @@ void loop()
         }
         break;
     }
-
-
-    /*
-
-          Serial.print(signalMax);
-          Serial.print(" ");
-          Serial.print(signalMin);
-          Serial.print(" ");
-          Serial.print("reset ");
-          Serial.print(diffTime);
-          Serial.print(" ");
-
-    */
-
 
     prevLEDTime    = currentTime;
     lockInMsg      = true;
