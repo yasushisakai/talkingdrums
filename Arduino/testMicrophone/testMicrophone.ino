@@ -24,7 +24,7 @@ unsigned int knock;
 int ledPin = 3;
 int solenoidPin = 4;
 float voltage = 3.3;
-float voltsThres = 1.5;
+float voltsThres = 0.5;
 
 
 void setup()
@@ -65,10 +65,6 @@ void loop()
   Serial.println(volts);
   if (volts >= voltsThres)
   {
-
-    
-
-    
     //turn on LED
     digitalWrite(ledPin, HIGH);
     digitalWrite(solenoidPin, HIGH);

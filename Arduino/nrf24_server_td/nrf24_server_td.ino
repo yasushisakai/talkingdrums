@@ -19,6 +19,7 @@ int counter = 0;
 void setup()
 {
   pinMode(LED_PIN, OUTPUT);
+  pinMode(4, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
 
   //Serial.begin(9600);
@@ -64,6 +65,7 @@ void loop()
   }
 
   digitalWrite(LED_PIN, LED_STATE);
+  digitalWrite(4, LED_STATE);
 
 }
 
