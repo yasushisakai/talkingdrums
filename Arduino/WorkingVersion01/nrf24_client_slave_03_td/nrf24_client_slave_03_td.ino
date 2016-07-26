@@ -49,7 +49,7 @@ unsigned long diffTime = 5;
 
 //Hit solenoid
 unsigned long prevHitTime = 0;
-unsigned long intervalHitTime = 100;// 50ms
+unsigned long intervalHitTime = 50;// 50ms
 unsigned long prevLEDTime = 0;
 
 //lock
@@ -70,7 +70,7 @@ boolean        activateSignalAnalysis = false;
 
 //Signal values
 float voltageIn        = 3.3;
-float voltsThreshold   = 0.9;
+float voltsThreshold   = 1.1;
 
 int analyzeSignal(int & micValue, int & sMax, int & sMin, float threshold, boolean lock);
 boolean timer(unsigned long & currTime, unsigned long & previousTime, unsigned long interval);
@@ -82,7 +82,7 @@ void setup()
   pinMode(SOLENOID_PIN, OUTPUT);
 
   digitalWrite(LED_PIN, HIGH);
-  digitalWrite(SOLENOID_PIN, HIGH);
+  //digitalWrite(SOLENOID_PIN, HIGH);
   delay(200);
 
   digitalWrite(LED_PIN, LOW);
@@ -117,6 +117,7 @@ void setup()
 
     digitalWrite(LED_PIN, HIGH);
     digitalWrite(SOLENOID_PIN, HIGH);
+    
     delay(500);
 
     digitalWrite(LED_PIN, LOW);
@@ -198,7 +199,6 @@ void loop()
         break;
       case 1:
         {
-
           int valueHit = 0;
 
           float peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
@@ -226,7 +226,7 @@ void loop()
 
             recordIndex++;
             if (recordIndex >= numSequence) {
-
+              Serial.println();
               Serial.println("2: Finish recording");
 
               //reset values
@@ -242,73 +242,73 @@ void loop()
               Serial.println();
 
             }
-
-            Serial.print(diffTime);
-            Serial.print(" ");
-            Serial.println(volts);
-
-            signalMax   = 0;
-            signalMin   = 1024;
-
-          }
-          break;
-        case 2:
-          {
-
-            //wait 3 clock steps to play the recorded sequence
-            timerMsgCounter++;
-            if (timerMsgCounter == stepWait) {
-              timerMsgCounter = 0;
-              sequenceState = 1;
-              sequenceIndex++;
-              Serial.print("Next Sequence Index: ");
-              Serial.println(sequenceIndex);
-            }
-
-            if (sequenceIndex == 3) {
-
-              Serial.println("Avg values");
-              //calculate average between each recorder sequence
-              for (int i = 0; i < numSequence; i++) {
-                float avgValue  = 0.0;
-                for (int j = 0; j < 3; i++) {
-                  avgValue += sequenceRecord[j][i];
-                }
-                avgValue /= 3.0;
-                if (avgValue >= 0.6) {
-                  sequencePlay[i] = 1;
-                } else {
-                  sequencePlay[i] = 0;
-                }
-                Serial.print(sequencePlay[i]);
-              }
-
-              Serial.println();
-
-              //check if its the same sequence
-              boolean equal = true;
-              for (int i = 0; i < numSequence; i++) {
-                if ( sequenceCheck[i] != sequencePlay[i] ) {
-                  equal = false;
-                  break;
-                }
-              }
-              if (equal) {
-                Serial.println("same");
-              } else {
-                Serial.println("not same");
-              }
-            }
-
-            sequenceState = 3;
-            sequenceIndex = 0;
-
           }
 
+          Serial.print(diffTime);
+          Serial.print(" ");
+          Serial.println(volts);
 
-
+          signalMax   = 0;
+          signalMin   = 1024;
 
         }
+        break;
+      case 2:
+        {
+
+          //wait 3 clock steps to play the recorded sequence
+          timerMsgCounter++;
+          if (timerMsgCounter == stepWait) {
+            timerMsgCounter = 0;
+            sequenceState = 1;
+            sequenceIndex++;
+            Serial.print("Next Sequence Index: ");
+            Serial.println(sequenceIndex);
+          }
+
+          if (sequenceIndex == 3) {
+
+            Serial.println("Avg values");
+            //calculate average between each recorder sequence
+            for (int i = 0; i < numSequence; i++) {
+              float avgValue  = 0.0;
+              for (int j = 0; j < 3; j++) {
+                avgValue += sequenceRecord[j][i];
+              }
+              avgValue /= 3.0;
+              if (avgValue >= 0.6) {
+                sequencePlay[i] = 1;
+              } else {
+                sequencePlay[i] = 0;
+              }
+              Serial.print(sequencePlay[i]);
+            }
+
+            Serial.println();
+
+            //check if its the same sequence
+            boolean equal = true;
+            for (int i = 0; i < numSequence; i++) {
+              if ( sequenceCheck[i] != sequencePlay[i] ) {
+                equal = false;
+                break;
+              }
+            }
+            if (equal) {
+              Serial.println("SAME");
+              Serial.println("SAME");
+            } else {
+              Serial.println("NOT THE SAME");
+            }
+
+            //Go to play sequence once the avg is calculated
+            sequenceState = 3;
+            sequenceIndex = 0;
+            Serial.println("2: Done calculating avg");
+          }
+
+        }
+        break;
       case 3:
         {
           //play the recorded sequence three times

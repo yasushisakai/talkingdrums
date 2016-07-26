@@ -14,7 +14,7 @@ RH_NRF24 nrf24;
 int STATE_SOL = LOW;
 
 //play sequence
-int numSequence =  8;
+int numSequence = 8;
 int playIndex   = 0;
 
 unsigned int sequencePlay[]      = {1, 0, 0, 1, 1, 0, 0, 1};
@@ -23,7 +23,9 @@ unsigned int sequenceRecord[]    = {0, 0, 0, 0, 0, 0, 0, 0};
 int timerCounter = 0;
 int numReplays = 3;
 int replaysCounter = 0;
-boolean delayTimer = false;
+
+int eventSequence = 2;
+boolean lockInMsg =true;
 
 
 //Times
@@ -33,10 +35,9 @@ unsigned long diffTime = 5;
 
 //Hit solenoid
 unsigned long prevHitTime = 0;
-unsigned long intervalHitTime = 100;// 50ms
+unsigned long intervalHitTime = 50;// 50ms
 
 //lock
-boolean lockInMsg = true;
 int counterLock  = 0;
 
 void setup()
@@ -98,7 +99,7 @@ void setup()
   digitalWrite(LED_PIN, LOW);
   // digitalWrite(SOLENOID_PIN, LOW);
 
-  delay(2000);
+  delay(3000);
 }
 
 
@@ -131,53 +132,61 @@ void loop()
     }
   }
 
-  if (delayTimer) {
+  if (!lockInMsg) {
+    switch (eventSequence) {
+      case 1:
+        {
+          timerCounter++;
+          if (timerCounter == 2) {
+            timerCounter = 0;
+            replaysCounter++;
 
-    timerCounter++;
-    if (timerCounter == 2) {
-      timerCounter = 0;
-      replaysCounter++;
+            if ( numReplays == replaysCounter) {
+              eventSequence = 3;
+            } else {
+              //continue play
+              eventSequence = 2;
+              Serial.println("play again the sequence");
+            }
 
-      if ( numReplays == replaysCounter) {
+          }
 
-      } else {
-        //continue play
-        delayTimer = false;
-      }
+          prevTime = currentTime;
+          lockInMsg = true;
+        }
+        break;
+      case 2:
+        {
+          unsigned int  value = sequencePlay[playIndex];
+
+          Serial.print("New msg: ");
+          Serial.print(diffTime);
+          Serial.print(" ");
+          Serial.println(value);
+
+          if (value == 1) {
+            STATE_SOL = HIGH;
+          }
+
+          prevTime = currentTime;
+          counterLock = 0;
+          lockInMsg = true;
+          playIndex++;
+
+          if (playIndex >= numSequence) {
+            playIndex = 0;
+            eventSequence = 1;
+            Serial.println("Waiting two clocks");
+          }
+        }
+        break;
+      case 3:
+        lockInMsg = true;
+        prevTime = currentTime;
+        break;
 
     }
-
   }
-
-  if ( !lockInMsg) {
-
-    //play sequence
-    if (!delayTimer) {
-      unsigned int  value = sequencePlay[playIndex];
-
-      Serial.print("New msg: ");
-      Serial.print(diffTime);
-      Serial.print(" ");
-      Serial.println(value);
-
-      if (value == 1) {
-        STATE_SOL = HIGH;
-      }
-
-      prevTime = currentTime;
-      counterLock = 0;
-      lockInMsg = true;
-      playIndex++;
-
-      if (playIndex >= numSequence) {
-        playIndex = 0;
-        delayTimer = true;
-        //sequence
-      }
-    }
-
-  }
-
 
 
 
@@ -199,6 +208,7 @@ boolean timer(unsigned long currTime, unsigned long previousTime, unsigned long 
   }
   return false;
 }
+
 
 
 
