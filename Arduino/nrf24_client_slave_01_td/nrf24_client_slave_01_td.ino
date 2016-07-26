@@ -10,19 +10,22 @@ RH_NRF24 nrf24;
 
 #define LED_PIN 3
 #define SOLENOID_PIN 4
-#define MIC_PIN A0
+#define MIC_PIN A5
 
 int STATE = LOW;
-int LED_STATE = LOW;
 
 //play sequence
-int numSequence = 8;
+int numSequence = 12;
 int playIndex   = 0;
 
-unsigned int sequencePlay[]      = {1, 0, 0, 1, 1, 0, 0, 1};
-unsigned int sequenceRecord[]    = {0, 0, 0, 0, 0, 0, 0, 0};
+unsigned int sequencePlay[]      =  {1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1};
+unsigned int sequenceRecord[]    =  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-
+//Sequence
+boolean recordSequence = false;
+boolean playSequence  = false;
+int recordIndex = 0;
+int knockCounter = 0;
 
 //Times
 unsigned long clockInterval = 0;
@@ -31,7 +34,7 @@ unsigned long diffTime = 5;
 
 //Hit solenoid
 unsigned long prevHitTime = 0;
-unsigned long intervalHitTime = 60;// 50ms
+unsigned long intervalHitTime = 100;// 50ms
 unsigned long prevLEDTime = 50;
 
 //lock
@@ -49,22 +52,22 @@ boolean        activateSignalAnalysis = false;
 
 //Signal values
 float voltageIn        = 3.3;
-float voltsThreshold   = 0.7;
+float voltsThreshold   = 1.2;
 
 
 int analyzeSignal(int & micValue, int & sMax, int & sMin, float threshold, boolean lock);
 boolean timer(unsigned long & currTime, unsigned long & previousTime, unsigned long interval);
 
+
 void setup()
 {
-
+  pinMode(MIC_PIN, INPUT);
   pinMode(LED_PIN, OUTPUT);
   pinMode(SOLENOID_PIN, OUTPUT);
 
   digitalWrite(LED_PIN, HIGH);
   digitalWrite(SOLENOID_PIN, HIGH);
   delay(200);
-
 
   digitalWrite(LED_PIN, LOW);
   digitalWrite(SOLENOID_PIN, LOW);
@@ -124,10 +127,7 @@ void loop()
 
   int  microphoneValue = analogRead(MIC_PIN);
 
-  //Serial.println(microphoneValue);
-
-
-  if (microphoneValue < 1024)  //This is the max of the 10-bit ADC so this loop will include all readings
+  if (microphoneValue < 1023 && microphoneValue > 50)  //This is the max of the 10-bit ADC so this loop will include all readings
   {
     if (microphoneValue > signalMax)
     {
@@ -139,118 +139,137 @@ void loop()
     }
   }
 
-  if (timer(currentTime, prevLEDTime, 500)) {
+  uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
+  uint8_t len = sizeof(buf);
 
-    float peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
-    double volts = (peakToPeak * voltageIn) / 1024;  // convert to volts
-
-    Serial.println(volts);
-
-    signalMax   = 0;
-    signalMin   = 1024;
-
-    prevLEDTime = currentTime;
-  }
-
-  /*
-
-    uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
-    uint8_t len = sizeof(buf);
-
-    // Should be a reply message for us now
-    if (nrf24.recv(buf, &len))
-    {
+  // Should be a reply message for us now
+  if (nrf24.recv(buf, &len))
+  {
     int value = buf[0] - 48;
 
     if (value == 1) {
 
-      prevLEDTime = currentTime;
-
-      // read only once
-      //lock incomming
-      if (lockInMsg) {
-
-        diffTime = currentTime - prevTime;
-        if (diffTime > 10) {
-          prevHitTime    = currentTime;
-          prevSignalTime = currentTime;
-          prevTime       = currentTime;
-          lockInMsg = false;
-          activateSignalAnalysis = true;
-        }
+      diffTime = currentTime - prevTime;
+      if (diffTime > 60) {
+        lockInMsg = false;
       }
 
-
     } else {
+
     }
-    }
 
+  }
 
+  if ( !lockInMsg) {
 
-
-    // Serial.print(" M: ");
-    // Serial.print(microphoneValue);
-
-    //int micValue = analyzeSignal(microphoneValue, signalMax, signalMin,  voltsThreshold, lockInMsg);
-    //Serial.print(" V: ");
-    // Serial.print(micValue);
-
-    if ( !lockInMsg) {
+    int valueHit = 0;
 
     float peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
-    double volts = (peakToPeak * voltageIn) / 1024;  // convert to volts
+    double volts = (peakToPeak * voltageIn) / 1024.0;  // convert to volts
 
-    //play sequence
-    unsigned int  value = sequencePlay[playIndex];
+    if (volts > voltsThreshold) {
+      Serial.println("Knock");
 
-    Serial.print("New msg: ");
-    Serial.print(diffTime);
+
+      //Save values
+      // New initial header
+
+      knockCounter++;
+
+      if (knockCounter > 1) {
+        if (!recordSequence) {
+          recordSequence = true;
+          Serial.println("Starting recording sequence");
+        }
+      }
+      valueHit = 1;
+    }
+
+    if (playSequence) {
+
+
+    }
+
+
+    if (recordSequence) {
+      Serial.print(valueHit);
+      sequenceRecord[recordIndex] = valueHit;
+
+      recordIndex++;
+      if (recordIndex >= numSequence) {
+        recordIndex = 0;
+
+        recordSequence = false;
+
+
+        //print the recording
+        Serial.println();
+        for (int i = 0; i < numSequence; i++) {
+          Serial.print(sequenceRecord[i] );
+        }
+        Serial.println();
+
+        boolean equal = true;
+        for (int i = 0; i < numSequence; i++) {
+          if ( sequencePlay[i] != sequenceRecord[i] ) {
+            equal = false;
+            break;
+          }
+        }
+        if (equal) {
+          Serial.println("same");
+
+
+          //if done recording play Sequence
+          playSequence = true;
+
+        } else {
+          Serial.println("not same");
+        }
+      }
+    }
+
+
+    /*
+
+          Serial.print(signalMax);
+          Serial.print(" ");
+          Serial.print(signalMin);
+          Serial.print(" ");
+          Serial.print("reset ");
+          Serial.print(diffTime);
+          Serial.print(" ");
+
+    */
     Serial.print(" ");
-    Serial.print(value);
-    Serial.print(" max ");
-    Serial.print(signalMax);
-    Serial.print(" min ");
-    Serial.print(signalMin);
-    Serial.print(" mic: ");
-
     Serial.println(volts);
 
     signalMax   = 0;
     signalMin   = 1024;
 
-    //clock
-    if (value == 1) {
-      STATE = HIGH;
-      LED_STATE = HIGH;
-    }
+    //play sequence
+    //unsigned int  value = sequencePlay[playIndex];
 
-    counterLock = 0;
-    playIndex++;
+    //playIndex++;
 
-    if (playIndex >= numSequence) {
-      playIndex = 0;
-    }
+    //if (playIndex >= numSequence) {
+    //  playIndex = 0;
+    // }
 
-    lockInMsg = true;
-    }
+    prevTime       = currentTime;
+    STATE          = HIGH;
+    lockInMsg      = true;
+  }
 
-    digitalWrite(LED_PIN, LED_STATE);
-    digitalWrite(SOLENOID_PIN, LED_STATE);
+  digitalWrite(LED_PIN, STATE);
+  digitalWrite(SOLENOID_PIN, STATE);
 
-    if (LED_STATE == HIGH) {
-    if (timer(currentTime, prevLEDTime, intervalHitTime)) {
-      LED_STATE = LOW;
-    }
-    }
-
-    if (STATE == HIGH) {
-    if (timer(currentTime, prevHitTime, intervalHitTime)) {
+  if (STATE == HIGH) {
+    if (timer(currentTime, prevTime, intervalHitTime)) {
       STATE = LOW;
     }
-    }
+  }
 
-
-  */
 }
 
 boolean timer(unsigned long & currTime, unsigned long & previousTime, unsigned long interval) {
@@ -289,27 +308,6 @@ int analyzeSignal(int & micValue, int & sMax, int & sMin, float  threshold, bool
     float peak = sMax - sMin;  // max - min = peak-peak amplitude
     double voltage = (peak * 3.3) / 1024;  // convert to volts
 
-    /*
-
-
-        Serial.print(micValue);
-        Serial.print(",c ");
-        Serial.print(currTimer);
-        Serial.print(",p ");
-        Serial.print(previousTime);
-        Serial.print(", ");
-
-
-        Serial.print(prevVoltage);
-
-
-
-      Serial.print("Max ");
-      Serial.print(signalMax);
-      Serial.print(" Min ");
-      Serial.print(signalMin);
-
-    */
     Serial.print("Max");
     Serial.print(sMax);
     Serial.print(", Min ");
