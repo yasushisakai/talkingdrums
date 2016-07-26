@@ -11,15 +11,21 @@ RH_NRF24 nrf24;
 #define LED_PIN 3
 #define SOLENOID_PIN 4
 
-int STATE = LOW;
+int STATE_SOL = LOW;
 
 //play sequence
 int numSequence = 8;
 int playIndex   = 0;
 
-unsigned int sequencePlay[]      = {1, 0, 0, 0, 1, 0, 0, 0};
+unsigned int sequencePlay[]      = {1, 0, 0, 1, 1, 0, 0, 1};
 unsigned int sequenceRecord[]    = {0, 0, 0, 0, 0, 0, 0, 0};
 
+int timerCounter = 0;
+int numReplays = 3;
+int replaysCounter = 0;
+
+int eventSequence = 2;
+boolean lockInMsg =true;
 
 
 //Times
@@ -29,10 +35,9 @@ unsigned long diffTime = 5;
 
 //Hit solenoid
 unsigned long prevHitTime = 0;
-unsigned long intervalHitTime = 60;// 50ms
+unsigned long intervalHitTime = 50;// 50ms
 
 //lock
-boolean lockInMsg = true;
 int counterLock  = 0;
 
 void setup()
@@ -42,12 +47,12 @@ void setup()
   pinMode(SOLENOID_PIN, OUTPUT);
 
   digitalWrite(LED_PIN, HIGH);
-  digitalWrite(SOLENOID_PIN, HIGH);
-  delay(200);
+  //digitalWrite(SOLENOID_PIN, HIGH);
+  delay(3000);
 
 
   digitalWrite(LED_PIN, LOW);
-  digitalWrite(SOLENOID_PIN, LOW);
+  //digitalWrite(SOLENOID_PIN, LOW);
 
   Serial.begin(9600);
 
@@ -92,8 +97,9 @@ void setup()
   }
 
   digitalWrite(LED_PIN, LOW);
-  digitalWrite(SOLENOID_PIN, LOW);
+  // digitalWrite(SOLENOID_PIN, LOW);
 
+  delay(3000);
 }
 
 
@@ -117,7 +123,6 @@ void loop()
 
         diffTime = currentTime - prevTime;
         if (diffTime > 10) {
-          prevTime = currentTime;
           lockInMsg = false;
         }
       }
@@ -127,40 +132,71 @@ void loop()
     }
   }
 
-  if ( !lockInMsg) {
+  if (!lockInMsg) {
+    switch (eventSequence) {
+      case 1:
+        {
+          timerCounter++;
+          if (timerCounter == 2) {
+            timerCounter = 0;
+            replaysCounter++;
 
-    //play sequence
-    unsigned int  value = sequencePlay[playIndex];
+            if ( numReplays == replaysCounter) {
+              eventSequence = 3;
+            } else {
+              //continue play
+              eventSequence = 2;
+              Serial.println("play again the sequence");
+            }
 
-    Serial.print("New msg: ");
-    Serial.print(diffTime);
-    Serial.print(" ");
-    Serial.println(value);
+          }
 
-    if (value == 1) {
-      STATE = HIGH;
-      prevHitTime = currentTime;
-    } else {
-      STATE = LOW;
-    }
+          prevTime = currentTime;
+          lockInMsg = true;
+        }
+        break;
+      case 2:
+        {
+          unsigned int  value = sequencePlay[playIndex];
 
-    counterLock = 0;
-    lockInMsg = true;
-    playIndex++;
+          Serial.print("New msg: ");
+          Serial.print(diffTime);
+          Serial.print(" ");
+          Serial.println(value);
 
-    if (playIndex >= numSequence) {
-      playIndex = 0;
+          if (value == 1) {
+            STATE_SOL = HIGH;
+          }
+
+          prevTime = currentTime;
+          counterLock = 0;
+          lockInMsg = true;
+          playIndex++;
+
+          if (playIndex >= numSequence) {
+            playIndex = 0;
+            eventSequence = 1;
+            Serial.println("Waiting two clocks");
+          }
+        }
+        break;
+      case 3:
+        lockInMsg = true;
+        prevTime = currentTime;
+        break;
+
     }
   }
 
 
-  digitalWrite(LED_PIN, STATE);
-  digitalWrite(SOLENOID_PIN, STATE);
 
-  if (STATE == HIGH) {
-    if (timer(currentTime, prevHitTime, intervalHitTime)) {
-      STATE = LOW;
-      Serial.println("OFF");
+  digitalWrite(LED_PIN, STATE_SOL);
+  digitalWrite(SOLENOID_PIN, STATE_SOL);
+
+  if (STATE_SOL == HIGH) {
+    if (timer(currentTime, prevTime, intervalHitTime)) {
+      STATE_SOL = LOW;
+      // Serial.println("OFF");
     }
   }
 
@@ -172,6 +208,7 @@ boolean timer(unsigned long currTime, unsigned long previousTime, unsigned long 
   }
   return false;
 }
+
 
 
 
