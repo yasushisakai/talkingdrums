@@ -14,7 +14,7 @@ RH_NRF24 nrf24;
 int STATE_SOL = LOW;
 
 //play sequence
-int numSequence = 8;
+int numSequence = 8; //num of bits
 int playIndex   = 0;
 
 unsigned int sequencePlay[]      = {1, 0, 0, 1, 1, 0, 0, 1};
