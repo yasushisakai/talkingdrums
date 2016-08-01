@@ -8,22 +8,15 @@ RH_NRF24 nrf24;
 // RH_NRF24 nrf24(8, 7); // For RFM73 on Anarduino Mini
 
 
-// (arduinoIDE -> atmega 328P pin), (3 -> 5), (4 -> 6), (A0 -> 23)
 #define LED_PIN 3
 #define SOLENOID_PIN 4
 #define MIC_PIN A0
-
-//   *nrf 24* | Adruino | mega328p
-// IRQ  MISO  |  --  12 |  --   18
-// MOSI SCK   |  11  13 |  17   19
-// CSN  CE    |  10   8 |  16   14
-// VCC  GND*  | VCC GND | VCC  GND
 
 int LED_STATE = LOW;
 int SOLENOID_STATE = LOW;
 
 //play sequence
-int numSequence = 8; // we don't know whether we want to constrain to 8bits yet
+int numSequence = 8;
 int playIndex   = 0;
 int playRecordCount = 0;
 
@@ -38,10 +31,10 @@ int sequenceRecord[3][8]    = {
 };
 
 //Hard coded sequence for error/debug correction
-boolean sequenceCheck[]     =  {1, 0,  0,  1,  0,  1,  0,  1};
+int sequenceCheck[]     =  {1,   0,  0,  1,  1,  0,  0,  1};
 
 //Sequence
-int sequenceState = 0; // the current mode
+int sequenceState = 0;
 boolean recordSequence = false;
 boolean playSequence  = false;
 int recordIndex = 0;
@@ -79,9 +72,8 @@ boolean        activateSignalAnalysis = false;
 float voltageIn        = 3.3;
 float voltsThreshold   = 1.1;
 
-
+int analyzeSignal(int & micValue, int & sMax, int & sMin, float threshold, boolean lock);
 boolean timer(unsigned long & currTime, unsigned long & previousTime, unsigned long interval);
-boolean checkRF(RH_NRF24& rf);
 
 void setup()
 {
@@ -98,22 +90,71 @@ void setup()
 
   Serial.begin(9600);
 
-  checkRF(nrf24);
-  
+  int failed = 0;
+
+
+  if (!nrf24.init()) {
+    failed = 1;
+  }
+
+  if (!nrf24.setChannel(1)) {
+    failed = 1;
+  }
+
+  if (!nrf24.setRF(RH_NRF24::DataRate2Mbps, RH_NRF24::TransmitPower0dBm)) {
+    failed = 1;
+  }
+
+  //SEND LED NOTIFICATION THAT RF FAILED
+  if (failed == 1) {
+    digitalWrite(LED_PIN, HIGH);
+    digitalWrite(SOLENOID_PIN, HIGH);
+    delay(500);
+
+    digitalWrite(LED_PIN, LOW);
+    digitalWrite(SOLENOID_PIN, LOW);
+    delay(200);
+
+    digitalWrite(LED_PIN, HIGH);
+    digitalWrite(SOLENOID_PIN, HIGH);
+    
+    delay(500);
+
+    digitalWrite(LED_PIN, LOW);
+    digitalWrite(SOLENOID_PIN, LOW);
+    delay(200);
+
+    Serial.println("error starting RF");
+
+  } else {
+    Serial.println("started RF");
+
+  }
+
+  digitalWrite(LED_PIN, LOW);
+  digitalWrite(SOLENOID_PIN, LOW);
+
 }
 
 
 void loop()
 {
 
-  unsigned long currentTime = millis(); // Start time
+  unsigned long currentTime     = millis(); // Start time
 
-  if (sequenceState < 2) {
+  if (sequenceState == 0 || sequenceState == 1) {
     int  microphoneValue = analogRead(MIC_PIN);
-    // getting the amplitude from the mic
-    if (microphoneValue < 1023 && microphoneValue > 50) {
-      if (microphoneValue > signalMax) signalMax = microphoneValue;
-      else if (microphoneValue < signalMin) signalMin = microphoneValue;
+
+    if (microphoneValue < 1023 && microphoneValue > 50)  //This is the max of the 10-bit ADC so this loop will include all readings
+    {
+      if (microphoneValue > signalMax)
+      {
+        signalMax = microphoneValue;  // save just the max levels
+      }
+      else if (microphoneValue < signalMin)
+      {
+        signalMin = microphoneValue;  // save just the min levels
+      }
     }
   }
 
@@ -124,23 +165,29 @@ void loop()
   if (nrf24.recv(buf, &len))
   {
     int value = buf[0] - 48;
+
     if (value == 1) {
+
       diffTime = currentTime - prevTime;
       if (diffTime > 60) {
         lockInMsg = false;
         prevTime = currentTime;
       }
+
+    } else {
+
     }
   }
 
-  if (!lockInMsg) {
+  if ( !lockInMsg) {
 
     switch (sequenceState) {
 
       //Record sequence from the microphone
-      case 0: // WAIT
+      case 0:
         {
-          //wait 3 clock steps to gather data from the microphone
+          //wait 3 clock steps to recorded sequence from the microphone
+
           timerMsgCounter++;
           if (timerMsgCounter == stepWait) {
             timerMsgCounter = 0;
@@ -150,7 +197,7 @@ void loop()
 
         }
         break;
-      case 1: // LISTEN
+      case 1:
         {
           int valueHit = 0;
 
@@ -160,23 +207,24 @@ void loop()
           if (volts > voltsThreshold) {
             Serial.println("Knock");
 
+
             //Save values
             // New initial header
+
 
             if (!recordSequence) {
               Serial.println("1: Starting recording sequence");
               recordSequence = true;
             }
-            valueHit = 1; // was hit
+
+            valueHit = 1;
           }
-          // was not hit
 
           if (recordSequence) {
             Serial.print(valueHit);
             sequenceRecord[sequenceIndex][recordIndex] = valueHit;
 
             recordIndex++;
-
             if (recordIndex >= numSequence) {
               Serial.println();
               Serial.println("2: Finish recording");
@@ -192,6 +240,7 @@ void loop()
                 Serial.print(sequenceRecord[sequenceIndex][i] );
               }
               Serial.println();
+
             }
           }
 
@@ -199,14 +248,14 @@ void loop()
           Serial.print(" ");
           Serial.println(volts);
 
-          // reset the readings
           signalMax   = 0;
           signalMin   = 1024;
 
         }
         break;
-      case 2: //ANALYZE
+      case 2:
         {
+
           //wait 3 clock steps to play the recorded sequence
           timerMsgCounter++;
           if (timerMsgCounter == stepWait) {
@@ -247,18 +296,20 @@ void loop()
             }
             if (equal) {
               Serial.println("SAME");
+              Serial.println("SAME");
             } else {
               Serial.println("NOT THE SAME");
             }
+
             //Go to play sequence once the avg is calculated
             sequenceState = 3;
-            sequenceIndex = 0; // reset number of arrays
+            sequenceIndex = 0;
             Serial.println("2: Done calculating avg");
           }
 
         }
         break;
-      case 3: //PLAY SINGLE
+      case 3:
         {
           //play the recorded sequence three times
 
@@ -301,10 +352,15 @@ void loop()
 
             if (playRecordCount == 3) {
               playRecordCount = 0;
-              sequenceState = 1; //
+              sequenceState = 1;
               Serial.println("5: Go to Listen");
             }
           }
+
+        }
+        break;
+      case 5:
+        {
 
         }
         break;
@@ -339,51 +395,61 @@ boolean timer(unsigned long & currTime, unsigned long & previousTime, unsigned l
   return false;
 }
 
-boolean checkRF(RH_NRF24& rf) {
-  boolean failed = 0;
 
-  if (!rf.init()) {
-    failed = 1;
+
+int analyzeSignal(int & micValue, int & sMax, int & sMin, float  threshold, boolean lock) {
+
+  int outputValue = 2;
+
+  //signalSum += micValue;
+  // signalCount++;
+
+  //if (signalCount  >= 5 ) {
+  ///  float signalAvrg = signalSum / signalCount;
+
+  if (micValue < 1024)  //This is the max of the 10-bit ADC so this loop will include all readings
+  {
+    if (micValue > sMax)
+    {
+      sMax = micValue;  // save just the max levels
+    }
+    else if (micValue < sMin)
+    {
+      sMin = micValue;  // save just the min levels
+    }
   }
 
-  if (!rf.setChannel(1)) {
-    failed = 1;
-  }
+  // collect data for interval time
+  if (!lock) {
+    float peak = sMax - sMin;  // max - min = peak-peak amplitude
+    double voltage = (peak * 3.3) / 1024;  // convert to volts
 
-  if (!rf.setRF(RH_NRF24::DataRate2Mbps, RH_NRF24::TransmitPower0dBm)) {
-    failed = 1;
-  }
+    Serial.print("Max");
+    Serial.print(sMax);
+    Serial.print(", Min ");
+    Serial.print(sMin);
 
-  //SEND LED NOTIFICATION THAT RF FAILED
-  if (failed == 1) {
-    digitalWrite(LED_PIN, HIGH);
-    digitalWrite(SOLENOID_PIN, HIGH);
-    delay(500);
+    Serial.print(" v: ");
+    Serial.print(voltage);
+    Serial.print(" micV: ");
+    Serial.print(micValue);
+    Serial.print(" ");
 
-    digitalWrite(LED_PIN, LOW);
-    digitalWrite(SOLENOID_PIN, LOW);
-    delay(200);
+    //reset values;
+    sMax  = 0;
+    sMin  = 1024;
 
-    digitalWrite(LED_PIN, HIGH);
-    digitalWrite(SOLENOID_PIN, HIGH);
 
-    delay(500);
-
-    digitalWrite(LED_PIN, LOW);
-    digitalWrite(SOLENOID_PIN, LOW);
-    delay(200);
-
-    Serial.println("error starting RF");
-
-  } else {
-    Serial.println("started RF");
+    if (voltage > threshold) {
+      outputValue = 1;
+    } else {
+      outputValue = 0;
+    }
 
   }
 
-  digitalWrite(LED_PIN, LOW);
-  digitalWrite(SOLENOID_PIN, LOW);
 
-  return failed;
+  return outputValue;
 }
 
 
