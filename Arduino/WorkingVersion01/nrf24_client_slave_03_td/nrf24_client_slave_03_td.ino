@@ -7,7 +7,6 @@ RH_NRF24 nrf24;
 // RH_NRF24 nrf24(8, 10);// For Leonardo, need explicit SS pin
 // RH_NRF24 nrf24(8, 7); // For RFM73 on Anarduino Mini
 
-
 #define LED_PIN 3
 #define SOLENOID_PIN 4
 #define MIC_PIN A0
@@ -117,7 +116,7 @@ void setup()
 
     digitalWrite(LED_PIN, HIGH);
     digitalWrite(SOLENOID_PIN, HIGH);
-    
+
     delay(500);
 
     digitalWrite(LED_PIN, LOW);

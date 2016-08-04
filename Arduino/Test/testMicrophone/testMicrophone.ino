@@ -19,12 +19,12 @@
 
 */
 
-const int sampleWindow = 500; // Sample window width in mS (250 mS = 4Hz)
+const int sampleWindow = 50; // Sample window width in mS (250 mS = 4Hz)
 unsigned int knock;
-int ledPin = 3;
+int ledPin = 3; //
 int solenoidPin = 4;
 float voltage = 3.3;
-float voltsThres = 0.5;
+float voltsThres = 2.0;
 
 
 void setup()
@@ -42,7 +42,6 @@ void loop()
   unsigned int signalMax = 0;
   unsigned int signalMin = 1024;
 
-  // collect data for 250 miliseconds
   while (millis() - start < sampleWindow)
   {
     knock = analogRead(0);
@@ -68,8 +67,8 @@ void loop()
     //turn on LED
     digitalWrite(ledPin, HIGH);
     digitalWrite(solenoidPin, HIGH);
-    delay(500);
-    Serial.println("Knock Knock");
+    delay(50);
+    digitalWrite(solenoidPin,LOW);
   }
   else
   {
