@@ -11,20 +11,20 @@ TimeKeeper::TimeKeeper() {
 
 char static TimeKeeper::signalCount = 0;
 
-bool static TimeKeeper::wait(){
+bool static TimeKeeper::wait() {
   bool flag = signalCount >= signalLimit;
-    if(!flag){
-      TimeKeeper::signalCount = 0; // refresh the signal Count
-      }
-  return flag;
+  if (!flag) {
+    TimeKeeper::signalCount = 0; // refresh the signal Count
   }
+  return flag;
+}
 
 void TimeKeeper::cycle() {
   this->currentTime = millis();
+  this->timeFrame = this->currentTime - this->lastTick;
 }
 
 void TimeKeeper::tick() {
-  this->timeFrame = this->currentTime - this->lastTick;
   this->lastTick = this->currentTime;
 }
 
@@ -44,4 +44,15 @@ bool TimeKeeper::checkFlash() {
   return (this->currentTime - this->lastFlash) < this->interval;
 }
 
-bool static wait();
+void TimeKeeper::timeFrameChar() {
+  String num = String(3);
+  if (this->timeFrame < 100) {
+    Serial.print('0');
+  }
+  Serial.print(this->timeFrame);
+}
+
+
+
+
+

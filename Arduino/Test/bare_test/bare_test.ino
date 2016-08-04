@@ -3,21 +3,24 @@
 
 #include "TimeKeeper.h"
 
-#include <SPI.h>
+//#include <SPI.h>
 
 RH_NRF24 nrf24;
-TimeKeeper timekeeper;
+TimeKeeper timeKeeper;
+
+///DEBUG
+bool const DEBUG = true;
 
 ///Sequence
-char sequenceState, sequenceIndex, recordIndex;
-boolean isRecord;
-boolean isPlay;
-boolean recording[SEQITER][SEQBITS];
-boolean playing[SEQBITS];
+byte sequenceState, sequenceIndex, bitIndex;
+bool lock, isRecord;
+bool recording[SEQITER][SEQBITS];
+bool playSequence[SEQBITS];
+bool debugSequence[] = {1, 0, 0, 1, 1, 0, 0, 1};
 
 ///Signal Processing
 int signalMin, signalMax;
-const int signalThreshold = 600; // 50-1024 we may need to make this dynamic
+const int signalThreshold = 800; // 50-1024 we may need to make this dynamic
 
 void setup() {
   Serial.begin(9600);
@@ -30,10 +33,11 @@ void setup() {
 
   //sequence
   sequenceState = WAIT;
-  recordIndex = sequenceIndex = 0;
-  isRecord = isPlay = false;
+  bitIndex = sequenceIndex = 0;
+  lock = true;
+  isRecord = false;
   for (char i = 0; i < SEQBITS; i++) {
-    playing[i] = false;
+    playSequence[i] = false;
     for (char j = 0; j < SEQITER; j++) {
       recording[j][i] = false;
     }
@@ -47,15 +51,6 @@ void setup() {
 }
 
 void loop() {
-  timekeeper.cycle();
-
-  char value;
-  if (checkServer(nrf24, value)) {
-    if (value == TICK) {
-      timekeeper.tick();
-      timekeeper.flash();
-    }
-  }
 
   //collect signal readings
   if (sequenceState == WAIT || sequenceState == LISTEN) {
@@ -66,48 +61,162 @@ void loop() {
     }
   }
 
-  //
-  switch (sequenceState) {
-    case WAIT:
-      {
-        TimeKeeper::signalCount++;
-        if (!TimeKeeper::wait()) sequenceState = LISTEN;
-      }
-      break;
+  timeKeeper.cycle();
 
-    case LISTEN: {
-        boolean valueHit = false;
-        int peakToPeak = signalMax - signalMin;
-        if (peakToPeak > signalThreshold) {
-          isRecord = true;
-          valueHit = true;
-          Serial.println("L:start record");
+  char value;
+  if (checkServer(nrf24, value)) {
+    if (value == TICK && timeKeeper.timeFrame > 60) {
+      value = TOCK;
+      timeKeeper.tick();
+      timeKeeper.flash();
+      lock = false;
+    }
+  }
+
+  if (!lock) {
+    switch (sequenceState) {
+      case WAIT:
+        {
+          TimeKeeper::signalCount++;
+          if (!TimeKeeper::wait()) sequenceState = LISTEN;
         }
+        break;
 
-        if (isRecord) {
-          recording[sequenceIndex][recordIndex] = valueHit;
-          recordIndex++;
-          if (recordIndex > SEQBITS) {
-          recordIndex=0;
+      case LISTEN: {
+          bool valueHit = false;
+          int peakToPeak = signalMax - signalMin;
+          /* reset */
+          signalMax = 0;
+          signalMin = 1024;
+
+          if (!isRecord) {
+            Serial.print("L: ");
+            timeKeeper.timeFrameChar();
+            Serial.print(", ");
+            Serial.println(peakToPeak);
+          }
+          if (peakToPeak > signalThreshold) {
+            if (!isRecord) Serial.println("L:rec start");
+            isRecord = true;
+            valueHit = true;
+          }
+
+          if (isRecord) {
+            Serial.print("L: ");
+            timeKeeper.timeFrameChar();
+            Serial.print(", ");
+            Serial.print(peakToPeak);
+            Serial.print(", ");
+            Serial.print(sequenceIndex);
+            Serial.print(", ");
+            Serial.print(bitIndex);
+            Serial.print(", ");
+            Serial.println(valueHit);
+            recording[sequenceIndex][bitIndex] = valueHit;
+            bitIndex++;
+            if (bitIndex >= SEQBITS) {
+              sequenceState = ANALYZE;
+            }
           }
         }
-      }
-      break;
+        break;
 
-    case ANALYZE: {
-      }
-      break;
-    case PLAYPULSE: {
-      }
-      break;
-    case REPLAY: {
-      }
-      break;
+      case ANALYZE: {
+          TimeKeeper::signalCount++;
+          if (TimeKeeper::wait()) sequenceState = LISTEN;
+
+          sequenceIndex++;
+          bitIndex = 0;
+          if (sequenceIndex < SEQITER) {
+            sequenceState = LISTEN;
+          } else {
+            isRecord = false;
+            sequenceIndex = 0;
+            for (int i = 0; i < SEQBITS; i++) {
+              float average = 0.0;
+              for (int j = 0; j < SEQITER; j++) {
+                average += recording[j][i];
+              }
+              playSequence[i] = average >= 0.5 * SEQITER;
+            }
+
+            for (int i = 0; i < SEQITER; i++) {
+              Serial.print("L: ");
+              Serial.print(i);
+              Serial.print('=');
+              for (int j = 0; j < SEQBITS; j++) {
+                Serial.print(recording[i][j]);
+              }
+              Serial.println();
+            }
+
+            Serial.print("L: r=");
+            for (int i = 0; i < SEQBITS; i++) {
+              Serial.print(playSequence[i]);
+            }
+            Serial.println();
+
+            if (DEBUG) {
+              bool flag = true;
+              for (int i = 0; i < SEQBITS; i++) {
+                if (debugSequence[i] != playSequence[i]) {
+                  flag = !flag;
+                  break;
+                }
+              }
+              if (flag) {
+                Serial.println("L:sequence correct");
+              } else {
+                Serial.println("L:sequence incorrect");
+              }
+            }
+
+            sequenceState = PLAYPULSE;
+            Serial.print("L: playing=");
+            Serial.print(sequenceIndex);
+            Serial.print(", ");
+          } //- anaylze
+
+        }
+        break;
+      case PLAYPULSE: {
+          Serial.print(playSequence[bitIndex]);
+          if (playSequence[bitIndex]) timeKeeper.hit();
+
+          bitIndex++;
+          if (bitIndex == SEQBITS) {
+            Serial.println("");
+            bitIndex = 0;
+            sequenceState = REPLAY;
+          }
+        }
+        break;
+      case REPLAY: {
+
+          TimeKeeper::signalCount++;
+          if (!TimeKeeper::wait()) {
+            sequenceState = PLAYPULSE;
+            bitIndex = 0;
+            sequenceIndex ++;
+
+            if (sequenceIndex == SEQITER) {
+              sequenceIndex = 0;
+              bitIndex = 0;
+              sequenceState = LISTEN;
+            } else {
+              Serial.print("L: playing=");
+              Serial.print(sequenceIndex);
+              Serial.print(", ");
+            }
+          }
+        }
+        break;
+    }
+    lock = !lock; //unlock
   }
 
   // outputs
-  digitalWrite(LED_PIN, timekeeper.checkFlash());
-  digitalWrite(SOL_PIN, timekeeper.checkHit());
+  digitalWrite(LED_PIN, timeKeeper.checkFlash());
+  digitalWrite(SOL_PIN, timeKeeper.checkHit());
 }
-
 
