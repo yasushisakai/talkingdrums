@@ -20,8 +20,11 @@
        \/__/         \/__/     \/__/                       \/__/
 
 
-   defines are in the defines.h file
-   you might want to look at TimeKeeper.h for other const variables
+  This is the slave program, which can be seen in any data passing phase,
+  it is also a client, that recieves data from the server
+
+   look for defines.h file for important variables
+   you might want to look at TimeKeeper.h for other const variables as well
 */
 
 // Objects
@@ -71,7 +74,6 @@ void setup() {
 }
 
 void loop() {
-
   //collect signal readings
   if (sequenceState == WAIT || sequenceState == LISTEN) {
     int micValue = analogRead(MIC_PIN);
@@ -192,6 +194,7 @@ void loop() {
             }
             Serial.println();
 
+            // check sequence if its correct
             if (DEBUG) {
               bool flag = true;
               for (int i = 0; i < SEQBITS; i++) {
@@ -255,7 +258,7 @@ void loop() {
         }
         break;
     }
-    lock = !lock; //lock
+    lock = !lock;
   }
 
   // outputs
