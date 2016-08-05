@@ -45,6 +45,9 @@ bool debugSequence[] = {1, 0, 0, 1, 1, 0, 0, 1};
 int signalMin, signalMax;
 const int signalThreshold = 800; // 50-1024 we may need to make this dynamic
 
+/// PWM-ing the Solenoid will need additional test 0-255
+byte const solenoid_pwm = 200;
+
 void setup() {
   Serial.begin(9600);
 
@@ -263,6 +266,10 @@ void loop() {
 
   // outputs
   digitalWrite(LED_PIN, timeKeeper.checkFlash());
-  digitalWrite(SOL_PIN, timeKeeper.checkHit());
+  if (timeKeeper.checkHit()) {
+    analogWrite(SOL_PIN, solenoid_pwm);
+  } else {
+    analogWrite(SOL_PIN, timeKeeper.checkHit); // 0
+  }
 }
 

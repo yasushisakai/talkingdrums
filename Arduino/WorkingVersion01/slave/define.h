@@ -4,7 +4,8 @@
 
 /// pins
 #define LED_PIN 3
-#define SOL_PIN 4
+#define SOL_PIN 5
+//changed for the use of PWM (Analog Write)
 #define MIC_PIN A0
 
 /// server values
