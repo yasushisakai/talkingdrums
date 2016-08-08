@@ -266,10 +266,12 @@ void loop() {
 
   // outputs
   digitalWrite(LED_PIN, timeKeeper.checkFlash());
+  digitalWrite(SOL_PIN, timeKeeper.checkHit());
+
   if (timeKeeper.checkHit()) {
     analogWrite(SOL_PIN, solenoid_pwm);
   } else {
-    analogWrite(SOL_PIN, timeKeeper.checkHit); // 0
+    analogWrite(SOL_PIN, 0);
   }
 }
 
