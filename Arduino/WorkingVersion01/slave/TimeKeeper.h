@@ -26,7 +26,7 @@ class TimeKeeper {
     unsigned long lastFlash;
 
   public:
-    static char signalCount;
+    char static signalCount;
     bool static wait();
     // waits untill signalCount hits the signalLimit 
     // resets the signalCount once it does.
