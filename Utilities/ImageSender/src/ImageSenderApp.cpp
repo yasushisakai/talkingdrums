@@ -17,10 +17,11 @@ using namespace std;
 
 const ci::ivec2 windowSize(1280 + 640, 720);
 
-//divide image 20, 20, -> 1280, 720, (64 x 36) =
 const ci::ivec2 stepDiv(20, 20);
 
 const int BAU_RATE = 9600;
+
+const int BUFFER_SIZE = 80;
 
 
 class ImageSenderApp : public App {
@@ -32,7 +33,7 @@ public:
     void draw() override;
     
     Surface processPixeletedImage(const Surface input, ci::ivec2 stepAmount, ci::ivec2 & numPixels);
-    void processPixels();
+    void processPixels(double currentTime);
     
     void initFBO();
     void renderOutputImage();
@@ -71,6 +72,14 @@ private:
     
     //Serial
     SerialRef           mSerial;
+    string              mSerialName;
+    string              mSerialStr;
+    double              mSerialPrevT;
+    double              mSerialDuratinT;
+    
+    
+    //Time Events
+    double               mCurrentT;
     
     //params gui
     params::InterfaceGlRef	mParams;
@@ -98,12 +107,14 @@ void ImageSenderApp::initFBO()
 void ImageSenderApp::initPort()
 {
     // print the devices
-    for( const auto &dev : Serial::getDevices() )
-        console() << "Device: " << dev.getName() << endl;
-    
-    try {
-        Serial::Device dev = Serial::findDeviceByNameContains( "tty.usbserial" );
-        mSerial = Serial::create( dev, 9600 );
+    string findUsb = "cu.usbserial";
+    for( const auto &dev : Serial::getDevices() ){
+        CI_LOG_V("Device: " << dev.getName() );
+    }try {
+        Serial::Device dev = Serial::findDeviceByNameContains( "cu.usbserial" );
+        mSerialName = dev.getName();
+        mSerial = Serial::create( dev, BAU_RATE );
+        CI_LOG_I( "Conected to: "<< mSerialName);
     }
     catch( SerialExc &exc ) {
         CI_LOG_EXCEPTION( "coult not initialize the serial device", exc );
@@ -268,8 +279,9 @@ void ImageSenderApp::draw()
 {
     gl::clear( Color( 0, 0, 0 ) );
     
+    mCurrentT = getElapsedSeconds();
     
-    processPixels();
+    processPixels(mCurrentT);
     
     //draw pixeleted image, the image that we are going to send
     if(!mDrawOriginal){
@@ -330,7 +342,7 @@ void ImageSenderApp::draw()
 }
 
 
-void ImageSenderApp::processPixels()
+void ImageSenderApp::processPixels(double currentTime)
 {
     
     //process pixels
@@ -338,6 +350,31 @@ void ImageSenderApp::processPixels()
         
         //if incomming msg is true then activate the pixel ready
         {
+            
+            //read incomming message
+            char mInSerial;
+            
+            try{
+                // read until newline, to a maximum of BUFSIZE bytes
+                mInSerial = mSerial->readChar();
+            }
+            catch( SerialTimeoutExc &exc ) {
+                CI_LOG_EXCEPTION( "timeout", exc );
+            }
+            
+            if(mInSerial == 's'){
+                mSerialDuratinT = currentTime - mSerialPrevT;
+                
+                mSerialPrevT = currentTime;
+                
+                //time 100 for ms
+                console()<<"got msg "<< mSerialDuratinT * 1000 <<std::endl;
+            }
+           
+            //currentTime
+            
+            
+            
             if(getElapsedFrames() % 5 == 0){
                 mPixelReady = true;
                 ci::ivec2 centrPixel = mIteraPixel * stepDiv;
@@ -346,7 +383,7 @@ void ImageSenderApp::processPixels()
                 //render font with new value
                 TextLayout simple;
                 simple.setFont( mFont );
-                simple.setColor( Color( 0.7, 0.7, 0.7f ) );
+                simple.setColor( Color( 0.8, 0.8, 0.8f ) );
                 
                 
                 std::string rgbStr = "("+ to_string(mCurrentColor.r)+", "+to_string(mCurrentColor.g)+", "+ to_string(mCurrentColor.b)+")";
@@ -365,8 +402,10 @@ void ImageSenderApp::processPixels()
                 simple.addCenteredLine(indexStr);
                 simple.addCenteredLine(byteStr);
                 mTextTexture = gl::Texture2d::create( simple.render( true, false ) );
-                
+             
             }
+            
+            //mSerial->flush();
         }
         
         //middle block
