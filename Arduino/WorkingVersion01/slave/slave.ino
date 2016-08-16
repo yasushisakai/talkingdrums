@@ -62,6 +62,8 @@ void setup() {
   bitIndex = sequenceIndex = 0;
   lock = true;
   isRecord = false;
+
+  //reset values
   for (char i = 0; i < SEQBITS; i++) {
     playSequence[i] = false;
     for (char j = 0; j < SEQITER; j++) {
@@ -252,6 +254,15 @@ void loop() {
               sequenceIndex = 0;
               bitIndex = 0;
               sequenceState = LISTEN;
+              //reset listen values
+
+              for (char i = 0; i < SEQBITS; i++) {
+                playSequence[i] = false;
+                for (char j = 0; j < SEQITER; j++) {
+                  recording[j][i] = false;
+                }
+              }
+
             } else {
               Serial.print("L: playing=");
               Serial.print(sequenceIndex);

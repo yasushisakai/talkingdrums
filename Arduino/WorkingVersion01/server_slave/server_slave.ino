@@ -80,7 +80,7 @@ void setup() {
   analogWrite(LED_PIN_06, 0);
   analogWrite(LED_PIN_07, 0);
 
-//sequence
+  //sequence
   sequenceState = WAIT;
   bitIndex = sequenceIndex = 0;
   lock = true;
@@ -119,8 +119,8 @@ void loop() {
 
   if (!lock) {
     switch (sequenceState) {
-      case WAIT: 
-      {
+      case WAIT:
+        {
           /*
             waits untill its good enough to get peaks
           */
@@ -129,29 +129,30 @@ void loop() {
         }
         break;
 
-      case LISTEN: 
-      {
+      case LISTEN:
+        {
           /*
             listens to the byte in the serial port
             same time as listen
-            
+
           */
 
-          
-      }
+          bool recording[SEQITER][SEQBITS];
+
+        }
         break;
 
-      case ANALYZE: 
-      {
-          
+      case ANALYZE:
+        {
+
           TimeKeeper::signalCount++;
           if (TimeKeeper::wait()) sequenceState = LISTEN;
 
-         
+
         }
         break;
-      case PLAYPULSE: 
-      {
+      case PLAYPULSE:
+        {
           /*
             plays single pulse
           */
@@ -164,7 +165,7 @@ void loop() {
             bitIndex = 0;
             sequenceState = RESET_PLAYPULSE;
           }
-          
+
         }
         break;
       case RESET_PLAYPULSE: {
@@ -183,6 +184,15 @@ void loop() {
               sequenceIndex = 0;
               bitIndex = 0;
               sequenceState = LISTEN;
+
+              //reset listen values
+              for (char i = 0; i < SEQBITS; i++) {
+                playSequence[i] = false;
+                for (char j = 0; j < SEQITER; j++) {
+                  recording[j][i] = false;
+                }
+              }
+
             } else {
               Serial.print("L: playing=");
               Serial.print(sequenceIndex);
