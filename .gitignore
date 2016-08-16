@@ -2,6 +2,9 @@
 
 # Ignore list for Eagle, a PCB layout tool
 
+# ignore xcode project
+*.xcodeproj
+
 # Backup files
 *.s#?
 *.b#?
