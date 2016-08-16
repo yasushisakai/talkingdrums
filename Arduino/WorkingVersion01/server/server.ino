@@ -53,7 +53,7 @@ void setup() {
   analogWrite(LED_PIN_05, 255);
   analogWrite(LED_PIN_06, 255);
   analogWrite(LED_PIN_07, 255);
-  delay(2000);
+  delay(1000);
 
   //turn off
   digitalWrite(LED_PIN_00, LOW);
@@ -101,5 +101,5 @@ void loop() {
 
 
   digitalWrite(LED_PIN, LED_STATE);
-  digitalWrite(LED_PIN_00, LED_STATE);
+
 }
