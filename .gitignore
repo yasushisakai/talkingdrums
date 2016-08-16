@@ -1,8 +1,5 @@
 .DS_Store
 
-*.jpg
-*.png
-
 # Ignore list for Eagle, a PCB layout tool
 
 # Backup files
