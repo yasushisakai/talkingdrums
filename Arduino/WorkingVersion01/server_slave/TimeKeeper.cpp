@@ -46,12 +46,11 @@ bool TimeKeeper::checkFlash() {
   return (this->currentTime - this->lastFlash) < this->interval;
 }
 
-void TimeKeeper::timeFrameChar() {
-  String num = String(3);
+unsigned long TimeKeeper::timeFrameChar() {
   if (this->timeFrame < 100) {
-    Serial.print('0');
+    return 0L;
   }
-  Serial.print(this->timeFrame);
+  return this->timeFrame;
 }
 
 

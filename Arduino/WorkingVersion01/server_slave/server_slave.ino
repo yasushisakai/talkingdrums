@@ -24,7 +24,7 @@ TimeKeeper timeKeeper;
 
 ///DEBUG
 bool const DEBUG = false;
-bool const DEBUG_PORT = true;
+bool const DEBUG_PORT = false;
 
 ///Sequence
 byte sequenceState, sequenceIndex, bitIndex;
@@ -123,25 +123,31 @@ void loop() {
       timeKeeper.tick();
       timeKeeper.flash();
       lock = false;
+
+
     }
   }
 
   //while not in the look read the serial port for incoming color
   if (lock) {
+    
+    
+        int val = Serial.readBytes(byteMSG8, 1);
 
-    int val = Serial.readBytes(byteMSG8, 1);
-
-    if (val > 0) {
-      Serial.flush();
-      if (DEBUG_PORT) {
-        Serial.print("Value Read Port: ");
-        Serial.println(byteMSG8[0]);
-      }
-    }
-
+        if (val > 0) {
+          Serial.flush();
+          if (DEBUG_PORT) {
+            Serial.print("Value Read Port: ");
+            Serial.println(byteMSG8[0]);
+          }
+        }
+    
   }
 
   if (!lock) {
+    
+    //Serial.write('s');
+    
     switch (sequenceState) {
       case WAIT:
         {
@@ -179,16 +185,14 @@ void loop() {
           /*
             plays single pulse
           */
-          if (DEBUG) {
-            Serial.print(playSequence[bitIndex]);
-          }
+          if (DEBUG) Serial.print(playSequence[bitIndex]);
+
           if (playSequence[bitIndex]) timeKeeper.hit();
 
           bitIndex++;
           if (bitIndex == SEQBITS) {
-            if (DEBUG) {
-              Serial.println("");
-            }
+            if (DEBUG) Serial.println("");
+
             bitIndex = 0;
             sequenceState = RESET_PLAYPULSE;
           }
@@ -243,4 +247,7 @@ void loop() {
   } else {
     analogWrite(SOL_PIN, 0);
   }
+
+
+  turnOnLEDs(byteMSG8[0]);
 }
