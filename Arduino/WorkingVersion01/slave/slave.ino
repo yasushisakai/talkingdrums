@@ -232,11 +232,11 @@ void loop() {
           if (bitIndex == SEQBITS) {
             Serial.println("");
             bitIndex = 0;
-            sequenceState = REPLAY;
+            sequenceState = RESET_PLAYPULSE;
           }
         }
         break;
-      case REPLAY: {
+      case RESET_PLAYPULSE: {
           /*
             returns to playpulse if there is something left to play
             (may not need this phase though)

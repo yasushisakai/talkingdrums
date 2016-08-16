@@ -14,7 +14,7 @@ boolean initNRF(RH_NRF24 &_nrf) {
   if (!_nrf.setRF(RH_NRF24::DataRate2Mbps, RH_NRF24::TransmitPower0dBm)) {
     Serial.println("E:(RF)failed to set RF");
   }
-  Serial.println("L: nrf connected");
+  Serial.println("L:nrf connected");
   delay(10);
   return true;
 }
@@ -31,6 +31,12 @@ boolean checkServer(RH_NRF24 &_nrf, char &value) {
   }
 }
 
-boolean timer(unsigned long const & cTime, unsigned long const & pTime, unsigned long const &interval) {
-  return (cTime - pTime) >= interval;
+//process the incoming byte
+void turnOnLEDs(uint8_t & inByte)
+{
+  
+}
+
+boolean timer(unsigned long const & currentTime, unsigned long const & previousTime, unsigned long const &interval) {
+  return (currentTime - previousTime) >= interval;
 }

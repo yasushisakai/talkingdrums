@@ -8,7 +8,8 @@
 
 boolean initNRF(RH_NRF24 &_nrf);
 boolean checkServer(RH_NRF24 &_nrf, char &value);
-boolean timer(unsigned long const & cTime, unsigned long const & pTime, unsigned long const &interval);
+boolean timer(unsigned long const & currentTime, unsigned long const & previousTime, unsigned long const &interval);
+void turnOnLEDs(uint8_t & inByte);
 
 // memo:
 
