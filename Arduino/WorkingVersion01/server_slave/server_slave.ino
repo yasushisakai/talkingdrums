@@ -23,7 +23,8 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = true;
+bool const DEBUG = false;
+bool const DEBUG_PORT = true;
 
 ///Sequence
 byte sequenceState, sequenceIndex, bitIndex;
@@ -38,6 +39,14 @@ const int signalThreshold = 800; // 50-1024 we may need to make this dynamic
 
 /// PWM-ing the Solenoid will need additional test 0-255
 byte const solenoid_pwm = 200;
+
+//Serial Port
+
+//incoming msg, keep it as an array in case we need to
+//read values bigger than a byte
+byte byteMSG8[] = {
+  0B00000000
+};
 
 void setup() {
 
@@ -117,6 +126,21 @@ void loop() {
     }
   }
 
+  //while not in the look read the serial port for incoming color
+  if (lock) {
+
+    int val = Serial.readBytes(byteMSG8, 1);
+
+    if (val > 0) {
+      Serial.flush();
+      if (DEBUG_PORT) {
+        Serial.print("Value Read Port: ");
+        Serial.println(byteMSG8[0]);
+      }
+    }
+
+  }
+
   if (!lock) {
     switch (sequenceState) {
       case WAIT:
@@ -132,12 +156,11 @@ void loop() {
       case LISTEN:
         {
           /*
-            listens to the byte in the serial port
+            wait.. listing is happening
             same time as listen
 
           */
 
-          bool recording[SEQITER][SEQBITS];
 
         }
         break;
@@ -156,12 +179,16 @@ void loop() {
           /*
             plays single pulse
           */
-          Serial.print(playSequence[bitIndex]);
+          if (DEBUG) {
+            Serial.print(playSequence[bitIndex]);
+          }
           if (playSequence[bitIndex]) timeKeeper.hit();
 
           bitIndex++;
           if (bitIndex == SEQBITS) {
-            Serial.println("");
+            if (DEBUG) {
+              Serial.println("");
+            }
             bitIndex = 0;
             sequenceState = RESET_PLAYPULSE;
           }
@@ -194,9 +221,11 @@ void loop() {
               }
 
             } else {
-              Serial.print("L: playing=");
-              Serial.print(sequenceIndex);
-              Serial.print(", ");
+              if (DEBUG) {
+                Serial.print("L: playing=");
+                Serial.print(sequenceIndex);
+                Serial.print(", ");
+              }
             }
           }
         }

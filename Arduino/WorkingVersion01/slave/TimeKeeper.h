@@ -40,6 +40,6 @@ class TimeKeeper {
     void flash();
     bool checkHit();
     bool checkFlash();
-    void timeFrameChar();
+    unsigned long timeFrameChar();
 };
 #endif
