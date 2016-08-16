@@ -5,6 +5,7 @@
 #include "cinder/gl/Texture.h"
 #include "cinder/CinderMath.h"
 #include "cinder/Log.h"
+#include "cinder/params/Params.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -14,7 +15,7 @@ using namespace std;
 const ci::ivec2 windowSize(1280 + 640, 720);
 
 //divide image 20, 20, -> 1280, 720, (64 x 36) =
-const ci::ivec2 stepDiv(25, 25);
+const ci::ivec2 stepDiv(20, 20);
 
 
 
@@ -48,6 +49,10 @@ private:
     bool                mPixelReady;
     bool                mSendPixels;
     
+    //params gui
+    params::InterfaceGlRef	mParams;
+    float                   mAvgFps;
+    
     
 };
 
@@ -79,6 +84,11 @@ void ImageSenderApp::setup()
     mPixelReady    = false;
     
     mIteraPixel = ivec2(0, 0);
+    
+    //create params
+    mParams = params::InterfaceGl::create( getWindow(), "App parameters", toPixels( ivec2( 200, 400 ) ) );
+    mParams->addParam("FPS", &mAvgFps, false);
+    
 }
 
 Surface ImageSenderApp::processPixeletedImage(const Surface input, ci::ivec2 stepAmount, ci::ivec2 & numPixels)
@@ -112,8 +122,8 @@ Surface ImageSenderApp::processPixeletedImage(const Surface input, ci::ivec2 ste
                 xyIter.y += stepAmount.y;
                 col = input.getPixel(xyIter);
                 
-               // CI_LOG_V(i<<" "<< j <<" "<<counterPix);
-               // CI_LOG_V("center "<<xyIter);
+                // CI_LOG_V(i<<" "<< j <<" "<<counterPix);
+                // CI_LOG_V("center "<<xyIter);
             }
             
             
@@ -143,6 +153,7 @@ void ImageSenderApp:: keyDown( KeyEvent event)
     switch(event.getChar()){
         case 'a':
             mSendPixels = true;
+            CI_LOG_I("START SENDING PIXELS");
             break;
         case 's':
             break;
@@ -152,6 +163,7 @@ void ImageSenderApp:: keyDown( KeyEvent event)
 
 void ImageSenderApp::update()
 {
+    mAvgFps = getAverageFps();
 }
 
 void ImageSenderApp::draw()
@@ -168,12 +180,51 @@ void ImageSenderApp::draw()
     {
         if(mSendPixels){
             
-            if(mPixelReady){
-                mCurrentColor =  mPixelImage.getPixel(mIteraPixel);
+            
+            
+            //if incomming msg is true then activate the pixel ready
+            {
+                if(getElapsedFrames() % 30 == 0){
+                    mPixelReady = true;
+                    mCurrentColor =  mPixelImage.getPixel(mIteraPixel);
+                }
+            }
+            
+            {
+                gl::ScopedMatrices mat;
+                gl::ScopedColor col;
+                gl::translate(ci::ivec2( (getWindowWidth()/3.0), getWindowHeight()/5.0));
+                gl::color(mCurrentColor);
+                gl::drawSolidRect(mTexBounds);
+            }
+            
+            
+            {
+                gl::ScopedColor col;
+                gl::ScopedMatrices mat;
+                gl::translate(ci::ivec2( 2.0 * (getWindowWidth()/3.0), getWindowHeight()/5.0));
                 
-                mIteraPixel.x;
+                
+                float xAspect =  ((stepDiv.x * mIteraPixel.x ) / (float) mSendTexProces->getWidth() )* mTexBounds.getWidth();
+                float yAspect =  ((stepDiv.y * mIteraPixel.y ) / (float) mSendTexProces->getHeight() )* mTexBounds.getHeight();
+                
+                //iverted
+                ci::vec2 aspectInv( (float)mTexBounds.getWidth()/ (float) mSendTexProces->getWidth(), (float)mTexBounds.getHeight()/ (float) mSendTexProces->getHeight() );
+                
+                gl::translate(ci::vec2(xAspect, yAspect));
+                gl::color(mCurrentColor);
+                gl::drawSolidRect(Rectf(0, 0, stepDiv.x * aspectInv.x, stepDiv.y * aspectInv.y));
+                
+            }
+            
+            
+            //update iteration
+            if(mPixelReady){
+                
+                mIteraPixel.x++;
                 if(mIteraPixel.x > mNumPixels.x){
                     mIteraPixel.y++;
+                    mIteraPixel.x = 0;
                 }
                 
                 if(mIteraPixel.y > mNumPixels.y){
@@ -182,21 +233,7 @@ void ImageSenderApp::draw()
                 }
                 
                 mPixelReady = false;
-            }
-            
-            {
-                gl::ScopedMatrices mat;
-                gl::translate(ci::ivec2( (getWindowWidth()/3.0), getWindowHeight()/5.0));
-                gl::translate(ci::ivec2(mIteraPixel * ivec2(stepDiv)));
-                gl::drawSolidRect(Rectf(0, 0, stepDiv.x, stepDiv.y));
-            }
-
-            
-            
-            {
-                gl::ScopedMatrices mat;
-                gl::translate(ci::ivec2( 2.0 * (getWindowWidth()/3.0), getWindowHeight()/5.0));
-                
+              //  console()<<mIteraPixel<<std::endl;
             }
             
         }
@@ -206,15 +243,28 @@ void ImageSenderApp::draw()
     
     //draw pixeleted image, the image that we are going to send
     if(mSendTexProces){
+        gl::ScopedBlendAlpha alpha;
+        
         gl::ScopedColor col;
         gl::ScopedMatrices  mat;
-        gl::translate(ci::ivec2( (getWindowWidth()/3.0), getWindowHeight()/5.0));
+        gl::translate(ci::ivec2( 2*(getWindowWidth()/3.0), getWindowHeight()/5.0));
+        
+        //Alpha effect to texture
+        if(mSendPixels){
+            gl::enableAlphaBlending();
+            gl::color(1.0, 1.0, 1.0, 0.5);
+        }else{
+            gl::color(1.0, 1.0, 1.0, 1.0);
+        }
         gl::draw(mSendTexProces, mTexBounds);
     }
     
+    
+    mParams->draw();
     
 }
 
 CINDER_APP( ImageSenderApp,  RendererGl( RendererGl::Options().msaa( 16 ) ), [] (App::Settings * settings){
     
+    //settings->setHighDensityDisplayEnabled();
 })
