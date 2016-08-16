@@ -6,6 +6,8 @@
 #include "cinder/CinderMath.h"
 #include "cinder/Log.h"
 #include "cinder/params/Params.h"
+#include "cinder/Font.h"
+#include "cinder/gl/Fbo.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -29,17 +31,24 @@ public:
     
     Surface processPixeletedImage(const Surface input, ci::ivec2 stepAmount, ci::ivec2 & numPixels);
     
+    void initFBO();
+    void renderOutputImage();
+    
 private:
     
-    ci::ivec2           mDiv;
     ci::Surface         mSendImage;
     ci::Surface         mPixelImage;
     
     gl::Texture2dRef    mSendTex;
     ci::Area            mTexBounds;
-    ci::ivec2            mNumPixels;
+    ci::ivec2           mNumPixels;
     
     gl::Texture2dRef    mSendTexProces;
+    
+    
+    //FBO for the output test image
+    gl::FboRef			mFbo;
+    
     
     // iterate though the image and send it via serial port
     ci::ivec2           mIteraPixel;
@@ -48,6 +57,11 @@ private:
     bool                mFinishSending;
     bool                mPixelReady;
     bool                mSendPixels;
+    bool                mDrawOriginal;
+    
+    //fonts
+    gl::Texture2dRef	mTextTexture;
+    Font                mFont;
     
     //params gui
     params::InterfaceGlRef	mParams;
@@ -56,11 +70,29 @@ private:
     
 };
 
+void ImageSenderApp::initFBO()
+{
+    //FBO
+    mFbo = gl::Fbo::create(mSendImage.getWidth(), mSendImage.getHeight());
+    {
+        gl::ScopedFramebuffer fbScp( mFbo );
+        
+        gl::clear( Color( 0.0, 0.0, 0.0 ) );
+        
+        gl::ScopedViewport scpVp( ivec2( 0 ), mFbo->getSize() );
+        
+    }
+    
+}
+
 void ImageSenderApp::setup()
 {
     setWindowSize(windowSize);
     
     mSendImage = loadImage(loadAsset("wave.png"));
+    
+    //FBO
+    initFBO();
     
     //process the image
     mPixelImage = processPixeletedImage(mSendImage, stepDiv, mNumPixels);
@@ -76,6 +108,8 @@ void ImageSenderApp::setup()
     
     CI_LOG_I(width<<" "<<height);
     
+    //create font
+    mFont =  Font( "Arial", 20 );
     
     //intial values
     mTexBounds = ci::Area(0, 0, width, height);
@@ -83,11 +117,14 @@ void ImageSenderApp::setup()
     mFinishSending = false;
     mPixelReady    = false;
     
+    mDrawOriginal  = false;
+    
     mIteraPixel = ivec2(0, 0);
     
     //create params
-    mParams = params::InterfaceGl::create( getWindow(), "App parameters", toPixels( ivec2( 200, 400 ) ) );
+    mParams = params::InterfaceGl::create( getWindow(), "App parameters", toPixels( ivec2( 200, 200 ) ) );
     mParams->addParam("FPS", &mAvgFps, false);
+    mParams->addParam("Draw", &mDrawOriginal);
     
 }
 
@@ -153,6 +190,7 @@ void ImageSenderApp:: keyDown( KeyEvent event)
     switch(event.getChar()){
         case 'a':
             mSendPixels = true;
+            mCurrentColor =  mPixelImage.getPixel(ci::ivec2(0, 0));
             CI_LOG_I("START SENDING PIXELS");
             break;
         case 's':
@@ -160,61 +198,115 @@ void ImageSenderApp:: keyDown( KeyEvent event)
     }
 }
 
+void ImageSenderApp::renderOutputImage()
+{
+    if(mSendPixels){
+        gl::ScopedFramebuffer fbScp( mFbo );
+        
+        gl::ScopedViewport scpVp( ivec2( 0 ), mTexBounds.getSize() );
+        gl::ScopedMatrices matrices;
+        gl::setMatricesWindow( mTexBounds.getSize(), true);
+        gl::setModelMatrix(ci::mat4());
+        
+        gl::ScopedColor col;
+        gl::ScopedMatrices mat;
+        
+        float xAspect =  ((stepDiv.x * mIteraPixel.x ) / (float) mSendTexProces->getWidth() )* mTexBounds.getWidth();
+        float yAspect =  ((stepDiv.y * mIteraPixel.y ) / (float) mSendTexProces->getHeight() )* mTexBounds.getHeight();
+        
+        //iverted aspect ratio
+        ci::vec2 aspectInv( (float)mTexBounds.getWidth()/ (float) mSendTexProces->getWidth(), (float)mTexBounds.getHeight()/ (float) mSendTexProces->getHeight() );
+        
+        gl::translate(0, 0);
+        gl::translate(ci::vec2(xAspect, yAspect));
+        gl::color(mCurrentColor);
+        gl::drawSolidRect(Rectf(0, 0, stepDiv.x * aspectInv.x, stepDiv.y * aspectInv.y));
+    }
+}
 
 void ImageSenderApp::update()
 {
     mAvgFps = getAverageFps();
+    
+    renderOutputImage();
+    
 }
 
 void ImageSenderApp::draw()
 {
     gl::clear( Color( 0, 0, 0 ) );
     
-    //draw original image
-    if(mSendTex){
-        gl::ScopedMatrices  mat;
-        gl::translate(ci::ivec2(0, getWindowHeight()/5.0));
-        gl::draw(mSendTex, mTexBounds);
-    }
     
+    
+    //process pixels
     {
         if(mSendPixels){
             
-            
-            
             //if incomming msg is true then activate the pixel ready
             {
-                if(getElapsedFrames() % 30 == 0){
+                if(getElapsedFrames() % 5 == 0){
                     mPixelReady = true;
-                    mCurrentColor =  mPixelImage.getPixel(mIteraPixel);
+                    ci::ivec2 centrPixel = mIteraPixel * stepDiv;
+                    mCurrentColor =  mPixelImage.getPixel(centrPixel);
+                    
+                    //render font with new value
+                    
+                    TextLayout simple;
+                    simple.setFont( mFont );
+                    simple.setColor( Color( 0.7, 0.7, 0.7f ) );
+               
+                    
+                    std::string rgbStr = "("+ to_string(mCurrentColor.r)+", "+to_string(mCurrentColor.g)+", "+ to_string(mCurrentColor.b)+")";
+                    std::string indexStr = "["+to_string(mIteraPixel.x)+", "+to_string(mIteraPixel.y)+"]";
+        
+                    uint8_t grayValue = ceil(int(mCurrentColor.r * 255.0));
+                    
+                    uint8_t result[8];
+                    std::string byteStr;
+                    for(int i = 0; i < 8; ++i) {
+                        result[i] = 0 != (grayValue & (1 << i));
+                        byteStr += to_string(result[i]);
+                    }
+                    
+                    simple.addLine(rgbStr);
+                    simple.addCenteredLine(indexStr);
+                    simple.addCenteredLine(byteStr);
+                    mTextTexture = gl::Texture2d::create( simple.render( true, false ) );
+                    
                 }
             }
             
+            //middle block
             {
                 gl::ScopedMatrices mat;
                 gl::ScopedColor col;
                 gl::translate(ci::ivec2( (getWindowWidth()/3.0), getWindowHeight()/5.0));
                 gl::color(mCurrentColor);
                 gl::drawSolidRect(mTexBounds);
+                
+                if(mTextTexture){
+                    gl::translate(ci::vec2(mTexBounds.getWidth()/4.5, mTexBounds.getHeight() ));
+                    gl::color(0.6, 0.6, 0.6);
+                    gl::draw(mTextTexture, vec2(0, 0));
+                }
+                
             }
             
-            
+            //third block
             {
                 gl::ScopedColor col;
                 gl::ScopedMatrices mat;
-                gl::translate(ci::ivec2( 2.0 * (getWindowWidth()/3.0), getWindowHeight()/5.0));
-                
+                gl::translate(ci::ivec2( 0.0 * (getWindowWidth()/3.0), getWindowHeight()/5.0));
                 
                 float xAspect =  ((stepDiv.x * mIteraPixel.x ) / (float) mSendTexProces->getWidth() )* mTexBounds.getWidth();
                 float yAspect =  ((stepDiv.y * mIteraPixel.y ) / (float) mSendTexProces->getHeight() )* mTexBounds.getHeight();
                 
-                //iverted
+                //iverted aspect ratio
                 ci::vec2 aspectInv( (float)mTexBounds.getWidth()/ (float) mSendTexProces->getWidth(), (float)mTexBounds.getHeight()/ (float) mSendTexProces->getHeight() );
                 
                 gl::translate(ci::vec2(xAspect, yAspect));
                 gl::color(mCurrentColor);
                 gl::drawSolidRect(Rectf(0, 0, stepDiv.x * aspectInv.x, stepDiv.y * aspectInv.y));
-                
             }
             
             
@@ -222,42 +314,80 @@ void ImageSenderApp::draw()
             if(mPixelReady){
                 
                 mIteraPixel.x++;
-                if(mIteraPixel.x > mNumPixels.x){
+                if(mIteraPixel.x >= mNumPixels.x){
                     mIteraPixel.y++;
                     mIteraPixel.x = 0;
                 }
                 
-                if(mIteraPixel.y > mNumPixels.y){
+                if(mIteraPixel.y >= mNumPixels.y){
                     mFinishSending = true;
+                    mSendPixels  = 0;
+                    mIteraPixel = ci::vec2(0, 0);
                     CI_LOG_I("DONE SENDING");
                 }
                 
                 mPixelReady = false;
-              //  console()<<mIteraPixel<<std::endl;
+                console()<<mIteraPixel<<std::endl;
             }
             
         }
         
-        
     }
     
     //draw pixeleted image, the image that we are going to send
-    if(mSendTexProces){
-        gl::ScopedBlendAlpha alpha;
-        
-        gl::ScopedColor col;
-        gl::ScopedMatrices  mat;
-        gl::translate(ci::ivec2( 2*(getWindowWidth()/3.0), getWindowHeight()/5.0));
-        
-        //Alpha effect to texture
-        if(mSendPixels){
-            gl::enableAlphaBlending();
-            gl::color(1.0, 1.0, 1.0, 0.5);
-        }else{
-            gl::color(1.0, 1.0, 1.0, 1.0);
+    
+    if(!mDrawOriginal){
+        if(mSendTexProces){
+            gl::ScopedBlendAlpha alpha;
+            
+            gl::ScopedColor col;
+            gl::ScopedMatrices  mat;
+            gl::translate(ci::ivec2( 0.0*(getWindowWidth()/3.0), getWindowHeight()/5.0));
+            
+            //Alpha effect to texture
+            if(mSendPixels){
+                gl::enableAlphaBlending();
+                gl::color(1.0, 1.0, 1.0, 0.5);
+            }else{
+                gl::color(1.0, 1.0, 1.0, 1.0);
+            }
+            gl::draw(mSendTexProces, mTexBounds);
         }
-        gl::draw(mSendTexProces, mTexBounds);
     }
+    
+    //draw original image
+    if(mDrawOriginal){
+        if(mSendTex){
+            gl::ScopedMatrices  mat;
+            gl::translate(ci::ivec2(0,  10));
+            gl::draw(mSendTex, mTexBounds);
+        }
+        
+        if(mSendTexProces){
+            gl::ScopedBlendAlpha alpha;
+            
+            gl::ScopedColor col;
+            gl::ScopedMatrices  mat;
+            gl::translate(ci::ivec2( 0.0*(getWindowWidth()/3.0),  getWindowHeight()*0.52));
+            
+            //Alpha effect to texture
+            if(mSendPixels){
+                gl::enableAlphaBlending();
+                gl::color(1.0, 1.0, 1.0, 0.5);
+            }else{
+                gl::color(1.0, 1.0, 1.0, 1.0);
+            }
+            gl::draw(mSendTexProces, mTexBounds);
+        }
+        
+    }
+    
+    if(mFbo->getColorTexture()){
+        gl::ScopedMatrices  mat;
+        gl::translate(ci::ivec2( 2.0*(getWindowWidth()/3.0), -getWindowHeight()/3.333));
+        gl::draw(mFbo->getColorTexture());
+    }
+    
     
     
     mParams->draw();
