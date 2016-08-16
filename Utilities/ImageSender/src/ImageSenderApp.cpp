@@ -23,6 +23,8 @@ const int BAU_RATE = 9600;
 
 const int BUFFER_SIZE = 80;
 
+const int NUM_BYTES = 1;
+
 
 class ImageSenderApp : public App {
 public:
@@ -76,6 +78,8 @@ private:
     string              mSerialStr;
     double              mSerialPrevT;
     double              mSerialDuratinT;
+    uint8_t *           mSendData;
+    bool                mNexIteration;
     
     
     //Time Events
@@ -120,6 +124,8 @@ void ImageSenderApp::initPort()
         CI_LOG_EXCEPTION( "coult not initialize the serial device", exc );
         exit( -1 );
     }
+    
+    mSendData = new uint8_t[NUM_BYTES];
 }
 
 void ImageSenderApp::setup()
@@ -158,6 +164,8 @@ void ImageSenderApp::setup()
     mPixelReady    = false;
     
     mDrawOriginal  = false;
+    
+    mNexIteration  = false;
     
     mIteraPixel    = ivec2(0, 0);
     
@@ -234,6 +242,7 @@ void ImageSenderApp:: keyDown( KeyEvent event)
             CI_LOG_I("START SENDING PIXELS");
             break;
         case 's':
+            mNexIteration = true;
             break;
     }
 }
@@ -351,31 +360,38 @@ void ImageSenderApp::processPixels(double currentTime)
         //if incomming msg is true then activate the pixel ready
         {
             
+            /*
             //read incomming message
-            char mInSerial;
+            char mInSerial = '0';
+        
+           // mSerial->writeBytes(const void * data, size_t numBytes)
             
-            try{
-                // read until newline, to a maximum of BUFSIZE bytes
-                mInSerial = mSerial->readChar();
-            }
-            catch( SerialTimeoutExc &exc ) {
-                CI_LOG_EXCEPTION( "timeout", exc );
-            }
-            
-            if(mInSerial == 's'){
-                mSerialDuratinT = currentTime - mSerialPrevT;
+            if(getElapsedFrames() % 10 == 0){
+                try{
+                    // read until newline, to a maximum of BUFSIZE bytes
+                    mInSerial = mSerial->readChar();
+                    console()<<"reading char"<<std::endl;
+                    mSerial->flush();
+                }
+                catch( SerialTimeoutExc &exc ) {
+                    CI_LOG_EXCEPTION( "timeout", exc );
+                }
                 
-                mSerialPrevT = currentTime;
-                
-                //time 100 for ms
-                console()<<"got msg "<< mSerialDuratinT * 1000 <<std::endl;
+                if(mInSerial == 's'){
+                    mSerialDuratinT = currentTime - mSerialPrevT;
+                    
+                    mSerialPrevT = currentTime;
+                    
+                    //time 100 for ms
+                    console()<<"got msg "<< mSerialDuratinT * 1000 <<std::endl;
+                    mNexIteration = true;
+                }
             }
-           
             //currentTime
+        
+            */
             
-            
-            
-            if(getElapsedFrames() % 5 == 0){
+            if(mNexIteration){
                 mPixelReady = true;
                 ci::ivec2 centrPixel = mIteraPixel * stepDiv;
                 mCurrentColor =  mPixelImage.getPixel(centrPixel);
@@ -397,12 +413,16 @@ void ImageSenderApp::processPixels(double currentTime)
                     result[i] = 0 != (grayValue & (1 << i));
                     byteStr += to_string(result[i]);
                 }
+                mSendData[0] = grayValue;
+                
+                //write msg
+                mSerial->writeBytes( (uint8_t *)mSendData, NUM_BYTES);
                 
                 simple.addLine(rgbStr);
                 simple.addCenteredLine(indexStr);
                 simple.addCenteredLine(byteStr);
                 mTextTexture = gl::Texture2d::create( simple.render( true, false ) );
-             
+                mNexIteration = false;
             }
             
             //mSerial->flush();
