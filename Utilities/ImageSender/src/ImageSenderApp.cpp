@@ -149,6 +149,7 @@ void ImageSenderApp::setup()
     
     
     //calculate height depending on the aspect ratio of the image
+    //scaling ??
     float width = getWindowWidth()/3.0;
     float height =  (width * mSendTex->getHeight() ) /(mSendTex->getWidth());
     
