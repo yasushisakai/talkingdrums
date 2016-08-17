@@ -27,7 +27,7 @@ bool sendActivation;
 
 bool LED_STATE;
 
-uint8_t data = "1";
+uint8_t data [] = {0B00000001};
 
 void setup() {
   pinMode(LED_PIN, OUTPUT);
@@ -40,7 +40,7 @@ void setup() {
   counter = 0;
   isSend = LED_STATE = false;
 
-  data = TICK;
+  //data = TICK;
 
 }
 
@@ -54,7 +54,7 @@ void loop() {
   }
 
   if (isSend) {
-    nrf24.send(data, sizeof(data));
+    nrf24.send((uint8_t*)data, sizeof(data));
     nrf24.waitPacketSent();
 
     if (counter >= COUNTER_LIMIT) {

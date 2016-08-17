@@ -20,6 +20,8 @@
 
 // Objects
 RH_NRF24 nrf24;
+
+//TIMERS
 TimeKeeper timeKeeper;
 
 ///DEBUG
@@ -51,7 +53,7 @@ byte byteMSG8[] = {
 
 void setup() {
 
-  Serial.begin(9600);
+  Serial.begin(19200);
 
   //enable pins
   pinMode(LED_PIN, OUTPUT);
@@ -106,28 +108,34 @@ void setup() {
   signalMin = 1024;
   signalMax = 0;
 
-  initNRF(nrf24);
+  timeKeeper.setInterval(INTERVAL);
 
+  initNRF(nrf24);
+  Serial.println("");
 }
 
 
 void loop() {
+  unsigned long currentTime = millis();
+
   // updates the timeKeeper
-  timeKeeper.cycle();
+  timeKeeper.cycle(currentTime);
 
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
-  char value;
-  if (checkServer(nrf24, value)) {
-    if (value == TICK && timeKeeper.timeFrame > TIMEFRAMEINTERVAL) {
-      value = TOCK;
-      timeKeeper.tick();
-      timeKeeper.flash();
-      lock = false;
-      requestByte = true;
-
-    }
+  uint8_t value = 0B00000001;
+  //Serial.println("");//timeKeeper.getTimeFrame());
+  
+  delay(1);
+  if (checkServer(nrf24, value) && timeKeeper.getTimeFrame() > TIMEFRAMEINTERVAL) {
+    value = TOCK;
+    timeKeeper.tick();
+    timeKeeper.flash();
+    lock = false;
+    requestByte = true;
   }
+
+
 
   //while not in the look read the serial port for incoming color
   if (lock) {
@@ -147,16 +155,13 @@ void loop() {
     */
 
     if (requestByte) {
-      //Serial.write('s');
+      Serial.write("s");
       requestByte = false;
     }
-    
+
   }
 
   if (!lock) {
-
-
-
 
     //Serial.flush();
 

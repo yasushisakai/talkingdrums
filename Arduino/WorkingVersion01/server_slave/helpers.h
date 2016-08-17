@@ -7,7 +7,7 @@
 */
 
 boolean initNRF(RH_NRF24 &_nrf);
-boolean checkServer(RH_NRF24 &_nrf, char &value);
+boolean checkServer(RH_NRF24 & _nrf, uint8_t & value);
 boolean timer(unsigned long const & currentTime, unsigned long const & previousTime, unsigned long const &interval);
 void turnOnLEDs(uint8_t & inByte);
 

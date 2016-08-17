@@ -18,16 +18,15 @@
 #define LED_PIN_06 A4
 #define LED_PIN_07 A5
 
-
-
-
 /// server values
 #define TICK 49
 #define TOCK 48
+
 // this is the time interval for each frame
 // this is one factor to determine the duration of
 // data collection from the mic
-#define TIMEFRAMEINTERVAL 60
+const unsigned long TIMEFRAMEINTERVAL  = 60L;
+
 
 /// sequences
 #define SEQITER 3
@@ -35,8 +34,9 @@
 //we might want to constain the number of bits to 8
 //this way we can use byte
 
-#define INTERVAL 50
+
 // this interval is for the outputs, LED and solenoid
+const unsigned long  INTERVAL          = 50L;
 
 ///  modes
 // we can do enum if we want

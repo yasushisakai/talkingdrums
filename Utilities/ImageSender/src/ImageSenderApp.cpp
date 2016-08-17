@@ -363,7 +363,8 @@ void ImageSenderApp::processPixels(double currentTime)
             
     
             //read incomming message
-            char mInSerial = '0';
+            uint8_t dataIn [] ={0, 0};
+            uint8_t mInSerial ='0';
             
             // mSerial->writeBytes(const void * data, size_t numBytes)
         
@@ -373,18 +374,21 @@ void ImageSenderApp::processPixels(double currentTime)
                 //console()<<mSerial->getNumBytesAvailable()<<std::endl;
                 if(mSerial->getNumBytesAvailable() > 0){
                 
-                    mInSerial = mSerial->readChar();
-                    console()<<"available: "<<mSerial->getNumBytesAvailable()<<std::endl;
-                   //   mSerial->flush();
+                    mSerial->readBytes( ( uint8_t *) dataIn, sizeof(dataIn) * 2);
+                    
+                    //mSerial->readBytes(void *data, size_t numBytes)
+                    
+                    console()<<"available: "<<mSerial->getNumBytesAvailable()<<" "<<dataIn[0]<<" "<<dataIn[1]<<std::endl;
+                   
                 }
                
-              
+                mSerial->flush();
             }
             catch( SerialTimeoutExc &exc ) {
                 CI_LOG_EXCEPTION( "timeout", exc );
             }
             
-            if(mInSerial == 's'){
+            if(mInSerial == 0){
                 mSerialDuratinT = currentTime - mSerialPrevT;
                 
                 mSerialPrevT = currentTime;
@@ -392,6 +396,8 @@ void ImageSenderApp::processPixels(double currentTime)
                 //time 100 for ms
                 console()<<"got msg "<< mSerialDuratinT * 1000 <<std::endl;
                 mNexIteration = true;
+                
+               
             }
             
             //currentTime

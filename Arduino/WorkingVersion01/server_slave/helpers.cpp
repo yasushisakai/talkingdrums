@@ -20,16 +20,22 @@ boolean initNRF(RH_NRF24 &_nrf) {
   return true;
 }
 
-boolean checkServer(RH_NRF24 &_nrf, char &value) {
+boolean checkServer(RH_NRF24 &_nrf, uint8_t & value) {
   uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
-  uint8_t len = sizeof buf;
+  uint8_t len = sizeof(buf);
+
+  
 
   if (_nrf.recv(buf, &len)) {
-    value = buf[0];
+    Serial.println("got msg");
     return true;
-  } else {
-    return false;
+   // if(bitRead(value, 0) == 1){
+   //   return true;
+   // }
+    
   }
+
+  return false;
 }
 
 //process the incoming byte
