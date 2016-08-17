@@ -9,9 +9,9 @@
 //#define MIC_PIN A0
 
 //CHECK LEDS
-#define LED_PIN_00 6
-#define LED_PIN_01 4
-#define LED_PIN_02 A0
+#define LED_PIN_00 8
+#define LED_PIN_01 6
+#define LED_PIN_02 4
 #define LED_PIN_03 A1
 #define LED_PIN_04 A2
 #define LED_PIN_05 A3

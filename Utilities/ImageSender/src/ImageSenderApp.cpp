@@ -360,36 +360,41 @@ void ImageSenderApp::processPixels(double currentTime)
         //if incomming msg is true then activate the pixel ready
         {
             
-            /*
+    
             //read incomming message
             char mInSerial = '0';
-        
-           // mSerial->writeBytes(const void * data, size_t numBytes)
             
-            if(getElapsedFrames() % 10 == 0){
-                try{
-                    // read until newline, to a maximum of BUFSIZE bytes
-                    mInSerial = mSerial->readChar();
-                    console()<<"reading char"<<std::endl;
-                    mSerial->flush();
-                }
-                catch( SerialTimeoutExc &exc ) {
-                    CI_LOG_EXCEPTION( "timeout", exc );
-                }
-                
-                if(mInSerial == 's'){
-                    mSerialDuratinT = currentTime - mSerialPrevT;
-                    
-                    mSerialPrevT = currentTime;
-                    
-                    //time 100 for ms
-                    console()<<"got msg "<< mSerialDuratinT * 1000 <<std::endl;
-                    mNexIteration = true;
-                }
-            }
-            //currentTime
+            // mSerial->writeBytes(const void * data, size_t numBytes)
         
-            */
+            try{
+                // read until newline, to a maximum of BUFSIZE bytes
+                
+                //console()<<mSerial->getNumBytesAvailable()<<std::endl;
+                if(mSerial->getNumBytesAvailable() > 0){
+                
+                    mInSerial = mSerial->readChar();
+                    console()<<"available: "<<mSerial->getNumBytesAvailable()<<std::endl;
+                   //   mSerial->flush();
+                }
+               
+              
+            }
+            catch( SerialTimeoutExc &exc ) {
+                CI_LOG_EXCEPTION( "timeout", exc );
+            }
+            
+            if(mInSerial == 's'){
+                mSerialDuratinT = currentTime - mSerialPrevT;
+                
+                mSerialPrevT = currentTime;
+                
+                //time 100 for ms
+                console()<<"got msg "<< mSerialDuratinT * 1000 <<std::endl;
+                mNexIteration = true;
+            }
+            
+            //currentTime
+            
             
             if(mNexIteration){
                 mPixelReady = true;
@@ -416,16 +421,18 @@ void ImageSenderApp::processPixels(double currentTime)
                 mSendData[0] = grayValue;
                 
                 //write msg
-                mSerial->writeBytes( (uint8_t *)mSendData, NUM_BYTES);
+                //mSerial->writeBytes( (uint8_t *)mSendData, NUM_BYTES);
                 
                 simple.addLine(rgbStr);
                 simple.addCenteredLine(indexStr);
                 simple.addCenteredLine(byteStr);
                 mTextTexture = gl::Texture2d::create( simple.render( true, false ) );
                 mNexIteration = false;
+                
+                //mSerial->flush();
             }
             
-            //mSerial->flush();
+           
         }
         
         //middle block

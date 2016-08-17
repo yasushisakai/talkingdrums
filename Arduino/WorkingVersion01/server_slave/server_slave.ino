@@ -41,6 +41,7 @@ const int signalThreshold = 800; // 50-1024 we may need to make this dynamic
 byte const solenoid_pwm = 200;
 
 //Serial Port
+bool requestByte = false;
 
 //incoming msg, keep it as an array in case we need to
 //read values bigger than a byte
@@ -123,36 +124,47 @@ void loop() {
       timeKeeper.tick();
       timeKeeper.flash();
       lock = false;
-
+      requestByte = true;
 
     }
   }
 
   //while not in the look read the serial port for incoming color
   if (lock) {
-    
-    
+
+    /*
+       if (Serial.available() > 0) {
         int val = Serial.readBytes(byteMSG8, 1);
 
         if (val > 0) {
-          Serial.flush();
+          //Serial.flush();
           if (DEBUG_PORT) {
             Serial.print("Value Read Port: ");
             Serial.println(byteMSG8[0]);
           }
         }
+        }
+    */
+
+    if (requestByte) {
+      //Serial.write('s');
+      requestByte = false;
+    }
     
   }
 
   if (!lock) {
-    
-    //Serial.write('s');
-    
+
+
+
+
+    //Serial.flush();
+
     switch (sequenceState) {
       case WAIT:
         {
           /*
-            waits untill its good enough to get peaks
+             waits untill its good enough to get peaks
           */
           TimeKeeper::signalCount++;
           if (!TimeKeeper::wait()) sequenceState = LISTEN;
