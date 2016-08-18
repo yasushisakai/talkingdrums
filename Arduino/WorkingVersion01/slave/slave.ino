@@ -32,7 +32,7 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = true;
+bool const DEBUG = false;
 
 ///Sequence
 byte sequenceState, sequenceIndex, bitIndex;
@@ -140,7 +140,7 @@ void loop() {
             */
             if (!isRecord) {
 
-              if (DEBUG) Serial.println("L:rec start");
+              Serial.println("L:rec start");
 
             }
             isRecord = true;
@@ -203,12 +203,6 @@ void loop() {
                 Serial.println();
               }
 
-              Serial.print("L: r=");
-              for (int i = 0; i < SEQBITS; i++) {
-                Serial.print(playSequence[i]);
-              }
-              Serial.println();
-
               // check sequence if its correct
 
               bool flag = true;
@@ -228,6 +222,8 @@ void loop() {
               Serial.print(sequenceIndex);
               Serial.print(", ");
             }
+
+
 
             sequenceState = PLAYPULSE;
 
@@ -267,6 +263,12 @@ void loop() {
               bitIndex = 0;
               sequenceState = LISTEN;
               //reset listen values
+
+              Serial.print("L: r=");
+              for (int i = 0; i < SEQBITS; i++) {
+                Serial.print(playSequence[i]);
+              }
+              Serial.println();
 
               for (char i = 0; i < SEQBITS; i++) {
                 playSequence[i] = false;

@@ -3,14 +3,17 @@
 #include "cinder/gl/gl.h"
 #include "cinder/Serial.h"
 #include "cinder/Log.h"
-#include "cinder/params/Params.h"
+//#include "cinder/params/Params.h"
 
 using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-const int BAUD_RATE = 9600;
-const char NUM_BYTES = 1;
+
+#define BUF_SIZE 80;
+#define READ_INTERVAL 0.25;
+#define BAUD_RATE 9600;
+#define NUM_BYTES 1;
 
 const ivec2 windowSize(1280+640,720);
 
@@ -50,8 +53,12 @@ class ImageReceiverApp : public App {
     Font                mFont;
     gl::Texture2dRef    mTextTexture;
     
-    params::InterfaceGlRef mParams;
-    float               mAvgFps;
+//    params::InterfaceGlRef mParams;
+//    float               mAvgFps;
+    
+    // intervals
+    double              mLastUpdate;
+    double              mLastRead;
     
 
 };
@@ -74,11 +81,15 @@ void ImageReceiverApp::setup()
     
     
     mFont = Font("Arial",20);
-    mTextTexture   = Area(0,0,width,height);
+    mTextTexture = Area(0,0,width,height);
     
-    mParams = params::InterfaceGlRef::create(getWindow(),"App Parameters", toPixels(ivec(200,200)));
-    mParams->addParam("FPS",&mAvgFps,false);
-    mParams->addParam("Draw",&mDrawOriginal);
+//    mParams = params::InterfaceGlRef::create(getWindow(),"App Parameters", toPixels(ivec(200,200)));
+//    mParams->addParam("FPS",&mAvgFps,false);
+//    mParams->addParam("Draw",&mDrawOriginal);
+    
+    mLastUpdate = 0;
+    mLastRead = 0;
+    
 }
 
 void ImageReceiverApp::mouseDown( MouseEvent event )
@@ -92,12 +103,28 @@ void ImageReceiverApp::keyDown(KeyEvent event){
 void ImageReceiverApp::update()
 {
     mAvgFps = getAverageFps();
+    renderOutputImage();
+    
+    double now = getElapsedSeconds();
+    double delta_time = now - mLastUpdate;
+    mLastUpdate = now;
+    mLastRead += delta_time;
+    
+    if(mLastRead > READ_INTERVAL){
+        mLastString = mSerial->readStringUntill('\n',BUFSIZE);
+        
+        mLastRead = 0;
+    }
+    
+    
+    
     
 }
 
 void ImageReceiverApp::draw()
 {
-	gl::clear( Color( 0, 0, 0 ) ); 
+	gl::clear( Color( 0, 0, 0 ) );
+    
 }
 
 
