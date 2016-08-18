@@ -43,7 +43,7 @@ void turnOnLEDs(uint8_t & inByte)
 {
   digitalWrite(LED_PIN_00, (bitRead(inByte, 7)  ==  1) ? HIGH : LOW);
   digitalWrite(LED_PIN_01, (bitRead(inByte, 6)  ==  1) ? HIGH : LOW);
-  analogWrite(LED_PIN_02, (bitRead(inByte, 5)  ==  1) ? 255 : 0);
+  digitalWrite(LED_PIN_02, (bitRead(inByte, 5)  ==  1) ? HIGH : LOW);
   analogWrite(LED_PIN_03, (bitRead(inByte, 4)  ==  1) ? 255 : 0);
   analogWrite(LED_PIN_04, (bitRead(inByte, 3)  ==  1) ? 255 : 0);
   analogWrite(LED_PIN_05, (bitRead(inByte, 2)  ==  1) ? 255 : 0);

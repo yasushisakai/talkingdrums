@@ -111,7 +111,6 @@ void setup() {
   timeKeeper.setInterval(INTERVAL);
 
   initNRF(nrf24);
-  Serial.println("");
 }
 
 
@@ -125,7 +124,7 @@ void loop() {
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
   uint8_t value = 0B00000001;
   //Serial.println("");//timeKeeper.getTimeFrame());
-  
+
   delay(1);
   if (checkServer(nrf24, value) && timeKeeper.getTimeFrame() > TIMEFRAMEINTERVAL) {
     value = TOCK;
@@ -133,32 +132,8 @@ void loop() {
     timeKeeper.flash();
     lock = false;
     requestByte = true;
-  }
 
-
-
-  //while not in the look read the serial port for incoming color
-  if (lock) {
-
-    /*
-       if (Serial.available() > 0) {
-        int val = Serial.readBytes(byteMSG8, 1);
-
-        if (val > 0) {
-          //Serial.flush();
-          if (DEBUG_PORT) {
-            Serial.print("Value Read Port: ");
-            Serial.println(byteMSG8[0]);
-          }
-        }
-        }
-    */
-
-    if (requestByte) {
-      Serial.write("s");
-      requestByte = false;
-    }
-
+     Serial.flush();
   }
 
   if (!lock) {
@@ -265,6 +240,29 @@ void loop() {
     analogWrite(SOL_PIN, 0);
   }
 
-
   turnOnLEDs(byteMSG8[0]);
+
+  //while not in the look read the serial port for incoming color
+  if (lock) {
+
+    /*
+       if (Serial.available() > 0) {
+        int val = Serial.readBytes(byteMSG8, 1);
+
+        if (val > 0) {
+          //Serial.flush();
+          if (DEBUG_PORT) {
+            Serial.print("Value Read Port: ");
+            Serial.println(byteMSG8[0]);
+          }
+        }
+        }
+    */
+   
+    if (requestByte) {
+      Serial.write('s');
+      requestByte = false;
+    }
+    
+  }
 }
