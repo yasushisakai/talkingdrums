@@ -19,9 +19,9 @@ const ci::ivec2 windowSize(1280 + 640, 720);
 
 const ci::ivec2 stepDiv(20, 20);
 
-const int BAU_RATE = 9600;
+const int BAU_RATE = 19200;
 
-const int BUFFER_SIZE = 80;
+const int BUFFER_SIZE = 5;
 
 const int NUM_BYTES = 1;
 
@@ -363,22 +363,30 @@ void ImageSenderApp::processPixels(double currentTime)
             
     
             //read incomming message
-            char mInSerial = '0';
+            string  mLastString;
+            uint8_t mInSerial;
             
             // mSerial->writeBytes(const void * data, size_t numBytes)
         
             try{
                 // read until newline, to a maximum of BUFSIZE bytes
                 
-                //console()<<mSerial->getNumBytesAvailable()<<std::endl;
+                console()<<mSerial->getNumBytesAvailable()<<std::endl;
                 if(mSerial->getNumBytesAvailable() > 0){
                 
-                    mInSerial = mSerial->readChar();
-                    console()<<"available: "<<mSerial->getNumBytesAvailable()<<std::endl;
-                   //   mSerial->flush();
+                   // mLastString = mSerial->readStringUntil( 's', BUFFER_SIZE );
+                    
+                    mInSerial = mSerial->readByte();
+                    
+                    //mSerial->readBytes(void *data, size_t numBytes)
+                    
+                   // console()<<"available: "<<mSerial->getNumBytesAvailable()<<" "<<mLastString<<std::endl;
+                    
+                    console()<<"available: "<<mSerial->getNumBytesAvailable()<<" "<<mInSerial<<std::endl;
+                    mSerial->flush();
                 }
                
-              
+               
             }
             catch( SerialTimeoutExc &exc ) {
                 CI_LOG_EXCEPTION( "timeout", exc );
@@ -392,6 +400,8 @@ void ImageSenderApp::processPixels(double currentTime)
                 //time 100 for ms
                 console()<<"got msg "<< mSerialDuratinT * 1000 <<std::endl;
                 mNexIteration = true;
+                
+               
             }
             
             //currentTime

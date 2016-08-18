@@ -20,16 +20,22 @@ boolean initNRF(RH_NRF24 &_nrf) {
   return true;
 }
 
-boolean checkServer(RH_NRF24 &_nrf, char &value) {
+boolean checkServer(RH_NRF24 &_nrf, uint8_t & value) {
   uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
-  uint8_t len = sizeof buf;
+  uint8_t len = sizeof(buf);
+
+  
 
   if (_nrf.recv(buf, &len)) {
-    value = buf[0];
+    Serial.println("got msg");
     return true;
-  } else {
-    return false;
+   // if(bitRead(value, 0) == 1){
+   //   return true;
+   // }
+    
   }
+
+  return false;
 }
 
 //process the incoming byte
@@ -37,7 +43,7 @@ void turnOnLEDs(uint8_t & inByte)
 {
   digitalWrite(LED_PIN_00, (bitRead(inByte, 7)  ==  1) ? HIGH : LOW);
   digitalWrite(LED_PIN_01, (bitRead(inByte, 6)  ==  1) ? HIGH : LOW);
-  analogWrite(LED_PIN_02, (bitRead(inByte, 5)  ==  1) ? 255 : 0);
+  digitalWrite(LED_PIN_02, (bitRead(inByte, 5)  ==  1) ? HIGH : LOW);
   analogWrite(LED_PIN_03, (bitRead(inByte, 4)  ==  1) ? 255 : 0);
   analogWrite(LED_PIN_04, (bitRead(inByte, 3)  ==  1) ? 255 : 0);
   analogWrite(LED_PIN_05, (bitRead(inByte, 2)  ==  1) ? 255 : 0);
