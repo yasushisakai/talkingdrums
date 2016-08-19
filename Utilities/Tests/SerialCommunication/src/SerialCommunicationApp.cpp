@@ -29,8 +29,7 @@ class SerialCommunicationApp : public App {
 
 	bool		mSendSerialMessage;
 	SerialRef	mSerial;
-	uint8_t		mCounter;
-	string		mLastString;
+    string		mLastString;
 	
 	gl::TextureRef	mTexture;
 	
@@ -42,6 +41,9 @@ private:
 
 void SerialCommunicationApp::setup()
 {
+    
+    
+    
 	mCounter = 0;
 	mLastRead = 0;
 	mLastUpdate = 0;
@@ -100,9 +102,8 @@ void SerialCommunicationApp::update()
 		}
 		
 		mSendSerialMessage = false;
-		mCounter += 8;
 
-		console() << mLastString << endl;
+        console() << mLastString << endl;
         
         
 		TextLayout simple;
@@ -116,14 +117,14 @@ void SerialCommunicationApp::update()
                 value += (string_bits[i]=='1') << (7-i);
             }
             
-            console() << std::to_string(value) << endl;
             rectangles.push_back(value);
             
             pixelIndex++;
 
-        }else{
-            simple.setColor(Color(.7,.7,.7));
+        }else if(mLastString.find("start")!=string::npos){
+                
         }
+        
 		//simple.setColor( Color( .7, .7, .2 ) );
 		simple.addLine( mLastString );
 		simple.setLeadingOffset( 0 );
@@ -147,6 +148,8 @@ void SerialCommunicationApp::draw()
         Rectf rect = Rectf(vec2(x*10,y*10),vec2((x+1)*10,(y+1)*10));
         gl::drawSolidRect(rect);
     }
+    
+    
     
     int x= pixelIndex%15;
     int y= pixelIndex/15;
