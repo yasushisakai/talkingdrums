@@ -27,7 +27,7 @@ bool sendActivation;
 
 bool LED_STATE;
 
-uint8_t data [] = {0B00000001};
+uint8_t data [] = {B00000001};
 
 void setup() {
   pinMode(LED_PIN, OUTPUT);

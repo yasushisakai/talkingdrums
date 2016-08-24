@@ -115,19 +115,19 @@ void setup() {
 
 
 void loop() {
- // unsigned long currentTime = millis();
+  unsigned long currentTime = millis();
 
   // updates the timeKeeper
- // timeKeeper.cycle(currentTime);
+  timeKeeper.cycle(currentTime);
 
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
-  uint8_t value = 0B00000001;
-  //Serial.println("");//timeKeeper.getTimeFrame());
-
-  Serial.println("hell");
-  if (checkServer(nrf24, value) ){//&& timeKeeper.getTimeFrame() > TIMEFRAMEINTERVAL) {
-    value = TOCK;
+  uint8_t valueByte = B00000001;
+  Serial.println(timeKeeper.getTimeFrame());
+  
+  delay(50);
+  if (checkServer(nrf24, valueByte) && timeKeeper.getTimeFrame() > TIMEFRAMEINTERVAL) {
+    //valueByte = TOCK;
     timeKeeper.tick();
     timeKeeper.flash();
     lock = false;
@@ -136,7 +136,6 @@ void loop() {
     // Serial.flush();
   }
 
-<<<<<<< HEAD
   // outputs
   digitalWrite(LED_PIN, timeKeeper.checkFlash());
   digitalWrite(SOL_PIN, timeKeeper.checkHit());
@@ -165,14 +164,12 @@ void loop() {
         }
         }
     */
-   
+
     if (requestByte) {
       Serial.write('s');
       requestByte = false;
     }
-    
+
   }
-  
-=======
->>>>>>> becdec007c8a335875002c3f14c80fe1ee59fd7f
+
 }
