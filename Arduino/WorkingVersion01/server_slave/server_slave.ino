@@ -25,8 +25,8 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = false;
-bool const DEBUG_PORT = false;
+bool const DEBUG = true;
+bool const DEBUG_PORT = true;
 
 ///Sequence
 byte sequenceState, sequenceIndex, bitIndex;
@@ -115,121 +115,28 @@ void setup() {
 
 
 void loop() {
-  unsigned long currentTime = millis();
+ // unsigned long currentTime = millis();
 
   // updates the timeKeeper
-  timeKeeper.cycle(currentTime);
+ // timeKeeper.cycle(currentTime);
 
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
   uint8_t value = 0B00000001;
   //Serial.println("");//timeKeeper.getTimeFrame());
 
-  delay(1);
-  if (checkServer(nrf24, value) && timeKeeper.getTimeFrame() > TIMEFRAMEINTERVAL) {
+  Serial.println("hell");
+  if (checkServer(nrf24, value) ){//&& timeKeeper.getTimeFrame() > TIMEFRAMEINTERVAL) {
     value = TOCK;
     timeKeeper.tick();
     timeKeeper.flash();
     lock = false;
     requestByte = true;
-
-     Serial.flush();
+    Serial.println("thomas");
+    // Serial.flush();
   }
 
-  if (!lock) {
-
-    //Serial.flush();
-
-    switch (sequenceState) {
-      case WAIT:
-        {
-          /*
-             waits untill its good enough to get peaks
-          */
-          TimeKeeper::signalCount++;
-          if (!TimeKeeper::wait()) sequenceState = LISTEN;
-        }
-        break;
-
-      case LISTEN:
-        {
-          /*
-            wait.. listing is happening
-            same time as listen
-
-          */
-
-
-        }
-        break;
-
-      case ANALYZE:
-        {
-
-          TimeKeeper::signalCount++;
-          if (TimeKeeper::wait()) sequenceState = LISTEN;
-
-
-        }
-        break;
-      case PLAYPULSE:
-        {
-          /*
-            plays single pulse
-          */
-          if (DEBUG) Serial.print(playSequence[bitIndex]);
-
-          if (playSequence[bitIndex]) timeKeeper.hit();
-
-          bitIndex++;
-          if (bitIndex == SEQBITS) {
-            if (DEBUG) Serial.println("");
-
-            bitIndex = 0;
-            sequenceState = RESET_PLAYPULSE;
-          }
-
-        }
-        break;
-      case RESET_PLAYPULSE: {
-          /*
-            returns to playpulse if there is something left to play
-            (may not need this phase though)
-          */
-
-          TimeKeeper::signalCount++;
-          if (!TimeKeeper::wait()) {
-            sequenceState = PLAYPULSE;
-            bitIndex = 0;
-            sequenceIndex ++;
-
-            if (sequenceIndex == SEQITER) {
-              sequenceIndex = 0;
-              bitIndex = 0;
-              sequenceState = LISTEN;
-
-              //reset listen values
-              for (char i = 0; i < SEQBITS; i++) {
-                playSequence[i] = false;
-                for (char j = 0; j < SEQITER; j++) {
-                  recording[j][i] = false;
-                }
-              }
-
-            } else {
-              if (DEBUG) {
-                Serial.print("L: playing=");
-                Serial.print(sequenceIndex);
-                Serial.print(", ");
-              }
-            }
-          }
-        }
-        break;
-    }
-    lock = !lock;
-  }
-
+<<<<<<< HEAD
   // outputs
   digitalWrite(LED_PIN, timeKeeper.checkFlash());
   digitalWrite(SOL_PIN, timeKeeper.checkHit());
@@ -266,4 +173,6 @@ void loop() {
     
   }
   
+=======
+>>>>>>> becdec007c8a335875002c3f14c80fe1ee59fd7f
 }

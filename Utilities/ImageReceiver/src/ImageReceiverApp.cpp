@@ -3,133 +3,231 @@
 #include "cinder/gl/gl.h"
 #include "cinder/Serial.h"
 #include "cinder/Log.h"
-#include "cinder/params/Params.h"
+
+
+#include <vector>
 
 using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-const int BAUD_RATE = 9600;
-const char NUM_BYTES = 1;
+const ci::ivec2 stepDiv(20,20);
+// the original image is pixelated by 20;
 
-const ivec2 windowSize(1280+640,720);
+#define BUF_SIZE 80
+#define READ_INTERVAL 0.15
+#define BAUD_RATE 9600
+#define NUM_BYTES 1
+
+const ci::ivec2 margin(5,5);
 
 class ImageReceiverApp : public App {
-  public:
-	void setup() override;
-	void mouseDown( MouseEvent event ) override;
+public:
+    void setup() override;
+    void mouseDown( MouseEvent event ) override;
     void keyDown(KeyEvent event) override;
-	void update() override;
-	void draw() override;
+    void update() override;
+    void draw() override;
     
     
-  private:
+private:
+    
     void initPort();
-    void initFBO();
+    int  coordToIndex(const int x, const int y);
+    ivec2  indexToCoord(const int id);
     
-    Surface             mSendImage;
-    Surface             mPixelImage;
+    Surface             mSentImage;
+    Surface8u           mReceivedImage;
+    gl::Texture2dRef    mTexture;
+    gl::Texture::Format mFormat;
+    
+    bool                mIsRecord;
     
     // Serial
     SerialRef           mSerial;
-    string              mSerialName;
-    string              mSerialStr;
-    uint8_t*            mSendData;
+    bool                mIsReceiveMessage;
     
     // FBO
-    gl::FboRef          mFbo;
-    
-    
-    ivec2               mIteraPixel;
-    ColorA              mCurrentColor; // can this be char??
-    bool                mFinishSending;
-    bool                mPixelReady;
-    bool                mSendPixels;
-    bool                mDrawOriginal;
+    // gl::FboRef          mFbo; // we don't need this!
     
     Font                mFont;
     gl::Texture2dRef    mTextTexture;
     
-    params::InterfaceGlRef mParams;
-    float               mAvgFps;
+    // intervals
+    double              mLastUpdate;
+    double              mLastRead;
+    string              mLastString;
     
-
+    // pixel_values
+    int                 mPixelCount;
+    ivec2               mPixelCursor;
 };
 
 void ImageReceiverApp::setup()
 {
-    setWindowSize(windowSize);
-    mSendImage = loadImage(loadAsset("wave.png"));
+    mSentImage = loadImage(loadAsset("wave.png")); // kinda cheating but none the less...
+    ivec2 receivedImageSize = mSentImage.getSize() / stepDiv;
     
-    initFBO();
+    // This holds what got from them...
+    mReceivedImage = Surface(receivedImageSize.x,receivedImageSize.y,false);
+    
+    Surface8u::Iter iter(mReceivedImage.getIter());
+    while(iter.line()){
+        while(iter.pixel()){
+            iter.r() = 0;
+            iter.g() = 0;
+            iter.b() = 0;
+        }
+    }
+    
+    
+    mFormat.setMagFilter(GL_NEAREST); // we want crispy pixels
+    
+    setWindowSize(mSentImage.getSize()+margin*2);
+    
+    mIsRecord = false;
+    
+    mFont = Font("Arial",10);
+    
     initPort();
     
-    // we don't need to process the image.. just recieve it!
+    // timer stuff
+    mLastUpdate = 0;
+    mLastRead = 0;
     
-    mIteraPixel    = ivec2(0,0);
-    mFinishSending = false;
-    mPixelReady    = false;
-    mSendPixels    = false;
-    mDrawOriginal  = false;
+    mPixelCount = 0;
+    mPixelCursor = ivec2(indexToCoord(mPixelCount)*stepDiv+margin);
     
-    
-    mFont = Font("Arial",20);
-    mTextTexture   = Area(0,0,width,height);
-    
-    mParams = params::InterfaceGlRef::create(getWindow(),"App Parameters", toPixels(ivec(200,200)));
-    mParams->addParam("FPS",&mAvgFps,false);
-    mParams->addParam("Draw",&mDrawOriginal);
 }
 
 void ImageReceiverApp::mouseDown( MouseEvent event )
 {
 }
 
-void ImageReceiverApp::keyDown(KeyEvent event){
-    
+void ImageReceiverApp::keyDown(KeyEvent event)
+{
 }
 
 void ImageReceiverApp::update()
 {
-    mAvgFps = getAverageFps();
+    
+    double now = getElapsedSeconds();
+    double deltaTime = now - mLastUpdate;
+    mLastUpdate = now;
+    mLastRead += deltaTime;
+    
+    if( mLastRead > READ_INTERVAL )	{
+        mIsReceiveMessage = true;
+        mLastRead = 0.0;
+    }
+    
+    if( mIsReceiveMessage ) {
+        
+//        try{
+//            // read until newline, to a maximum of BUFSIZE bytes
+//            mLastString = mSerial->readStringUntil( '\n', BUF_SIZE );
+//            
+//        }
+//        catch( SerialTimeoutExc &exc ) {
+//            CI_LOG_EXCEPTION( "timeout", exc );
+//        }
+        mLastString = mSerial->readStringUntil('\n',BUF_SIZE);
+        
+        mIsReceiveMessage = false;
+        
+        TextLayout simple;
+        simple.setFont( mFont );
+        if(mLastString.find("L: r=")!= string::npos ){
+            
+            string string_bits = mLastString.substr(5);
+            uint8_t value = 0;
+            for (int i =0;i<8;i++){
+                value |= (string_bits[i]=='1') << (7-i);
+            }
+            
+            CI_LOG_D("got value: "<< std::to_string(value));
+            
+            simple.setColor(Color::white());
+            simple.addLine(std::to_string(value));
+            
+            Color8u color = Color8u::gray(value);
+            
+            mReceivedImage.setPixel(indexToCoord(mPixelCount),Color8u::gray(value));
+
+            
+            mPixelCount++;
+            mPixelCursor = ivec2(indexToCoord(mPixelCount)*stepDiv+margin);
+            
+            mIsRecord = false;
+            
+            // update mTexture
+            mTexture = gl::Texture::create(mReceivedImage,mFormat);
+            
+        }else if(mLastString.find("start")!=string::npos){
+            CI_LOG_D("record start");
+            
+            mIsRecord = true;
+            simple.setColor(Color(1.0,0.0,0.0)); // red
+            simple.addLine("rec");
+        }
+        
+        simple.setLeadingOffset( 0 );
+        mTextTexture = gl::Texture::create( simple.render( true, false ) );
+        
+        mSerial->flush();
+    }
+    
+    gl::clear(Color::black());
     
 }
 
 void ImageReceiverApp::draw()
 {
-	gl::clear( Color( 0, 0, 0 ) ); 
+    gl::clear(Color::black());
+    
+    gl::color(Color::white());
+    
+    //stuff
+    if(mTexture){
+        gl::draw(mTexture,Area(margin,margin+mSentImage.getSize()));
+    }
+    
+    if(mTextTexture){
+        gl::draw(mTextTexture,ivec2(margin.x,getWindowHeight()-margin.y));
+    }
+    
+    // border
+    gl::drawStrokedRect(Rectf(margin,margin+mSentImage.getSize()));
+    
+    // cursor
+    if(mIsRecord) gl::color(Color(1,0,0));
+    gl::drawStrokedRect(Rectf(mPixelCursor,mPixelCursor+stepDiv));
+
+    
 }
 
 
 void ImageReceiverApp::initPort(){
-    // print the devices
-    string findUsb = "cu.usbserial";
-    for( const auto &dev : Serial::getDevices() ){
-        CI_LOG_V("Device: " << dev.getName() );
-    }try {
-        Serial::Device dev = Serial::findDeviceByNameContains( "cu.usbserial" );
-        mSerialName = dev.getName();
+    
+    try {
+        Serial::Device dev = Serial::findDeviceByNameContains( "tty.usbserial" );
         mSerial = Serial::create( dev, BAUD_RATE );
-        CI_LOG_I( "Connected to: "<< mSerialName);
+        CI_LOG_D("connected to " << dev.getName());
     }
     catch( SerialExc &exc ) {
-        CI_LOG_EXCEPTION( "coult not initialize the serial device", exc );
+        CI_LOG_EXCEPTION( "could not initialize the serial device", exc );
         exit( -1 );
     }
-    mSendData = new uint8_t[NUM_BYTES];
+    
 }
 
-void ImageReceiverApp::initFBO(){
-    //FBO
-    mFbo = gl::Fbo::create(mSendImage.getWidth(), mSendImage.getHeight());
-    {
-        gl::ScopedFramebuffer fbScp( mFbo );
-        
-        gl::clear( Color( 0.0, 0.0, 0.0 ) );
-        
-        gl::ScopedViewport scpVp( ivec2( 0 ), mFbo->getSize() );
-        
-    }
+int ImageReceiverApp::coordToIndex(int x, int y){
+    return y*mReceivedImage.getSize().x + x;
+}
+
+ivec2 ImageReceiverApp::indexToCoord(int id){
+    int imageWidth = mReceivedImage.getSize().x;
+    return ivec2(id%imageWidth,id/imageWidth);
 }
 
 
