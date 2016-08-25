@@ -44,6 +44,7 @@ byte const solenoid_pwm = 200;
 
 //Serial Port
 bool requestByte = false;
+bool readInBytes = false;
 
 //incoming msg, keep it as an array in case we need to
 //read values bigger than a byte
@@ -111,6 +112,8 @@ void setup() {
   timeKeeper.setInterval(INTERVAL);
 
   initNRF(nrf24);
+
+  Serial.flush();
 }
 
 
@@ -151,10 +154,7 @@ void loop() {
         }
     */
 
-    if (requestByte) {
-     // Serial.write('s');
-      requestByte = false;
-    }
+
 
   }
   if (!lock) {
@@ -175,25 +175,49 @@ void loop() {
       case LISTEN:  //use it to send activating code
         {
 
-           bitIndex++;
-           if (bitIndex >= SEQBITS) {
-              sequenceState = ANALYZE;
+          bitIndex++;
+          if (bitIndex >= SEQBITS) {
+            sequenceState = ANALYZE;
 
-             
-            }
 
-            if (DEBUG) Serial.print(bitIndex);
-            if (DEBUG) Serial.println(" LISTEN");
+          }
 
-            if (Serial.read() == 's') {
+          if (DEBUG) Serial.print(bitIndex);
+          if (DEBUG) Serial.println(" LISTEN");
 
+          if (requestByte) {
+            Serial.write('s');
+            requestByte = false;
+            readInBytes = true;
+          }
+
+          //if (Serial.available() > 0) {
+          if (readInBytes) {
+            int val = Serial.readBytes(byteMSG8, 1);
+            delay(1);
+            if (val > 0) {
+              readInBytes = false;
+              requestByte = false;
+              Serial.flush();
+
+              for(int i = 0; i < 8; i++){
+                char f = Serial.read();
+              }
               
             }
+          }
 
-            if(Serial.read() ){
-              int val = Serial.readBytes(byteMSG8, 1);
+          /*if (!readInBytes) {
+            if (Serial.read() == 'a') {
+              readInBytes = true;
+              Serial.flush();
             }
-          
+            }
+          */
+         
+
+
+
           /*
             wait.. listing is happening
             same time as listen
@@ -213,7 +237,7 @@ void loop() {
           bitIndex = 0;
           if (sequenceIndex < SEQITER) {
             sequenceState = LISTEN;
-             if (DEBUG) Serial.println("Analyze");
+            if (DEBUG) Serial.println("Analyze");
           } else {
             isRecord = false;
             sequenceIndex = 0;
@@ -221,7 +245,7 @@ void loop() {
             if (DEBUG) Serial.println("Play pulse");
           }
 
-           
+
 
         }
         break;
@@ -260,6 +284,10 @@ void loop() {
               sequenceIndex = 0;
               bitIndex = 0;
               sequenceState = LISTEN;
+
+              //reset port request
+              requestByte = true;
+              readInBytes = false;
 
               //reset listen values
               for (char i = 0; i < SEQBITS; i++) {

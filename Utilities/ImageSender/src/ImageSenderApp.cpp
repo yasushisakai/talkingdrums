@@ -80,6 +80,7 @@ private:
     double              mSerialDuratinT;
     uint8_t *           mSendData;
     bool                mNexIteration;
+    bool                mReadInMsg;
     
     
     //Time Events
@@ -168,6 +169,8 @@ void ImageSenderApp::setup()
     
     mNexIteration  = false;
     
+    mReadInMsg     = true;
+    
     mIteraPixel    = ivec2(0, 0);
     
     //create params
@@ -244,6 +247,10 @@ void ImageSenderApp:: keyDown( KeyEvent event)
             break;
         case 's':
             mNexIteration = true;
+            break;
+        case 'z':
+            mNexIteration = false;
+            mReadInMsg = true;
             break;
     }
 }
@@ -367,44 +374,32 @@ void ImageSenderApp::processPixels(double currentTime)
             uint8_t mInSerial;
             
             // mSerial->writeBytes(const void * data, size_t numBytes)
+            if(mReadInMsg){
+                try{
+                    // read until newline, to a maximum of BUFSIZE bytes
+                    
+                    //console()<<mSerial->getNumBytesAvailable()<<std::endl;
+                    if(mSerial->getNumBytesAvailable() > 0){
+                    
+                       // mLastString = mSerial->readStringUntil( 's', BUFFER_SIZE );
+                        
+                        mInSerial = mSerial->readByte();
+                        mSerial->flush();
+                        mReadInMsg = false;
+                        
+                        //mSerial->readBytes(void *data, size_t numBytes)
+                        
         
-            try{
-                // read until newline, to a maximum of BUFSIZE bytes
-                
-                console()<<mSerial->getNumBytesAvailable()<<std::endl;
-                if(mSerial->getNumBytesAvailable() > 0){
-                
-                   // mLastString = mSerial->readStringUntil( 's', BUFFER_SIZE );
-                    
-                    mInSerial = mSerial->readByte();
-                    
-                    //mSerial->readBytes(void *data, size_t numBytes)
-                    
-    
-                    
-                    //console()<<"available: "<<mSerial->getNumBytesAvailable()<<" "<<mInSerial<<std::endl;
-                    mSerial->flush();
+                        console()<<"Available: "<<mSerial->getNumBytesAvailable()<<" "<<mInSerial<<std::endl;
+                  
+                    }
+                   
+                   
                 }
-               
-               
+                catch( SerialTimeoutExc &exc ) {
+                    CI_LOG_EXCEPTION( "timeout", exc );
+                }
             }
-            catch( SerialTimeoutExc &exc ) {
-                CI_LOG_EXCEPTION( "timeout", exc );
-            }
-            
-            if(mInSerial == 's'){
-                mSerialDuratinT = currentTime - mSerialPrevT;
-                
-                mSerialPrevT = currentTime;
-                
-                //time 100 for ms
-                console()<<"got msg "<< mSerialDuratinT * 1000 <<std::endl;
-                mNexIteration = true;
-                
-               
-            }
-            
-            //currentTime
             
             
             if(mNexIteration){
@@ -416,7 +411,6 @@ void ImageSenderApp::processPixels(double currentTime)
                 TextLayout simple;
                 simple.setFont( mFont );
                 simple.setColor( Color( 0.8, 0.8, 0.8f ) );
-                
                 
                 std::string rgbStr = "("+ to_string(mCurrentColor.r)+", "+to_string(mCurrentColor.g)+", "+ to_string(mCurrentColor.b)+")";
                 std::string indexStr = "["+to_string(mIteraPixel.x)+", "+to_string(mIteraPixel.y)+"]";
@@ -432,16 +426,37 @@ void ImageSenderApp::processPixels(double currentTime)
                 mSendData[0] = grayValue;
                 
                 //write msg
-                //mSerial->writeBytes( (uint8_t *)mSendData, NUM_BYTES);
+                mSerial->writeBytes( (uint8_t *)mSendData, NUM_BYTES);
                 
                 simple.addLine(rgbStr);
                 simple.addCenteredLine(indexStr);
                 simple.addCenteredLine(byteStr);
                 mTextTexture = gl::Texture2d::create( simple.render( true, false ) );
-                mNexIteration = false;
                 
-                //mSerial->flush();
+                mNexIteration = false;
+                mReadInMsg = true;
             }
+            
+            
+            if(!mReadInMsg){
+                if(mInSerial == 's'){
+                    mSerialDuratinT = currentTime - mSerialPrevT;
+                    
+                    mSerialPrevT = currentTime;
+                    
+                    //time 100 for ms
+                    console()<<"Got msg  S "<< mSerialDuratinT * 1000 <<std::endl;
+                    
+                    //request a Bytes.
+                    //mSerial->writeByte('a');
+                    mNexIteration = true;
+                    
+                }
+            }
+            
+            //currentTime
+            
+
             
            
         }
