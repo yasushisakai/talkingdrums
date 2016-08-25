@@ -380,9 +380,9 @@ void ImageSenderApp::processPixels(double currentTime)
                     
                     //mSerial->readBytes(void *data, size_t numBytes)
                     
-                   // console()<<"available: "<<mSerial->getNumBytesAvailable()<<" "<<mLastString<<std::endl;
+    
                     
-                    console()<<"available: "<<mSerial->getNumBytesAvailable()<<" "<<mInSerial<<std::endl;
+                    //console()<<"available: "<<mSerial->getNumBytesAvailable()<<" "<<mInSerial<<std::endl;
                     mSerial->flush();
                 }
                

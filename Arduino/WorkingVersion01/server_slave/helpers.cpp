@@ -27,7 +27,6 @@ boolean checkServer(RH_NRF24 & _nrf, uint8_t & value) {
   
 
   if (_nrf.recv(buf, &len)) {
-    Serial.println("got msg");
     return true;
    // if(bitRead(value, 0) == 1){
    //   return true;
