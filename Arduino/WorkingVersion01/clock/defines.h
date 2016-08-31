@@ -11,9 +11,6 @@
 #define LED_PIN_06 A4
 #define LED_PIN_07 A5
 
-
+// clock interval in ms
 #define DURATION 100
 #define COUNTER_LIMIT 3
-
-#define TICK 49
-#define TOCK 48
