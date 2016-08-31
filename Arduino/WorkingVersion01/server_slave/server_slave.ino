@@ -123,12 +123,11 @@ void loop() {
   // updates the timeKeeper
   timeKeeper.cycle(currentTime);
 
-  // unlocks if we recieve a TICK from the server
+  // unlocks if we recieve somthing from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
   uint8_t valueByte = B00000001;
   delay(1);
   if (checkServer(nrf24, valueByte) && timeKeeper.getTimeFrame() > TIMEFRAMEINTERVAL) {
-    //valueByte = TOCK;
     timeKeeper.tick();
     timeKeeper.flash();
     lock = false;
@@ -138,25 +137,6 @@ void loop() {
 
 
   //while not in the look read the serial port for incoming color
-  if (lock) {
-
-    /*
-       if (Serial.available() > 0) {
-        int val = Serial.readBytes(byteMSG8, 1);
-
-        if (val > 0) {
-          //Serial.flush();
-          if (DEBUG_PORT) {
-            Serial.print("Value Read Port: ");
-            Serial.println(byteMSG8[0]);
-          }
-        }
-        }
-    */
-
-
-
-  }
   if (!lock) {
 
     //Serial.flush();
@@ -164,9 +144,6 @@ void loop() {
     switch (sequenceState) {
       case WAIT:
         {
-          /*
-             waits untill its good enough to get peaks
-          */
           TimeKeeper::signalCount++;
           if (!TimeKeeper::wait()) sequenceState = LISTEN;
         }
@@ -313,7 +290,7 @@ void loop() {
 
   // outputs
   digitalWrite(LED_PIN, timeKeeper.checkFlash());
-  digitalWrite(SOL_PIN, timeKeeper.checkHit());
+  //digitalWrite(SOL_PIN, timeKeeper.checkHit());
 
   if (timeKeeper.checkHit()) {
     analogWrite(SOL_PIN, solenoid_pwm);

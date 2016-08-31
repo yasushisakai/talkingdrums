@@ -106,9 +106,6 @@ void loop() {
   if (!lock) {
     switch (sequenceState) {
       case WAIT: {
-          /*
-            waits untill its good enough to get peaks
-          */
           TimeKeeper::signalCount++;
           if (!TimeKeeper::wait()) sequenceState = LISTEN;
         }
