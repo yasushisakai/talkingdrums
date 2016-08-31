@@ -1,7 +1,7 @@
 dependencies: \
-  /Users/tom/Documents/Programming/talkingdrums/Utilities/ImageSender/src/ImageSenderApp.cpp \
-  ../../../../Cinder/Cinder/include/cinder/app/RendererGl.h \
-  ../../../../Cinder/Cinder/include/cinder/Log.h \
-  ../../../../Cinder/Cinder/include/cinder/System.h \
-  ../../../../Cinder/Cinder/include/cinder/params/Params.h \
-  ../../../../Cinder/Cinder/include/cinder/Serial.h
+  /Users/yasushisakai/code/talkingdrums/Utilities/ImageSender/src/ImageSenderApp.cpp \
+  ../../../../cinder/include/cinder/app/RendererGl.h \
+  ../../../../cinder/include/cinder/Log.h \
+  ../../../../cinder/include/cinder/System.h \
+  ../../../../cinder/include/cinder/params/Params.h \
+  ../../../../cinder/include/cinder/Serial.h
