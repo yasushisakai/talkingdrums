@@ -9,8 +9,8 @@
 #define MIC_PIN A0
 
 /// server values
-#define TICK 0B00000001
-#define TOCK 0B00000000
+#define TICK B00000001
+#define TOCK B00000000
 // this is the time interval for each frame
 // this is one factor to determine the duration of
 // data collection from the mic
