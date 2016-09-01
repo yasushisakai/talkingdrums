@@ -32,7 +32,7 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = true;
+bool const DEBUG = false;
 
 ///Sequence
 byte sequenceState, sequenceIndex, bitIndex;
@@ -62,6 +62,8 @@ void setup() {
   bitIndex = sequenceIndex = 0;
   lock = true;
   isRecord = false;
+
+  //reset values
   for (char i = 0; i < SEQBITS; i++) {
     playSequence[i] = false;
     for (char j = 0; j < SEQITER; j++) {
@@ -91,7 +93,7 @@ void loop() {
 
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
-  char value;
+  uint8_t value;
   if (checkServer(nrf24, value)) {
     if (value == TICK && timeKeeper.timeFrame > TIMEFRAMEINTERVAL) {
       value = TOCK;
@@ -123,32 +125,41 @@ void loop() {
           signalMin = 1024;
 
           if (!isRecord) {
-            Serial.print("L: ");
-            timeKeeper.timeFrameChar();
-            Serial.print(", ");
-            Serial.println(peakToPeak);
+            unsigned long timeFrame = timeKeeper.timeFrameChar();
+            if (DEBUG) {
+              Serial.print("L: ");
+              Serial.print(timeFrame);
+              Serial.print(", ");
+              Serial.println(peakToPeak);
+            }
           }
           if (peakToPeak > signalThreshold) {
             /*
               it might be easier if we use the threshold after (when we aggreagate)
               TODO: revisit when to threshold
             */
-            if (!isRecord) Serial.println("L:rec start");
+            if (!isRecord) {
+
+              Serial.println("L:rec start");
+
+            }
             isRecord = true;
             valueHit = true;
           }
 
           if (isRecord) {
-            Serial.print("L: ");
-            timeKeeper.timeFrameChar();
-            Serial.print(", ");
-            Serial.print(peakToPeak);
-            Serial.print(", ");
-            Serial.print(sequenceIndex);
-            Serial.print(", ");
-            Serial.print(bitIndex);
-            Serial.print(", ");
-            Serial.println(valueHit);
+            unsigned long timeFrame = timeKeeper.timeFrameChar();
+            if (DEBUG) {
+              Serial.print("L: ");
+              Serial.print(", ");
+              Serial.print(peakToPeak);
+              Serial.print(", ");
+              Serial.print(sequenceIndex);
+              Serial.print(", ");
+              Serial.print(bitIndex);
+              Serial.print(", ");
+              Serial.println(valueHit);
+            }
             recording[sequenceIndex][bitIndex] = valueHit;
             bitIndex++;
             if (bitIndex >= SEQBITS) {
@@ -181,24 +192,19 @@ void loop() {
               playSequence[i] = average >= 0.5 * SEQITER;
             }
 
-            for (int i = 0; i < SEQITER; i++) {
-              Serial.print("L: ");
-              Serial.print(i);
-              Serial.print('=');
-              for (int j = 0; j < SEQBITS; j++) {
-                Serial.print(recording[i][j]);
-              }
-              Serial.println();
-            }
-
-            Serial.print("L: r=");
-            for (int i = 0; i < SEQBITS; i++) {
-              Serial.print(playSequence[i]);
-            }
-            Serial.println();
-
-            // check sequence if its correct
             if (DEBUG) {
+              for (int i = 0; i < SEQITER; i++) {
+                Serial.print("L: ");
+                Serial.print(i);
+                Serial.print('=');
+                for (int j = 0; j < SEQBITS; j++) {
+                  Serial.print(recording[i][j]);
+                }
+                Serial.println();
+              }
+
+              // check sequence if its correct
+
               bool flag = true;
               for (int i = 0; i < SEQBITS; i++) {
                 if (debugSequence[i] != playSequence[i]) {
@@ -211,12 +217,16 @@ void loop() {
               } else {
                 Serial.println("L:sequence incorrect");
               }
+
+              Serial.print("L: playing=");
+              Serial.print(sequenceIndex);
+              Serial.print(", ");
             }
 
+
+
             sequenceState = PLAYPULSE;
-            Serial.print("L: playing=");
-            Serial.print(sequenceIndex);
-            Serial.print(", ");
+
           } //- anaylze
 
         }
@@ -225,18 +235,18 @@ void loop() {
           /*
             plays single pulse
           */
-          Serial.print(playSequence[bitIndex]);
+          if (DEBUG) Serial.print(playSequence[bitIndex]);
           if (playSequence[bitIndex]) timeKeeper.hit();
 
           bitIndex++;
           if (bitIndex == SEQBITS) {
-            Serial.println("");
+            if (DEBUG) Serial.println("");
             bitIndex = 0;
-            sequenceState = REPLAY;
+            sequenceState = RESET_PLAYPULSE;
           }
         }
         break;
-      case REPLAY: {
+      case RESET_PLAYPULSE: {
           /*
             returns to playpulse if there is something left to play
             (may not need this phase though)
@@ -252,10 +262,27 @@ void loop() {
               sequenceIndex = 0;
               bitIndex = 0;
               sequenceState = LISTEN;
+              //reset listen values
+
+              Serial.print("L: r=");
+              for (int i = 0; i < SEQBITS; i++) {
+                Serial.print(playSequence[i]);
+              }
+              Serial.println();
+
+              for (char i = 0; i < SEQBITS; i++) {
+                playSequence[i] = false;
+                for (char j = 0; j < SEQITER; j++) {
+                  recording[j][i] = false;
+                }
+              }
+
             } else {
-              Serial.print("L: playing=");
-              Serial.print(sequenceIndex);
-              Serial.print(", ");
+              if (DEBUG) {
+                Serial.print("L: playing=");
+                Serial.print(sequenceIndex);
+                Serial.print(", ");
+              }
             }
           }
         }

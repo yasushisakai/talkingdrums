@@ -1,6 +1,8 @@
 #include "Arduino.h"
 #include "TimeKeeper.h"
 
+char static TimeKeeper::signalCount = 0;
+
 TimeKeeper::TimeKeeper() {
   this->currentTime = 0;
   this->timeFrame = 0;
@@ -9,7 +11,7 @@ TimeKeeper::TimeKeeper() {
   this->lastFlash = 0;
 }
 
-char static TimeKeeper::signalCount = 0;
+
 
 bool static TimeKeeper::wait() {
   bool flag = signalCount >= signalLimit;
@@ -44,12 +46,11 @@ bool TimeKeeper::checkFlash() {
   return (this->currentTime - this->lastFlash) < this->interval;
 }
 
-void TimeKeeper::timeFrameChar() {
-  String num = String(3);
+unsigned long TimeKeeper::timeFrameChar() {
   if (this->timeFrame < 100) {
-    Serial.print('0');
+    return 0L;
   }
-  Serial.print(this->timeFrame);
+  return this->timeFrame;
 }
 
 
