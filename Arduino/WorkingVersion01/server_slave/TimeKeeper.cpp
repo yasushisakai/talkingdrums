@@ -1,7 +1,7 @@
 #include "Arduino.h"
 #include "TimeKeeper.h"
 
-char static TimeKeeper::signalCount = 0;
+uint8_t static TimeKeeper::signalCount = 0;
 
 TimeKeeper::TimeKeeper() {
   this->currentTime = 0L;

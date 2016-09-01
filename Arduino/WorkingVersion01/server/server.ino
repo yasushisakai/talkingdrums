@@ -94,7 +94,7 @@ void loop() {
       counter = 0;
       isSend = false;
       LED_STATE = LOW;
-      Serial.write("s");
+      //Serial.write("s");
     }
     counter ++;
   }
