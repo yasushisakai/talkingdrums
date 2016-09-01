@@ -252,12 +252,7 @@ void loop() {
         break;
       case WAIT_PLAY:
         {
-          TimeKeeper::signalCount++;
-          if (!TimeKeeper::wait()) {
-
-            if (DEBUG)Serial.println("Waiting play");
-
-            bitIndex = 0;
+          bitIndex = 0;
           TimeKeeper::signalCount ++;
           if (!TimeKeeper::wait()) {
             if (DEBUG) Serial.println("L: WAIT_PLAY");
@@ -275,15 +270,9 @@ void loop() {
                 Serial.print(sequenceIndex);
                 Serial.print(", ");
               }
-
-
-            } else {
-              sequenceState = PLAYPULSE;
             }
 
           }
-
-          break;
         }
         break;
       case RESET: {
@@ -299,12 +288,12 @@ void loop() {
             sequenceIndex = 0;
             bitIndex = 0;
             sequenceState = LISTEN;
-            
+
             //reset listen values
             Serial.print("L: r=");
             for (int i = 0; i < SEQBITS; i++)
               Serial.print(playSequence[i]);
-            }
+
             Serial.println();
 
             // reset values
@@ -326,9 +315,9 @@ void loop() {
             sequenceState = WAIT_START;
 
           } // wait ends
-        }
+        } // case RESET
         break;
-    }
+    } // switch
     lock = !lock;
   }
 
