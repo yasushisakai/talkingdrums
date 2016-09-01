@@ -252,11 +252,13 @@ void loop() {
         break;
       case WAIT_PLAY:
         {
-          bitIndex = 0;
+
           TimeKeeper::signalCount ++;
           if (!TimeKeeper::wait()) {
             if (DEBUG) Serial.println("L: WAIT_PLAY");
-            sequenceIndex ++;
+
+            bitIndex = 0;
+            sequenceIndex++;
 
             // did it play it for enough times??
             if (sequenceIndex > SEQITER) {

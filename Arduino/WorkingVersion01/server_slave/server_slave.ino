@@ -175,9 +175,6 @@ void loop() {
       case ANALYZE:  //read the incomming msg from the computer
         {
 
-          TimeKeeper::signalCount++;
-          if (TimeKeeper::wait()) sequenceState = LISTEN;
-
           sequenceIndex++;
           bitIndex = 0;
           if (sequenceIndex < SEQITER) {
@@ -228,7 +225,10 @@ void loop() {
             bitIndex = 0;
             sequenceIndex ++;
 
+            // did it play it for enough times??
             if (sequenceIndex > SEQITER) {
+
+              //go to reset
               sequenceState = RESET;
               requestByte = true;
               readInBytes = false;
@@ -280,7 +280,7 @@ void loop() {
 
                 sequenceIndex = 0;
                 bitIndex = 0;
-                sequenceState = LISTEN; 
+                sequenceState = LISTEN;
 
                 Serial.flush();
 
