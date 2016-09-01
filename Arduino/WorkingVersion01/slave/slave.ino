@@ -43,7 +43,7 @@ bool debugSequence[] = {1, 0, 0, 1, 1, 0, 0, 1};
 
 ///Signal Processing
 int signalMin, signalMax;
-const int signalThreshold = 800; // 50-1024 we may need to make this dynamic
+const int signalThreshold = 550; // 50-1024 we may need to make this dynamic
 
 /// PWM-ing the Solenoid will need additional test 0-255
 byte const solenoid_pwm = 200;

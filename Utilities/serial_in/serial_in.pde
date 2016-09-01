@@ -38,29 +38,38 @@ void setup() {
 
 void draw() {
 
-  int[] xy = indexToXY(index);
-  stroke(255, 0, 0);
-  point(xy[0], xy[1]);
+ 
+  //stroke(255, 0, 0);
+
+
+  //rect(xy[0]*50, xy[1]*50, 50, 50);
 
   if (port.available() > 0) serialIn = port.readStringUntil('\n');
+  if (serialIn != null) {
+    if (serialIn.startsWith("L: r=")) {
+      // theres a log message!!
+      String bits = serialIn.substring(serialIn.lastIndexOf('=')+1);
+      println(bits);
 
-  if (serialIn.startsWith("L: r=")) {
-    // theres a log message!!
-    String bits = serialIn.substring(serialIn.lastIndexOf('=')+1);
-    stroke(unbinary(bits)+Byte.MIN_VALUE+1);
-    point(xy[0],xy[1]); // plot! plot!
-    index ++;
+      //println(bits.charAt(0)+" "+bits.charAt(1)+" "+bits.charAt(2)+" "+bits.charAt(3)+" "+bits.charAt(4)+" "+bits.charAt(5)+" "+bits.charAt(6)+" "+bits.charAt(7));
+      // stroke();//+Byte.MIN_VALUE+1);
+      stroke(200);
+      fill(random(100), 200, 0);
+       int[] xy = indexToXY(index);
+      rect(xy[0]*50, xy[1]*50, 49, 49);
+      index ++;
+    }
   }
-  
 }
 
-void keyPressed(){
+void keyPressed() {
   save("img_"+String.format("%06d", index)+".png");
 }
 
 int[] indexToXY(int index) {
   int[] result = new int [2];
-  result[0] = index/width;
-  result[1] = index%width;
+  result[0] = index%5;
+  result[1] = index/5;
+  println(result[0]+" "+result[1]);
   return result;
 }
