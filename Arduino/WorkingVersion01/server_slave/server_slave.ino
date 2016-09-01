@@ -285,13 +285,13 @@ void loop() {
         }
         break;
     }
+    
     lock = !lock;
   }
 
   // outputs
   digitalWrite(LED_PIN, timeKeeper.checkFlash());
-  //digitalWrite(SOL_PIN, timeKeeper.checkHit());
-
+  
   if (timeKeeper.checkHit()) {
     analogWrite(SOL_PIN, solenoid_pwm);
   } else {
