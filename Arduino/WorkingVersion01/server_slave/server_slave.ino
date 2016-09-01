@@ -168,22 +168,6 @@ void loop() {
           if (DEBUG) Serial.println(" LISTEN");
 
 
-          /*if (!readInBytes) {
-            if (Serial.read() == 'a') {
-              readInBytes = true;
-              Serial.flush();
-            }
-            }
-          */
-
-
-
-
-          /*
-            wait.. listing is happening
-            same time as listen
-          */
-
 
         }
         break;
@@ -296,7 +280,7 @@ void loop() {
 
                 sequenceIndex = 0;
                 bitIndex = 0;
-                sequenceState = WAIT_START;
+                sequenceState = LISTEN; 
 
                 Serial.flush();
 

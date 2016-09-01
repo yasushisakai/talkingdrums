@@ -16,7 +16,7 @@
 class TimeKeeper {
   private:
     unsigned long interval; //ms
-    static const uint8_t signalLimit = 3;
+    static const uint8_t signalLimit = 2;
     // the number of cycles to wait for aggregate data readings
 
     unsigned long currentTime;

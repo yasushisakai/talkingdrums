@@ -32,7 +32,7 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = false;
+bool const DEBUG = true;
 
 ///Sequence
 byte sequenceState, sequenceIndex, bitIndex;
@@ -49,7 +49,7 @@ const int signalThreshold = 800; // 50-1024 we may need to make this dynamic
 byte const solenoid_pwm = 200;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(19200);
 
   pinMode(LED_PIN, OUTPUT);
   pinMode(SOL_PIN, OUTPUT);
@@ -58,7 +58,7 @@ void setup() {
   digitalWrite(SOL_PIN, LOW);
 
   //sequence
-  sequenceState = WAIT;
+  sequenceState = WAIT_START;
   bitIndex = sequenceIndex = 0;
   lock = true;
   isRecord = false;
@@ -80,7 +80,7 @@ void setup() {
 
 void loop() {
   //collect signal readings
-  if (sequenceState == WAIT || sequenceState == LISTEN) {
+  if (sequenceState == LISTEN) {
     int micValue = analogRead(MIC_PIN);
     if (micValue < 1023 && micValue > 50) { // for weird readings??
       if (micValue > signalMax) signalMax = micValue;
@@ -105,9 +105,16 @@ void loop() {
 
   if (!lock) {
     switch (sequenceState) {
-      case WAIT: {
+      case WAIT_START: {
           TimeKeeper::signalCount++;
-          if (!TimeKeeper::wait()) sequenceState = LISTEN;
+          if (!TimeKeeper::wait()) {
+
+            if (DEBUG) {
+              Serial.println("Waiting start");
+            }
+
+            sequenceState = LISTEN;
+          }
         }
         break;
 
@@ -179,8 +186,7 @@ void loop() {
           if (sequenceIndex < SEQITER) {
             sequenceState = LISTEN;
           } else {
-            isRecord = false;
-            sequenceIndex = 0;
+
             for (int i = 0; i < SEQBITS; i++) {
               float average = 0.0;
               for (int j = 0; j < SEQITER; j++) {
@@ -221,8 +227,10 @@ void loop() {
             }
 
 
-
-            sequenceState = PLAYPULSE;
+            isRecord = false;
+            sequenceIndex = 0;
+            sequenceState = WAIT_PLAY;
+            if (DEBUG) Serial.println("Done Analyze");
 
           } //- anaylze
 
@@ -239,11 +247,37 @@ void loop() {
           if (bitIndex == SEQBITS) {
             if (DEBUG) Serial.println("");
             bitIndex = 0;
-            sequenceState = RESET_PLAYPULSE;
+            sequenceState = WAIT_PLAY;
           }
         }
         break;
-      case RESET_PLAYPULSE: {
+      case WAIT_PLAY:
+        {
+          TimeKeeper::signalCount++;
+          if (!TimeKeeper::wait()) {
+
+            if (DEBUG)Serial.println("Waiting play");
+
+            bitIndex = 0;
+            sequenceIndex ++;
+
+            if (sequenceIndex > SEQITER) {
+              sequenceState = RESET;
+
+              if (DEBUG) {
+                Serial.print("L: playing=");
+              }
+
+
+            } else {
+              sequenceState = PLAYPULSE;
+            }
+
+          }
+
+          break;
+        }
+      case RESET: {
           /*
             returns to playpulse if there is something left to play
             (may not need this phase though)
@@ -251,36 +285,33 @@ void loop() {
 
           TimeKeeper::signalCount++;
           if (!TimeKeeper::wait()) {
-            sequenceState = PLAYPULSE;
+           
             bitIndex = 0;
-            sequenceIndex ++;
+            sequenceIndex = 0;
+            bitIndex = 0;
+            sequenceState = LISTEN;
+            
+            //reset listen values
+            Serial.print("L: r=");
+            for (int i = 0; i < SEQBITS; i++) {
+              Serial.print(playSequence[i]);
+            }
+            Serial.println();
 
-            if (sequenceIndex == SEQITER) {
-              sequenceIndex = 0;
-              bitIndex = 0;
-              sequenceState = LISTEN;
-              //reset listen values
-
-              Serial.print("L: r=");
-              for (int i = 0; i < SEQBITS; i++) {
-                Serial.print(playSequence[i]);
-              }
-              Serial.println();
-
-              for (char i = 0; i < SEQBITS; i++) {
-                playSequence[i] = false;
-                for (char j = 0; j < SEQITER; j++) {
-                  recording[j][i] = false;
-                }
-              }
-
-            } else {
-              if (DEBUG) {
-                Serial.print("L: playing=");
-                Serial.print(sequenceIndex);
-                Serial.print(", ");
+            for (char i = 0; i < SEQBITS; i++) {
+              playSequence[i] = false;
+              for (char j = 0; j < SEQITER; j++) {
+                recording[j][i] = false;
               }
             }
+
+          } else {
+            if (DEBUG) {
+              Serial.print("L: playing=");
+              Serial.print(sequenceIndex);
+              Serial.print(", ");
+            }
+
           }
         }
         break;

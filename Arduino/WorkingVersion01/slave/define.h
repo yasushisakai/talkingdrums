@@ -27,10 +27,11 @@
 
 ///  modes
 // we can do enum if we want
-#define WAIT 0
+#define WAIT_START 0
 #define LISTEN 1
 #define ANALYZE 2
 #define PLAYPULSE 3
-#define RESET_PLAYPULSE 4
+#define WAIT_PLAY 4
+#define RESET 5
 
 #endif
