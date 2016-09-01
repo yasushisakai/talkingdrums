@@ -32,7 +32,7 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = false;
+bool const DEBUG = true;
 
 ///Sequence
 byte sequenceState, sequenceIndex, bitIndex;
@@ -49,7 +49,7 @@ const int signalThreshold = 800; // 50-1024 we may need to make this dynamic
 byte const solenoid_pwm = 200;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(19200);
 
   pinMode(LED_PIN, OUTPUT);
   pinMode(SOL_PIN, OUTPUT);
@@ -80,7 +80,7 @@ void setup() {
 
 void loop() {
   //collect signal readings
-  if (sequenceState == WAIT_START || sequenceState == LISTEN) {
+  if (sequenceState == LISTEN) {
     int micValue = analogRead(MIC_PIN);
     if (micValue < 1023 && micValue > 50) { // for weird readings??
       if (micValue > signalMax) signalMax = micValue;
@@ -108,9 +108,11 @@ void loop() {
       case WAIT_START: {
           TimeKeeper::signalCount++;
           if (!TimeKeeper::wait()) {
+
             if (DEBUG) {
               Serial.println("L: WAIT_START");
             }
+
             sequenceState = LISTEN;
           }
         }
@@ -182,8 +184,7 @@ void loop() {
           if (sequenceIndex < SEQITER) {
             sequenceState = LISTEN;
           } else {
-            isRecord = false;
-            sequenceIndex = 0;
+
             for (int i = 0; i < SEQBITS; i++) {
               float average = 0.0;
               for (int j = 0; j < SEQITER; j++) {
@@ -223,7 +224,11 @@ void loop() {
               Serial.print(", ");
             }
 
-            sequenceState = WAIT_PLAY; //
+
+            isRecord = false;
+            sequenceIndex = 0;
+            sequenceState = WAIT_PLAY;
+            if (DEBUG) Serial.println("Done Analyze");
 
           } //- anaylze
 
@@ -245,15 +250,18 @@ void loop() {
           }
         }
         break;
-      case WAIT_PLAY: {
-          /*
-            A short wait for the play
+      case WAIT_PLAY:
+        {
+          TimeKeeper::signalCount++;
+          if (!TimeKeeper::wait()) {
 
-          */
+            if (DEBUG)Serial.println("Waiting play");
+
+            bitIndex = 0;
           TimeKeeper::signalCount ++;
           if (!TimeKeeper::wait()) {
             if (DEBUG) Serial.println("L: WAIT_PLAY");
-            sequenceIndex ++ ;
+            sequenceIndex ++;
 
             // did it play it for enough times??
             if (sequenceIndex > SEQITER) {
@@ -261,15 +269,21 @@ void loop() {
               sequenceState = RESET;
             } else {
               // nope go back playing
-              sequenceStat = PLAYPULSE;
+              sequenceState = PLAYPULSE;
               if (DEBUG) {
                 Serial.print("L: playing=");
                 Serial.print(sequenceIndex);
                 Serial.print(", ");
               }
+
+
+            } else {
+              sequenceState = PLAYPULSE;
             }
 
-          } // wait
+          }
+
+          break;
         }
         break;
       case RESET: {
@@ -277,16 +291,20 @@ void loop() {
             returns to playpulse if there is iterations left to play
             (may not need this phase though)
           */
+
           TimeKeeper::signalCount++;
           if (!TimeKeeper::wait()) {
             if (DEBUG) Serial.println("L: RESET");
-
-            //
-            // This part is important to talk with ImageReciver app
-            //
+            bitIndex = 0;
+            sequenceIndex = 0;
+            bitIndex = 0;
+            sequenceState = LISTEN;
+            
+            //reset listen values
             Serial.print("L: r=");
             for (int i = 0; i < SEQBITS; i++)
               Serial.print(playSequence[i]);
+            }
             Serial.println();
 
             // reset values
@@ -297,8 +315,13 @@ void loop() {
                 recording[j][i] = false;
               }
             }
+          } else {
 
-            Serial.flush();
+            if (DEBUG) {
+              Serial.print("L: playing=");
+              Serial.print(sequenceIndex);
+              Serial.print(", ");
+            }
 
             sequenceState = WAIT_START;
 

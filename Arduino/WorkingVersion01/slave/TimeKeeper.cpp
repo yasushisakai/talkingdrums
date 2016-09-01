@@ -11,8 +11,6 @@ TimeKeeper::TimeKeeper() {
   this->lastFlash = 0;
 }
 
-
-
 bool static TimeKeeper::wait() {
   bool flag = signalCount >= signalLimit;
   if (!flag) {
