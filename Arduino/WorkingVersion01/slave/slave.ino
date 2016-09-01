@@ -106,12 +106,17 @@ void loop() {
   if (!lock) {
     switch (sequenceState) {
       case WAIT_START: {
+
+          //we only want to wait for 3 cycles in the begining,
+          //wait for the sensor data to be clean
           TimeKeeper::signalCount++;
           if (!TimeKeeper::wait()) {
 
             if (DEBUG) {
               Serial.println("L: WAIT_START");
             }
+
+            TimeKeeper::signalLimit  = 1;
 
             sequenceState = LISTEN;
           }

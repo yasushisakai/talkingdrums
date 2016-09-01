@@ -143,6 +143,8 @@ void loop() {
     switch (sequenceState) {
       case WAIT_START:
         {
+          //we only want to wait for 3 cycles in the begining,
+          //wait for the sensor data to be clean
           TimeKeeper::signalCount++;
           if (!TimeKeeper::wait()) {
 
@@ -161,8 +163,6 @@ void loop() {
           bitIndex++;
           if (bitIndex >= SEQBITS) {
             sequenceState = ANALYZE;
-
-
           }
 
           if (DEBUG) Serial.print(bitIndex);
@@ -291,7 +291,6 @@ void loop() {
 
             }
           }
-
 
 
           //reset listen values
