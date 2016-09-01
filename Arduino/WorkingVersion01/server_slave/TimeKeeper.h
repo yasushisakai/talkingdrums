@@ -16,8 +16,6 @@
 class TimeKeeper {
   private:
     unsigned long interval; //ms
-    static const uint8_t signalLimit = 2;
-    // the number of cycles to wait for aggregate data readings
 
     unsigned long currentTime;
     unsigned long lastTick;
@@ -28,6 +26,9 @@ class TimeKeeper {
   public:
 
     uint8_t static signalCount;
+
+    // the number of cycles to wait for aggregate data readings
+    uint8_t static  signalLimit;
 
     bool static wait();
     // waits untill signalCount hits the signalLimit

@@ -282,9 +282,6 @@ void loop() {
             returns to playpulse if there is iterations left to play
             (may not need this phase though)
           */
-
-          TimeKeeper::signalCount++;
-          if (!TimeKeeper::wait()) {
             if (DEBUG) Serial.println("L: RESET");
             bitIndex = 0;
             sequenceIndex = 0;
@@ -315,8 +312,6 @@ void loop() {
             }
 
             sequenceState = WAIT_START;
-
-          } // wait ends
         } // case RESET
         break;
     } // switch

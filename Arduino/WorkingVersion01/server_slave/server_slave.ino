@@ -150,6 +150,7 @@ void loop() {
               Serial.println("Waiting start");
             }
             sequenceState = LISTEN;
+            TimeKeeper::signalLimit  = 1;
           }
         }
         break;
@@ -252,59 +253,55 @@ void loop() {
             (may not need this phase though)
           */
 
-          TimeKeeper::signalCount++;
-          if (!TimeKeeper::wait()) {
-            if (DEBUG) Serial.println("RESET");
+          if (DEBUG) Serial.println("RESET");
 
-            //send byte request and read
-            if (requestByte) {
-              if (DEBUG) Serial.println("request bytes");
+          //send byte request and read
+          if (requestByte) {
+            if (DEBUG) Serial.println("request bytes");
 
-              Serial.write('s');
-              requestByte = false;
+            Serial.write('s');
+            requestByte = false;
+            readInBytes = true;
+          }
+
+          //if (Serial.available() > 0) {
+          if (readInBytes) {
+            if (DEBUG) Serial.println("incoming bytes");
+
+            int val = Serial.readBytes(byteMSG8, 1);
+
+            //Reset values when an array of bits is received
+            if (val > 0) {
+              if (DEBUG) Serial.println("clean Serial");
+
+
               readInBytes = true;
-            }
+              requestByte = false;
 
-            //if (Serial.available() > 0) {
-            if (readInBytes) {
-              if (DEBUG) Serial.println("incoming bytes");
+              sequenceIndex = 0;
+              bitIndex = 0;
+              sequenceState = LISTEN;
 
-              int val = Serial.readBytes(byteMSG8, 1);
+              Serial.flush();
 
-              if (val > 0) {
-                if (DEBUG) Serial.println("clean Serial");
-
-
-                readInBytes = true;
-                requestByte = false;
-
-                sequenceIndex = 0;
-                bitIndex = 0;
-                sequenceState = LISTEN;
-
-                Serial.flush();
-
-                //clean
-                for (int i = 0; i < 10; i++) {
-                  char f = Serial.read();
-                }
-
-
+              //clean
+              for (int i = 0; i < 10; i++) {
+                char f = Serial.read();
               }
-            }
 
-
-
-            //reset listen values
-            for (char i = 0; i < SEQBITS; i++) {
-              playSequence[i] = false;
-              for (char j = 0; j < SEQITER; j++) {
-                recording[j][i] = false;
-              }
             }
           }
 
-        }
+
+
+          //reset listen values
+          for (char i = 0; i < SEQBITS; i++) {
+            playSequence[i] = false;
+            for (char j = 0; j < SEQITER; j++) {
+              recording[j][i] = false;
+            }
+          }
+        } //case RESET
         break;
     }
 

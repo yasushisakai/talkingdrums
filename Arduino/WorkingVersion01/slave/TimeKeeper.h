@@ -16,7 +16,6 @@
 class TimeKeeper {
   private:
     static const unsigned long interval = INTERVAL; //ms
-    static const char signalLimit = 2;
     // the number of cycles to wait for aggregate data readings
 
     unsigned long currentTime;
@@ -27,10 +26,14 @@ class TimeKeeper {
 
   public:
     uint8_t static signalCount;
+
+    // the number of cycles to wait for aggregate data readings
+    uint8_t static  signalLimit;
+
     bool static wait();
-    // waits untill signalCount hits the signalLimit 
+    // waits untill signalCount hits the signalLimit
     // resets the signalCount once it does.
-    
+
     unsigned long timeFrame;
 
     TimeKeeper();
