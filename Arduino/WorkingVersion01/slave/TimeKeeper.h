@@ -16,7 +16,7 @@
 class TimeKeeper {
   private:
     static const unsigned long interval = INTERVAL; //ms
-    static const char signalLimit = 3;
+    static const uint8_t signalLimit = 3;
     // the number of cycles to wait for aggregate data readings
 
     unsigned long currentTime;
@@ -26,7 +26,7 @@ class TimeKeeper {
     unsigned long lastFlash;
 
   public:
-    char static signalCount;
+    uint8_t static signalCount;
     bool static wait();
     // waits untill signalCount hits the signalLimit 
     // resets the signalCount once it does.

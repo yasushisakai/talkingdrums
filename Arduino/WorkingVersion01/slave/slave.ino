@@ -58,7 +58,7 @@ void setup() {
   digitalWrite(SOL_PIN, LOW);
 
   //sequence
-  sequenceState = WAIT;
+  sequenceState = WAIT_START; // new wait!!!
   bitIndex = sequenceIndex = 0;
   lock = true;
   isRecord = false;
@@ -80,7 +80,7 @@ void setup() {
 
 void loop() {
   //collect signal readings
-  if (sequenceState == WAIT || sequenceState == LISTEN) {
+  if (sequenceState == WAIT_START || sequenceState == LISTEN) {
     int micValue = analogRead(MIC_PIN);
     if (micValue < 1023 && micValue > 50) { // for weird readings??
       if (micValue > signalMax) signalMax = micValue;
@@ -105,9 +105,14 @@ void loop() {
 
   if (!lock) {
     switch (sequenceState) {
-      case WAIT: {
+      case WAIT_START: {
           TimeKeeper::signalCount++;
-          if (!TimeKeeper::wait()) sequenceState = LISTEN;
+          if (!TimeKeeper::wait()) {
+            if (DEBUG) {
+              Serial.println("L: WAIT_START");
+            }
+            sequenceState = LISTEN;
+          }
         }
         break;
 
@@ -171,8 +176,6 @@ void loop() {
             collects and analyses the readings
             gets the average
           */
-          TimeKeeper::signalCount++;
-          if (TimeKeeper::wait()) sequenceState = LISTEN;
 
           sequenceIndex++;
           bitIndex = 0;
@@ -220,9 +223,7 @@ void loop() {
               Serial.print(", ");
             }
 
-
-
-            sequenceState = PLAYPULSE;
+            sequenceState = WAIT_PLAY; //
 
           } //- anaylze
 
@@ -233,55 +234,75 @@ void loop() {
             plays single pulse
           */
           if (DEBUG) Serial.print(playSequence[bitIndex]);
+
           if (playSequence[bitIndex]) timeKeeper.hit();
 
           bitIndex++;
           if (bitIndex == SEQBITS) {
             if (DEBUG) Serial.println("");
             bitIndex = 0;
-            sequenceState = RESET_PLAYPULSE;
+            sequenceState = WAIT_PLAY;
           }
         }
         break;
-      case RESET_PLAYPULSE: {
+      case WAIT_PLAY: {
           /*
-            returns to playpulse if there is something left to play
-            (may not need this phase though)
+            A short wait for the play
+
           */
-
-          TimeKeeper::signalCount++;
+          TimeKeeper::signalCount ++;
           if (!TimeKeeper::wait()) {
-            sequenceState = PLAYPULSE;
-            bitIndex = 0;
-            sequenceIndex ++;
+            if (DEBUG) Serial.println("L: WAIT_PLAY");
+            sequenceIndex ++ ;
 
-            if (sequenceIndex == SEQITER) {
-              sequenceIndex = 0;
-              bitIndex = 0;
-              sequenceState = LISTEN;
-              //reset listen values
-
-              Serial.print("L: r=");
-              for (int i = 0; i < SEQBITS; i++) {
-                Serial.print(playSequence[i]);
-              }
-              Serial.println();
-
-              for (char i = 0; i < SEQBITS; i++) {
-                playSequence[i] = false;
-                for (char j = 0; j < SEQITER; j++) {
-                  recording[j][i] = false;
-                }
-              }
-
+            // did it play it for enough times??
+            if (sequenceIndex > SEQITER) {
+              // yes, proceed to reset
+              sequenceState = RESET;
             } else {
+              // nope go back playing
+              sequenceStat = PLAYPULSE;
               if (DEBUG) {
                 Serial.print("L: playing=");
                 Serial.print(sequenceIndex);
                 Serial.print(", ");
               }
             }
-          }
+
+          } // wait
+        }
+        break;
+      case RESET: {
+          /*
+            returns to playpulse if there is iterations left to play
+            (may not need this phase though)
+          */
+          TimeKeeper::signalCount++;
+          if (!TimeKeeper::wait()) {
+            if (DEBUG) Serial.println("L: RESET");
+
+            //
+            // This part is important to talk with ImageReciver app
+            //
+            Serial.print("L: r=");
+            for (int i = 0; i < SEQBITS; i++)
+              Serial.print(playSequence[i]);
+            Serial.println();
+
+            // reset values
+            sequenceIndex = 0;
+            for (char i = 0; i < SEQBITS; i++) {
+              playSequence[i] = false;
+              for (char j = 0; j < SEQITER; j++) {
+                recording[j][i] = false;
+              }
+            }
+
+            Serial.flush();
+
+            sequenceState = WAIT_START;
+
+          } // wait ends
         }
         break;
     }
