@@ -303,13 +303,12 @@ void loop() {
             returns to playpulse if there is iterations left to play
             (may not need this phase though)
           */
-          //wait one clock time, because the server takes one clock cycle to
-          //send the data
-          TimeKeeper::signalCount++;
-          Serial.println(TimeKeeper::signalCount);
-          if (TimeKeeper::wait()) {
+
+
+          if (clockCounter == 57) {
 
             if (DEBUG) Serial.println("L: RESET");
+            if (DEBUG) Serial.println(clockCounter);
 
             bitIndex = 0;
             sequenceIndex = 0;

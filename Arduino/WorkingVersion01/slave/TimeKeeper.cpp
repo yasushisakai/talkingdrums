@@ -2,6 +2,9 @@
 #include "TimeKeeper.h"
 
 
+uint8_t  TimeKeeper::signalCount = 0;
+uint8_t  TimeKeeper::signalLimit = 3;
+
 TimeKeeper::TimeKeeper() {
   this->currentTime = 0;
   this->timeFrame   = 0;
