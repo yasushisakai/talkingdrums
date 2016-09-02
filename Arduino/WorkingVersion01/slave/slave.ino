@@ -48,6 +48,9 @@ const int signalThreshold = 800; // 50-1024 we may need to make this dynamic
 /// PWM-ing the Solenoid will need additional test 0-255
 byte const solenoid_pwm = 200;
 
+//clock cyles keepers
+uint8_t clockCounter = 0;
+
 void setup() {
   Serial.begin(19200);
 
@@ -100,6 +103,8 @@ void loop() {
       timeKeeper.tick();
       timeKeeper.flash();
       lock = false;
+
+      clockCounter++;
     }
   }
 
@@ -112,11 +117,19 @@ void loop() {
           TimeKeeper::signalCount++;
           if (!TimeKeeper::wait()) {
 
+
+            TimeKeeper::signalLimit  = 2;
+            TimeKeeper::signalCount  = 0;
+
             if (DEBUG) {
-              Serial.println("L: WAIT_START");
+              Serial.print("L: WAIT_START ");
+              Serial.print(TimeKeeper::signalLimit);
+              Serial.print(" ");
+              Serial.println(TimeKeeper::signalCount);
             }
 
-            TimeKeeper::signalLimit  = 1;
+
+
 
             sequenceState = LISTEN;
           }
@@ -154,6 +167,7 @@ void loop() {
             }
             isRecord = true;
             valueHit = true;
+            clockCounter  = 1;
           }
 
           if (isRecord) {
@@ -175,6 +189,8 @@ void loop() {
               sequenceState = ANALYZE;
             }
           }
+
+          if (DEBUG) Serial.println(clockCounter);
         }
         break;
 
@@ -237,6 +253,7 @@ void loop() {
 
           } //- anaylze
 
+          if (DEBUG) Serial.println(clockCounter);
         }
         break;
       case PLAYPULSE: {
@@ -253,11 +270,13 @@ void loop() {
             bitIndex = 0;
             sequenceState = WAIT_PLAY;
           }
+
+          if (DEBUG) Serial.println(clockCounter);
         }
         break;
       case WAIT_PLAY:
         {
-          if (DEBUG)Serial.println("1 clock cycle to play");
+          if (DEBUG)Serial.println("Waiting play");
 
           bitIndex = 0;
           sequenceIndex++;
@@ -276,7 +295,7 @@ void loop() {
             }
           }
 
-
+          if (DEBUG) Serial.println(clockCounter);
         }
         break;
       case RESET: {
@@ -284,37 +303,40 @@ void loop() {
             returns to playpulse if there is iterations left to play
             (may not need this phase though)
           */
-          if (DEBUG) Serial.println("L: RESET");
-          bitIndex = 0;
-          sequenceIndex = 0;
-          bitIndex = 0;
-          sequenceState = LISTEN;
+          //wait one clock time, because the server takes one clock cycle to
+          //send the data
+          TimeKeeper::signalCount++;
+          Serial.println(TimeKeeper::signalCount);
+          if (TimeKeeper::wait()) {
 
-          //reset listen values
-          Serial.print("L: r=");
-          for (int i = 0; i < SEQBITS; i++)
-            Serial.print(playSequence[i]);
+            if (DEBUG) Serial.println("L: RESET");
 
-          Serial.println();
+            bitIndex = 0;
+            sequenceIndex = 0;
+            clockCounter = 0;
+            sequenceState = LISTEN;
 
-          // reset values
-          sequenceIndex = 0;
-          for (char i = 0; i < SEQBITS; i++) {
-            playSequence[i] = false;
-            for (char j = 0; j < SEQITER; j++) {
-              recording[j][i] = false;
+            //reset listen values
+            Serial.print("L: r=");
+            for (int i = 0; i < SEQBITS; i++)
+              Serial.print(playSequence[i]);
+
+            Serial.println();
+
+            // reset values
+            sequenceIndex = 0;
+            for (char i = 0; i < SEQBITS; i++) {
+              playSequence[i] = false;
+              for (char j = 0; j < SEQITER; j++) {
+                recording[j][i] = false;
+              }
             }
-          }
-        } else {
 
-          if (DEBUG) {
-            Serial.print("L: playing=");
-            Serial.print(sequenceIndex);
-            Serial.print(", ");
           }
 
-          sequenceState = LISTEN;
-        } // case RESET
+          if (DEBUG) Serial.println(clockCounter);
+
+        }
         break;
     } // switch
     lock = !lock;

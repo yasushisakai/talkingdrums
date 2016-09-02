@@ -1,21 +1,19 @@
 #include "Arduino.h"
 #include "TimeKeeper.h"
 
-uint8_t static TimeKeeper::signalCount = 0;
-uint8_t static TimeKeeper::signalLimit = 3;
 
 TimeKeeper::TimeKeeper() {
   this->currentTime = 0;
-  this->timeFrame = 0;
-  this->lastTick = 0; // last time when '1' came from server
-  this->lastHit = 0;
-  this->lastFlash = 0;
+  this->timeFrame   = 0;
+  this->lastTick    = 0; // last time when '1' came from server
+  this->lastHit     = 0;
+  this->lastFlash   = 0;
 }
 
 bool static TimeKeeper::wait() {
   bool flag = signalCount >= signalLimit;
   if (!flag) {
-    TimeKeeper::signalCount = 0; // refresh the signal Count
+    signalCount = 0; // refresh the signal Count
   }
   return flag;
 }
