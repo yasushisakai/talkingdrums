@@ -46,7 +46,7 @@ bool TimeKeeper::checkFlash() {
 }
 
 unsigned long TimeKeeper::timeFrameChar() {
-  if (this->timeFrame < 100) {
+  if (this->timeFrame <= 100L) {
     return 0L;
   }
   return this->timeFrame;

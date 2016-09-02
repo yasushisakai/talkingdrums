@@ -52,6 +52,9 @@ byte byteMSG8[] = {
   B00000000
 };
 
+//clock cyles keepers
+uint8_t clockCounter = 0;
+
 void setup() {
 
   Serial.begin(19200);
@@ -132,6 +135,8 @@ void loop() {
     timeKeeper.flash();
     lock = false;
     // Serial.flush();
+
+    clockCounter++;
   }
 
 
@@ -166,8 +171,8 @@ void loop() {
           }
 
           if (DEBUG) Serial.print(bitIndex);
-          if (DEBUG) Serial.println(" LISTEN");
-
+          if (DEBUG) Serial.print(" LISTEN ");
+          if (DEBUG) Serial.println(clockCounter);
 
 
         }
@@ -192,7 +197,7 @@ void loop() {
           }
 
 
-
+          if (DEBUG) Serial.println(clockCounter);
         }
         break;
 
@@ -213,38 +218,35 @@ void loop() {
             sequenceState = WAIT_PLAY;
           }
 
+          if (DEBUG) Serial.println(clockCounter);
         }
         break;
       case WAIT_PLAY:
         {
 
-          TimeKeeper::signalCount++;
-          if (!TimeKeeper::wait()) {
+          if (DEBUG)Serial.println("Waiting play");
 
-            if (DEBUG)Serial.println("Waiting play");
+          bitIndex = 0;
+          sequenceIndex ++;
 
-            bitIndex = 0;
-            sequenceIndex ++;
+          // did it play it for enough times??
+          if (sequenceIndex > SEQITER) {
 
-            // did it play it for enough times??
-            if (sequenceIndex > SEQITER) {
+            //go to reset
+            sequenceState = RESET;
+            requestByte = true;
+            readInBytes = false;
 
-              //go to reset
-              sequenceState = RESET;
-              requestByte = true;
-              readInBytes = false;
-
-              if (DEBUG) {
-                //Serial.print("L: playing=");
-              }
-
-
-            } else {
-              sequenceState = PLAYPULSE;
+            if (DEBUG) {
+              //Serial.print("L: playing=");
             }
 
+
+          } else {
+            sequenceState = PLAYPULSE;
           }
 
+          if (DEBUG) Serial.println(clockCounter);
         }
         break;
       case RESET: {
@@ -254,15 +256,6 @@ void loop() {
           */
 
           if (DEBUG) Serial.println("RESET");
-
-          //send byte request and read
-          if (requestByte) {
-            if (DEBUG) Serial.println("request bytes");
-
-            Serial.write('s');
-            requestByte = false;
-            readInBytes = true;
-          }
 
           //if (Serial.available() > 0) {
           if (readInBytes) {
@@ -282,6 +275,12 @@ void loop() {
               bitIndex = 0;
               sequenceState = LISTEN;
 
+              if (DEBUG) {
+                Serial.print("Number cycles");
+                Serial.println(clockCounter);
+              }
+              clockCounter = 0;
+
               Serial.flush();
 
               //clean
@@ -290,6 +289,15 @@ void loop() {
               }
 
             }
+          }
+
+          //send byte request and read
+          if (requestByte) {
+            if (DEBUG) Serial.println("request bytes");
+
+            Serial.write('s');
+            requestByte = false;
+            readInBytes = true;
           }
 
 
@@ -301,6 +309,8 @@ void loop() {
             }
           }
         } //case RESET
+
+        if (DEBUG) Serial.println(clockCounter);
         break;
     }
 
