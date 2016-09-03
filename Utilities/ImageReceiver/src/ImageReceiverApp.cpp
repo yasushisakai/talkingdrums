@@ -16,7 +16,7 @@ const ci::ivec2 stepDiv(20,20);
 
 #define BUF_SIZE 80
 #define READ_INTERVAL 0.15
-#define BAUD_RATE 9600
+#define BAUD_RATE 192000
 #define NUM_BYTES 1
 
 const ci::ivec2 margin(5,5);
@@ -149,8 +149,6 @@ void ImageReceiverApp::update()
             
             simple.setColor(Color::white());
             simple.addLine(std::to_string(value));
-            
-            Color8u color = Color8u::gray(value);
             
             mReceivedImage.setPixel(indexToCoord(mPixelCount),Color8u::gray(value));
 
