@@ -43,7 +43,7 @@ bool debugSequence[] = {1, 0, 0, 1, 1, 0, 0, 1};
 
 ///Signal Processing
 int signalMin, signalMax;
-const int signalThreshold = 800; // 50-1024 we may need to make this dynamic
+const int signalThreshold = 500; // 50-1024 we may need to make this dynamic
 
 /// PWM-ing the Solenoid will need additional test 0-255
 byte const solenoid_pwm = 200;
@@ -128,9 +128,6 @@ void loop() {
               Serial.println(TimeKeeper::signalCount);
             }
 
-
-
-
             sequenceState = LISTEN;
           }
         }
@@ -142,6 +139,7 @@ void loop() {
           */
           bool valueHit = false;
           int peakToPeak = abs(signalMax - signalMin); // abs... weird stuff happens
+          
           /* reset */
           signalMax = 0;
           signalMin = 1024;
@@ -161,9 +159,7 @@ void loop() {
               TODO: revisit when to threshold
             */
             if (!isRecord) {
-
               Serial.println("L:rec start");
-
             }
             isRecord = true;
             valueHit = true;
@@ -303,7 +299,6 @@ void loop() {
             returns to playpulse if there is iterations left to play
             (may not need this phase though)
           */
-
 
           if (clockCounter == 57) {
 
