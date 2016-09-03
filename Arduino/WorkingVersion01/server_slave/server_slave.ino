@@ -114,7 +114,7 @@ void setup() {
 
   timeKeeper.setInterval(INTERVAL);
 
-  initNRF(nrf24);
+  initNRF(nrf24, DEBUG);
 
   Serial.flush();
 }
@@ -267,17 +267,6 @@ void loop() {
             if (val > 0) {
               if (DEBUG) Serial.println("clean Serial");
 
-
-              for (int i = 0; i < 8; i++) {
-                playSequence[i] = bitRead(byteMSG8[0], map(i, 0, 7, 7, 0));
-              }
-
-              for (int i = 0; i < 8; i++) {
-                Serial.println(playSequence[i] );
-              }
-
-
-
               readInBytes = true;
               requestByte = false;
 
@@ -298,7 +287,19 @@ void loop() {
                 char f = Serial.read();
               }
 
-            }
+              for (int i = 0; i < 8; i++) {
+                playSequence[i] = (bitRead(byteMSG8[0], (int)map(i, 0, 7, 7, 0)) == 1 ? true : false);
+              }
+
+              //reset listen values
+              for (char i = 0; i < SEQBITS; i++) {
+                for (char j = 0; j < SEQITER; j++) {
+                  recording[j][i] = false;
+                }
+              } //for
+              
+            } //got msg
+            
           }
 
           //send byte request and read
@@ -311,13 +312,9 @@ void loop() {
           }
 
 
-          //reset listen values
-          for (char i = 0; i < SEQBITS; i++) {
-            playSequence[i] = false;
-            for (char j = 0; j < SEQITER; j++) {
-              recording[j][i] = false;
-            }
-          }
+
+
+
         } //case RESET
 
         if (DEBUG) Serial.println(clockCounter);
