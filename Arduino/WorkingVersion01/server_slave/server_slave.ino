@@ -268,6 +268,16 @@ void loop() {
               if (DEBUG) Serial.println("clean Serial");
 
 
+              for (int i = 0; i < 8; i++) {
+                playSequence[i] = bitRead(byteMSG8[0], map(i, 0, 7, 7, 0));
+              }
+
+              for (int i = 0; i < 8; i++) {
+                Serial.println(playSequence[i] );
+              }
+
+
+
               readInBytes = true;
               requestByte = false;
 

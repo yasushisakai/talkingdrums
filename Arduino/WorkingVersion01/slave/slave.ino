@@ -97,6 +97,7 @@ void loop() {
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
   uint8_t value;
+  delay(1);
   if (checkServer(nrf24, value)) {
     if (value == TICK && timeKeeper.timeFrame > TIMEFRAMEINTERVAL) {
       value = TOCK;
