@@ -18,7 +18,7 @@
 
 /// sequences
 #define SEQITER 3
-#define SEQBITS 8
+#define SEQBITS 11
 //we might want to constain the number of bits to 8
 //this way we can use byte
 

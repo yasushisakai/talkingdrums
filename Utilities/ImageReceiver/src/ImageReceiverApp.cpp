@@ -3,6 +3,8 @@
 #include "cinder/gl/gl.h"
 #include "cinder/Serial.h"
 #include "cinder/Log.h"
+#include "cinder/ImageIo.h"
+#include "cinder/Utilities.h"
 
 
 #include <vector>
@@ -15,8 +17,8 @@ const ci::ivec2 stepDiv(20,20);
 // the original image is pixelated by 20;
 
 #define BUF_SIZE 80
-#define READ_INTERVAL 0.15
-#define BAUD_RATE 192000
+#define READ_INTERVAL 0.25
+#define BAUD_RATE 19200
 #define NUM_BYTES 1
 
 const ci::ivec2 margin(5,5);
@@ -28,6 +30,7 @@ public:
     void keyDown(KeyEvent event) override;
     void update() override;
     void draw() override;
+    void saveImage();
     
     
 private:
@@ -111,10 +114,12 @@ void ImageReceiverApp::keyDown(KeyEvent event)
 void ImageReceiverApp::update()
 {
     
+    
     double now = getElapsedSeconds();
     double deltaTime = now - mLastUpdate;
     mLastUpdate = now;
     mLastRead += deltaTime;
+    
     
     if( mLastRead > READ_INTERVAL )	{
         mIsReceiveMessage = true;
@@ -123,15 +128,18 @@ void ImageReceiverApp::update()
     
     if( mIsReceiveMessage ) {
         
-//        try{
-//            // read until newline, to a maximum of BUFSIZE bytes
-//            mLastString = mSerial->readStringUntil( '\n', BUF_SIZE );
-//            
-//        }
-//        catch( SerialTimeoutExc &exc ) {
-//            CI_LOG_EXCEPTION( "timeout", exc );
-//        }
-        mLastString = mSerial->readStringUntil('\n',BUF_SIZE);
+        try{
+            // read until newline, to a maximum of BUFSIZE bytes
+            mLastString = mSerial->readStringUntil( '\n', BUF_SIZE );
+            
+        }
+        catch( SerialTimeoutExc &exc ) {
+            CI_LOG_EXCEPTION( "timeout", exc );
+        }
+        //mLastString = mSerial->readStringUntil('\n',BUF_SIZE);
+        
+        
+        CI_LOG_D(mLastString);
         
         mIsReceiveMessage = false;
         
@@ -151,7 +159,7 @@ void ImageReceiverApp::update()
             simple.addLine(std::to_string(value));
             
             mReceivedImage.setPixel(indexToCoord(mPixelCount),Color8u::gray(value));
-
+            saveImage();
             
             mPixelCount++;
             mPixelCursor = ivec2(indexToCoord(mPixelCount)*stepDiv+margin);
@@ -172,8 +180,9 @@ void ImageReceiverApp::update()
         simple.setLeadingOffset( 0 );
         mTextTexture = gl::Texture::create( simple.render( true, false ) );
         
-        mSerial->flush();
+        //mSerial->flush();
     }
+    
     
     gl::clear(Color::black());
     
@@ -181,6 +190,7 @@ void ImageReceiverApp::update()
 
 void ImageReceiverApp::draw()
 {
+    
     gl::clear(Color::black());
     
     gl::color(Color::white());
@@ -204,11 +214,16 @@ void ImageReceiverApp::draw()
     
 }
 
+void ImageReceiverApp::saveImage(){
+    writeImage(getHomeDirectory() / "Desktop" / "out.png", copyWindowSurface());
+    CI_LOG_D("image saved");
+}
+
 
 void ImageReceiverApp::initPort(){
     
     try {
-        Serial::Device dev = Serial::findDeviceByNameContains( "tty.usbserial" );
+        Serial::Device dev = Serial::findDeviceByNameContains( "cu.usbserial" );
         mSerial = Serial::create( dev, BAUD_RATE );
         CI_LOG_D("connected to " << dev.getName());
     }
