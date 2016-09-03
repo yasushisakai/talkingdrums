@@ -25,15 +25,22 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = false;
+bool const DEBUG = true;
 bool const DEBUG_PORT = false;
 
 ///Sequence
-byte sequenceState, sequenceIndex, bitIndex;
+byte sequenceState = 0;
+byte sequenceIndex = 0;
+byte bitIndex = 0;
+
 bool lock, isRecord;
 bool recording[SEQITER][SEQBITS];
 bool playSequence[SEQBITS];
 bool debugSequence[] = {1, 0, 0, 1, 1, 0, 0, 1};
+
+//HEADER HEBITS = 3;
+bool playHeader[] = {1, 1, 0};
+int headerIndex = 0;
 
 ///Signal Processing
 int signalMin, signalMax;
@@ -68,7 +75,7 @@ void setup() {
 
   //turn on pin test
   digitalWrite(LED_PIN, HIGH);
-  digitalWrite(SOL_PIN, HIGH);
+  // digitalWrite(SOL_PIN, HIGH);
 
   //LEDS
   digitalWrite(LED_PIN_00, HIGH);
@@ -84,7 +91,7 @@ void setup() {
 
   //turn off
   digitalWrite(LED_PIN, LOW);
-  digitalWrite(SOL_PIN, LOW);
+  // digitalWrite(SOL_PIN, LOW);
 
   //LEDs
   digitalWrite(LED_PIN_00, LOW);
@@ -156,7 +163,7 @@ void loop() {
             if (DEBUG) {
               Serial.println("Waiting start");
             }
-            sequenceState = LISTEN;
+            sequenceState = HEADER_PLAY;
             TimeKeeper::signalLimit  = 1;
           }
         }
@@ -181,34 +188,55 @@ void loop() {
       case ANALYZE:  //read the incomming msg from the computer
         {
 
+          if (DEBUG) Serial.print("Analyze: ");
+
           sequenceIndex++;
           bitIndex = 0;
-          if (sequenceIndex < SEQITER) {
-            sequenceState = LISTEN;
-            if (DEBUG) {
-              Serial.print("Analyze: ");
-              Serial.println(sequenceIndex);
-            }
-          } else {
+          
+          if (sequenceIndex > SEQITER) {
             isRecord = false;
             sequenceIndex = 0;
-            sequenceState = WAIT_PLAY;
+            sequenceState = RESET;
             if (DEBUG) Serial.println("Done Analyze");
+            
+          } else {
+            sequenceState = LISTEN;
+            if (DEBUG) Serial.println(sequenceIndex);
+
           }
 
 
           if (DEBUG) Serial.println(clockCounter);
         }
         break;
-
-      case PLAYPULSE:
+      case HEADER_PLAY:
         {
+
+          if (DEBUG) Serial.print("Playing header ");
+          if (DEBUG) Serial.println(playHeader[headerIndex]);
+
+          if (playHeader[headerIndex]) timeKeeper.hit();
+
+          headerIndex++;
+          if (headerIndex >= HEBITS) {
+            sequenceState = PULSE_PLAY;
+            headerIndex = 0;
+            bitIndex = 0;
+          }
+
+        }
+        break;
+
+      case PULSE_PLAY:
+        {
+
           /*
-            plays single pulse
+             plays single pulse
           */
           if (DEBUG) Serial.print(playSequence[bitIndex]);
+          if (DEBUG) Serial.print(" ");
 
-          if (playSequence[bitIndex]) timeKeeper.hit();
+          if ( playSequence[bitIndex]) timeKeeper.hit();
 
           bitIndex++;
           if (bitIndex == SEQBITS) {
@@ -230,12 +258,13 @@ void loop() {
           sequenceIndex ++;
 
           // did it play it for enough times??
-          if (sequenceIndex > SEQITER) {
+          if (sequenceIndex >= SEQITER) {
 
             //go to reset
-            sequenceState = RESET;
+            sequenceState = ANALYZE;
             requestByte = true;
             readInBytes = false;
+            sequenceIndex = 0;
 
             if (DEBUG) {
               //Serial.print("L: playing=");
@@ -243,7 +272,7 @@ void loop() {
 
 
           } else {
-            sequenceState = PLAYPULSE;
+            sequenceState = PULSE_PLAY;
           }
 
           if (DEBUG) Serial.println(clockCounter);
@@ -264,42 +293,42 @@ void loop() {
             int val = Serial.readBytes(byteMSG8, 1);
 
             //Reset values when an array of bits is received
-            if (val > 0) {
-              if (DEBUG) Serial.println("clean Serial");
+            //  if (val > 0) {
+            if (DEBUG) Serial.println("clean Serial");
 
-              readInBytes = true;
-              requestByte = false;
+            readInBytes = true;
+            requestByte = false;
 
-              sequenceIndex = 0;
-              bitIndex = 0;
-              sequenceState = LISTEN;
+            sequenceIndex = 0;
+            bitIndex = 0;
+            sequenceState = LISTEN;
 
-              if (DEBUG) {
-                Serial.print("Number cycles");
-                Serial.println(clockCounter);
+            if (DEBUG) {
+              Serial.print("Number cycles");
+              Serial.println(clockCounter);
+            }
+            clockCounter = 0;
+
+            Serial.flush();
+
+            //clean
+            for (int i = 0; i < 10; i++) {
+              char f = Serial.read();
+            }
+
+            for (int i = 0; i < 8; i++) {
+              playSequence[i] = (bitRead(byteMSG8[0], i) == 1 ? true : false);
+            }
+
+            //reset listen values
+            for (char i = 0; i < SEQBITS; i++) {
+              for (char j = 0; j < SEQITER; j++) {
+                recording[j][i] = false;
               }
-              clockCounter = 0;
+            } //for
 
-              Serial.flush();
+            // } //got msg
 
-              //clean
-              for (int i = 0; i < 10; i++) {
-                char f = Serial.read();
-              }
-
-              for (int i = 0; i < 8; i++) {
-                playSequence[i] = (bitRead(byteMSG8[0], (int)map(i, 0, 7, 7, 0)) == 1 ? true : false);
-              }
-
-              //reset listen values
-              for (char i = 0; i < SEQBITS; i++) {
-                for (char j = 0; j < SEQITER; j++) {
-                  recording[j][i] = false;
-                }
-              } //for
-              
-            } //got msg
-            
           }
 
           //send byte request and read
