@@ -17,7 +17,7 @@ using namespace std;
 
 const ci::ivec2 windowSize(1280 + 640, 720);
 
-const ci::ivec2 stepDiv(20, 20);
+const ci::ivec2 stepDiv(100, 100);
 
 const int BAU_RATE = 19200;
 

@@ -6,7 +6,7 @@
   handy project agnostic functions
 */
 
-boolean initNRF(RH_NRF24 &_nrf);
+boolean initNRF(RH_NRF24 &_nrf, bool debug);
 boolean checkServer(RH_NRF24 & _nrf, uint8_t & value);
 boolean timer(unsigned long const & currentTime, unsigned long const & previousTime, unsigned long const &interval);
 void turnOnLEDs(uint8_t & inByte);
