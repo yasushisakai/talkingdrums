@@ -45,6 +45,7 @@ private:
     gl::Texture::Format mFormat;
     
     bool                mIsRecord;
+    bool                mIsPlay;
     
     // Serial
     SerialRef           mSerial;
@@ -64,6 +65,17 @@ private:
     // pixel_values
     int                 mPixelCount;
     ivec2               mPixelCursor;
+    
+    enum                State {
+                                    WAIT_START,
+                                    LISTEN,
+                                    ANALYZE,
+                                    HEADER_PLAY,
+                                    PULSE_PLAY,
+                                    WAIT_PLAY,
+                                    RESET
+                                };
+    State               sequenceState;
 };
 
 void ImageReceiverApp::setup()
@@ -89,6 +101,7 @@ void ImageReceiverApp::setup()
     setWindowSize(mSentImage.getSize()+margin*2);
     
     mIsRecord = false;
+    mIsPlay = true;
     
     mFont = Font("Arial",10);
     
@@ -100,6 +113,8 @@ void ImageReceiverApp::setup()
     
     mPixelCount = 0;
     mPixelCursor = ivec2(indexToCoord(mPixelCount)*stepDiv+margin);
+    
+    sequenceState = WAIT_START;
     
 }
 
@@ -165,16 +180,21 @@ void ImageReceiverApp::update()
             mPixelCursor = ivec2(indexToCoord(mPixelCount)*stepDiv+margin);
             
             mIsRecord = false;
+            mIsPlay = true;
             
             // update mTexture
             mTexture = gl::Texture::create(mReceivedImage,mFormat);
             
-        }else if(mLastString.find("start")!=string::npos){
-            CI_LOG_D("record start");
+        }else if(mLastString.find("found head")!=string::npos){
+            CI_LOG_D("found head");
             
             mIsRecord = true;
             simple.setColor(Color(1.0,0.0,0.0)); // red
             simple.addLine("rec");
+        }else if(mLastString.find("end")!= string::npos){
+            CI_LOG_D("got pixel");
+            
+            mIsPlay = false;
         }
         
         simple.setLeadingOffset( 0 );
@@ -208,7 +228,11 @@ void ImageReceiverApp::draw()
     gl::drawStrokedRect(Rectf(margin,margin+mSentImage.getSize()));
     
     // cursor
-    if(mIsRecord) gl::color(Color(1,0,0));
+    if(mIsRecord){
+        gl::color(Color(1,0,0));
+    }else if(mIsPlay){
+        gl::color(Color(0,1,0));
+    }
     gl::drawStrokedRect(Rectf(mPixelCursor,mPixelCursor+stepDiv));
 
     

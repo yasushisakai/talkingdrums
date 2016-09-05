@@ -33,6 +33,8 @@ TimeKeeper timeKeeper;
 
 ///DEBUG
 bool const DEBUG = false;
+bool const careHeader = true; // cares about the header or not
+
 
 ///Sequence
 byte sequenceState, sequenceIndex, bitIndex;
@@ -152,12 +154,26 @@ void loop() {
               }
             }
 
+            // forces the head to pass if careHead is off.
+            if (!careHeader) {
+              isHead = true;
+            }
+
             if (isHead) {
               bitIndex ++;
               if (bitIndex >= sizeof(correctHeader) / sizeof(bool)) {
+                Serial.println("L: found head"); // notify head detection to ImageReciever
+
+                if (DEBUG && !careHeader) {
+                  Serial.print("L: h=");
+                  for (uint8_t i = 0; i < sizeof(headerSequence) / sizeof(bool); i++)
+                    Serial.print(headerSequence[i]);
+                  Serial.println();
+                }
+
                 isRecord = true;
                 bitIndex = 0; //reset!
-                clockCounter = 1;
+                clockCounter = 2;
               }
             }
           }
@@ -222,6 +238,8 @@ void loop() {
             Serial.print("L: r=");
             for (int i = 0; i < SEQBITS; i++)
               Serial.print(playSequence[i]);
+
+            Serial.println();
 
             //
             // prints the recordings
@@ -326,16 +344,19 @@ void loop() {
             (may not need this phase though)
           */
 
-          if (clockCounter == 57) {
+          // the whole process (including the first head detection) is 61 steps.
+          // head + (SEQBITS + gap)*SEQITER + head + (SEQBITS + gap) * SEQITER + RESET
+          // 3 + (8+1)*3 + 3 + (8+1)*3 + 1 = 30 + 30 + 1 = 61
+          // https://docs.google.com/spreadsheets/d/1OzL0YygAY_DSaA0wT8SLMD5zovmk4wVnEPwZ80VJpbA/edit#gid=0
+
+          // starting from 0, so end is 60
+          if (clockCounter == 60) {
 
             if (DEBUG) Serial.println("L: RESET");
             if (DEBUG) Serial.println(clockCounter);
 
-
             clockCounter = 0;
             sequenceState = LISTEN;
-
-            Serial.println();
 
             // reset values
             bitIndex = 0;
