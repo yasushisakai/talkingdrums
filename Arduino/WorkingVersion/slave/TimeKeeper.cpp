@@ -3,7 +3,7 @@
 
 
 uint8_t  TimeKeeper::signalCount = 0;
-uint8_t  TimeKeeper::signalLimit = 3;
+uint8_t  TimeKeeper::signalLimit = 2;
 
 TimeKeeper::TimeKeeper() {
   this->currentTime = 0;

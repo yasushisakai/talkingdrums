@@ -18,7 +18,9 @@
 
 /// sequences
 #define SEQITER 3
-#define SEQBITS 11
+#define SEQBITS 8
+#define HEBITS  3
+
 //we might want to constain the number of bits to 8
 //this way we can use byte
 
@@ -30,8 +32,9 @@
 #define WAIT_START 0
 #define LISTEN 1
 #define ANALYZE 2
-#define PLAYPULSE 3
-#define WAIT_PLAY 4
-#define RESET 5
+#define HEADER_PLAY 3
+#define PULSE_PLAY 4
+#define WAIT_PLAY 5
+#define RESET 6
 
 #endif

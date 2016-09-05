@@ -36,9 +36,11 @@ bool const DEBUG = false;
 
 ///Sequence
 byte sequenceState, sequenceIndex, bitIndex;
-bool lock, isRecord;
+bool lock, isRecord, isHead;
 bool recording[SEQITER][SEQBITS];
 bool playSequence[SEQBITS];
+bool correctHeader[] = {1, 1, 0};
+bool headerSequence[sizeof(correctHeader) / sizeof(bool)];
 bool debugSequence[] = {1, 0, 0, 1, 1, 0, 0, 1};
 
 ///Signal Processing
@@ -65,14 +67,9 @@ void setup() {
   bitIndex = sequenceIndex = 0;
   lock = true;
   isRecord = false;
+  isHead = false;
 
-  //reset values
-  for (char i = 0; i < SEQBITS; i++) {
-    playSequence[i] = false;
-    for (char j = 0; j < SEQITER; j++) {
-      recording[j][i] = false;
-    }
-  }
+  resetSequence(); //resets recording, play and head Sequence
 
   //signal
   signalMin = 1024;
@@ -83,7 +80,7 @@ void setup() {
 
 void loop() {
   //collect signal readings
-  if (sequenceState == LISTEN) {
+  if (sequenceState == LISTEN || sequenceState == WAIT_START) {
     int micValue = analogRead(MIC_PIN);
     if (micValue < 1023 && micValue > 50) { // for weird readings??
       if (micValue > signalMax) signalMax = micValue;
@@ -112,15 +109,12 @@ void loop() {
   if (!lock) {
     switch (sequenceState) {
       case WAIT_START: {
+          /*
+            initial wait for 3 cycles for a stable mic reading
+          */
 
-          //we only want to wait for 3 cycles in the begining,
-          //wait for the sensor data to be clean
           TimeKeeper::signalCount++;
           if (!TimeKeeper::wait()) {
-
-
-            TimeKeeper::signalLimit  = 2;
-            TimeKeeper::signalCount  = 0;
 
             if (DEBUG) {
               Serial.print("L: WAIT_START ");
@@ -136,43 +130,45 @@ void loop() {
 
       case LISTEN: {
           /*
-            listens and looks at the reading
+            listens
+            1. listens for the right header
+            2. listens for the sequence
           */
-          bool valueHit = false;
-          int peakToPeak = abs(signalMax - signalMin); // abs... weird stuff happens
-          
-          /* reset */
-          signalMax = 0;
-          signalMin = 1024;
 
+          bool valueHit = isHit();
+
+          //
+          // detecting the right header
+          //
           if (!isRecord) {
-            unsigned long timeFrame = timeKeeper.timeFrameChar();
-            if (DEBUG) {
-              Serial.print("L: ");
-              Serial.print(timeFrame);
-              Serial.print(", ");
-              Serial.println(peakToPeak);
+            headerSequence[bitIndex] = valueHit;
+            isHead = true;
+
+            for (uint8_t i = 0; i <= bitIndex; i++) {
+              if (headerSequence[i] != correctHeader[i]) {
+                bitIndex = 0;
+                isHead = false;
+                break;
+              }
             }
-          }
-          if (peakToPeak > signalThreshold) {
-            /*
-              it might be easier if we use the threshold after (when we aggreagate)
-              TODO: revisit when to threshold
-            */
-            if (!isRecord) {
-              Serial.println("L:rec start");
+
+            if (isHead) {
+              bitIndex ++;
+              if (bitIndex >= sizeof(correctHeader) / sizeof(bool)) {
+                isRecord = true;
+                bitIndex = 0; //reset!
+                clockCounter = 1;
+              }
             }
-            isRecord = true;
-            valueHit = true;
-            clockCounter  = 1;
           }
 
+
+          //
+          // recording the sequence
+          //
           if (isRecord) {
-            unsigned long timeFrame = timeKeeper.timeFrameChar();
             if (DEBUG) {
               Serial.print("L: ");
-              Serial.print(", ");
-              Serial.print(peakToPeak);
               Serial.print(", ");
               Serial.print(sequenceIndex);
               Serial.print(", ");
@@ -199,10 +195,14 @@ void loop() {
 
           sequenceIndex++;
           bitIndex = 0;
+
           if (sequenceIndex < SEQITER) {
             sequenceState = LISTEN;
           } else {
 
+            //
+            // gets the average and defines what it heard to "playSequence"
+            //
             for (int i = 0; i < SEQBITS; i++) {
               float average = 0.0;
               for (int j = 0; j < SEQITER; j++) {
@@ -211,7 +211,16 @@ void loop() {
               playSequence[i] = average >= 0.5 * SEQITER;
             }
 
+            sequenceIndex = 0;
+            sequenceState = PULSE_PLAY;
+
+            //
+            // prints the recordings
+            //
             if (DEBUG) {
+
+              Serial.println("L: Done Analyze");
+
               for (int i = 0; i < SEQITER; i++) {
                 Serial.print("L: ");
                 Serial.print(i);
@@ -242,33 +251,39 @@ void loop() {
               Serial.print(", ");
             }
 
-
-            isRecord = false;
-            sequenceIndex = 0;
-            sequenceState = WAIT_PLAY;
-            if (DEBUG) Serial.println("Done Analyze");
-
-          } //- anaylze
+          }
 
           if (DEBUG) Serial.println(clockCounter);
         }
         break;
-      case PLAYPULSE: {
+      case PULSE_PLAY: {
           /*
             plays single pulse
           */
-          if (DEBUG) Serial.print(playSequence[bitIndex]);
 
-          if (playSequence[bitIndex]) timeKeeper.hit();
+          if (isHead) {
+            if (headerSequence[bitIndex]) timeKeeper.hit();
+            bitIndex++;
+            if (bitIndex >= sizeof(correctHeader) / sizeof(bool)) {
+              isHead = false;
+              bitIndex = 0;
+              // even if it ends playing the header,
+              // it won't go to WAIT_PLAY
+            }
+          } else {
+            if (DEBUG) Serial.print(playSequence[bitIndex]);
 
-          bitIndex++;
-          if (bitIndex == SEQBITS) {
-            if (DEBUG) Serial.println("");
-            bitIndex = 0;
-            sequenceState = WAIT_PLAY;
+            if (playSequence[bitIndex]) timeKeeper.hit();
+
+            bitIndex++;
+            if (bitIndex == SEQBITS) {
+              if (DEBUG) Serial.println("");
+              bitIndex = 0;
+              sequenceState = WAIT_PLAY;
+            }
+
+            if (DEBUG) Serial.println(clockCounter);
           }
-
-          if (DEBUG) Serial.println(clockCounter);
         }
         break;
       case WAIT_PLAY:
@@ -284,7 +299,7 @@ void loop() {
             sequenceState = RESET;
           } else {
             // nope go back playing
-            sequenceState = PLAYPULSE;
+            sequenceState = PULSE_PLAY;
             if (DEBUG) {
               Serial.print("L: playing=");
               Serial.print(sequenceIndex);
@@ -293,11 +308,12 @@ void loop() {
           }
 
           if (DEBUG) Serial.println(clockCounter);
+
         }
         break;
       case RESET: {
           /*
-            returns to playpulse if there is iterations left to play
+            returns to PULSE_PLAY if there is iterations left to play
             (may not need this phase though)
           */
 
@@ -306,8 +322,7 @@ void loop() {
             if (DEBUG) Serial.println("L: RESET");
             if (DEBUG) Serial.println(clockCounter);
 
-            bitIndex = 0;
-            sequenceIndex = 0;
+
             clockCounter = 0;
             sequenceState = LISTEN;
 
@@ -319,13 +334,11 @@ void loop() {
             Serial.println();
 
             // reset values
+            bitIndex = 0;
             sequenceIndex = 0;
-            for (char i = 0; i < SEQBITS; i++) {
-              playSequence[i] = false;
-              for (char j = 0; j < SEQITER; j++) {
-                recording[j][i] = false;
-              }
-            }
+            resetSequence();
+
+            isRecord = false;
 
           }
 
@@ -348,3 +361,43 @@ void loop() {
   }
 }
 
+
+bool isHit() {
+
+  bool valueHit = false;
+  int peakToPeak = abs(signalMax - signalMin); // abs... weird stuff happens
+
+  // show heartbeat
+  unsigned long timeFrame = timeKeeper.timeFrameChar();
+  if (DEBUG) {
+    Serial.print("L: ");
+    Serial.print(timeFrame);
+    Serial.print(", ");
+    Serial.println(peakToPeak);
+  }
+
+  //
+  // reset signal Max and Min
+  //
+  signalMax = 0;
+  signalMin = 1024;
+}
+
+
+
+
+void resetSequence() {
+  //reset sequences
+  for (char i = 0; i < SEQBITS; i++) {
+    playSequence[i] = false;
+    for (char j = 0; j < SEQITER; j++) {
+      recording[j][i] = false;
+    }
+  }
+
+  //reset header
+  for (uint8_t i = 0; i < sizeof(correctHeader) / sizeof(bool); i++) {
+    headerSequence[i] = false;
+  }
+
+}

@@ -6,9 +6,9 @@
   handy project agnostic functions
 */
 
-boolean initNRF(RH_NRF24 &_nrf);
-boolean checkServer(RH_NRF24 &_nrf, uint8_t &value);
-boolean timer(unsigned long const & currentTime, unsigned long const & previousTime, unsigned long const &interval);
+bool initNRF(RH_NRF24 &_nrf);
+bool checkServer(RH_NRF24 &_nrf, uint8_t &value);
+bool timer(unsigned long const & currentTime, unsigned long const & previousTime, unsigned long const &interval);
 
 // memo:
 
