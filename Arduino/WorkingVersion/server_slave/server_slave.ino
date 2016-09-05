@@ -219,7 +219,7 @@ void loop() {
 
           headerIndex++;
           if (headerIndex >= HEBITS) {
-            sequenceState = PULSE_PLAY;
+            sequenceState = PULSE_PLAY; // not going to wait_play
             headerIndex = 0;
             bitIndex = 0;
           }

@@ -215,6 +215,15 @@ void loop() {
             sequenceState = PULSE_PLAY;
 
             //
+            //
+            // IMPORTANT!! this line is for the ImageReciever app!!
+            //
+            //
+            Serial.print("L: r=");
+            for (int i = 0; i < SEQBITS; i++)
+              Serial.print(playSequence[i]);
+
+            //
             // prints the recordings
             //
             if (DEBUG) {
@@ -325,11 +334,6 @@ void loop() {
 
             clockCounter = 0;
             sequenceState = LISTEN;
-
-            //reset listen values
-            Serial.print("L: r=");
-            for (int i = 0; i < SEQBITS; i++)
-              Serial.print(playSequence[i]);
 
             Serial.println();
 
