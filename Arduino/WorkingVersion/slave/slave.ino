@@ -32,7 +32,7 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = false;
+bool const DEBUG = true;
 bool const careHeader = true; // cares about the header or not
 
 
@@ -240,7 +240,7 @@ void loop() {
               Serial.print(playSequence[i]);
 
             Serial.println();
-
+            
             //
             // prints the recordings
             //
@@ -344,6 +344,8 @@ void loop() {
             (may not need this phase though)
           */
 
+          Serial.println("L: end");
+          
           // the whole process (including the first head detection) is 61 steps.
           // head + (SEQBITS + gap)*SEQITER + head + (SEQBITS + gap) * SEQITER + RESET
           // 3 + (8+1)*3 + 3 + (8+1)*3 + 1 = 30 + 30 + 1 = 61
