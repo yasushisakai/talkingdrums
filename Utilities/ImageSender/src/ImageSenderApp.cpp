@@ -35,6 +35,7 @@ public:
     void draw() override;
     
     Surface processPixeletedImage(const Surface input, ci::ivec2 stepAmount, ci::ivec2 & numPixels);
+    
     void processPixels(double currentTime);
     
     void initFBO();
@@ -199,7 +200,7 @@ Surface ImageSenderApp::processPixeletedImage(const Surface input, ci::ivec2 ste
     CI_LOG_I("Area "<<imageSize.x<<" "<<imageSize.y);
     
     //process the Image
-    ci::ColorA col = mSendImage.getPixel(xyIter);
+    ci::ColorA col = input.getPixel(xyIter);
     
     for(int i = 0; i < imageSize.x; i++){
         for(int j = 0; j < imageSize.y; j++){
