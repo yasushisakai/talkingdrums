@@ -23,7 +23,7 @@ using namespace std;
 //const values
 const ci::ivec2 windowSize(1280 + 640, 720);
 
-const ci::ivec2 stepDiv(100, 100);
+const ci::ivec2 stepDiv(80, 80);
 // the original image is pixelated by 20;
 
 
@@ -48,13 +48,18 @@ private:
     
     Surface             mSentImage;
     Surface8u           mReceivedImage;
-    gl::Texture2dRef    mTexture;
-    gl::Texture::Format mFormat;
+    
+    void                cleanReceivedImage();
+    
+    ci::ColorA8u        mReciveColor;
+    ci::ivec2           mPixelCount;
+    
+    
+    gl::Texture2dRef    mReceiveTex;
     Area                mTexBounds;
+    gl::Texture::Format mFormatTex;
     
-    bool                mIsRecord;
-    bool                mIsPlay;
-    
+
     // Serial
     SerialRef           mSerial;
     bool                mIsReceiveMessage;
@@ -74,7 +79,6 @@ private:
     string              mLastString;
     
     // pixel_values
-    int                 mPixelCount;
     ivec2               mPixelCursor;
     
     //debug
@@ -97,6 +101,9 @@ private:
     };
     State               sequenceState;
     
+    bool                mIsRecord;
+    bool                mIsPlay;
+    bool                mDone;
     
     //params gui
     params::InterfaceGlRef	mParams;
@@ -113,22 +120,18 @@ void ImageReceiverApp::setup()
     // This holds what got from them...
     mReceivedImage = Surface(receivedImageSize.x, receivedImageSize.y, false);
     
-    Surface8u::Iter iter(mReceivedImage.getIter());
-    while(iter.line()){
-        while(iter.pixel()){
-            iter.r() = 0;
-            iter.g() = 0;
-            iter.b() = 0;
-        }
-    }
     
+    //file image with black
+    cleanReceivedImage();
+
     
     // we want crispy pixels
-    mFormat.setMagFilter(GL_NEAREST);
+    
+    mFormatTex.setMagFilter(GL_NEAREST);
     
     
     
-    mFont = Font("Arial",10);
+    mFont = Font("Arial", 20);
     
     //initialize port
     initPort();
@@ -137,20 +140,23 @@ void ImageReceiverApp::setup()
     mLastUpdate = 0;
     mLastRead = 0;
     
-    mPixelCount = 0;
-    mPixelCursor = ivec2(indexToCoord(mPixelCount)*stepDiv+margin);
+    mPixelCount  = ci::ivec2(0, 0);
+    mReciveColor = ci::ColorA8u(0, 0, 0);
+
     
     //Sequence
     sequenceState = WAIT_START;
-    mIsRecord = false;
-    mIsPlay = true;
     
+    mIsRecord = false;
+    mIsPlay   = true;
+    mDone     = false;
+    mDebug    = true;
     
     //debug
     Surface mDebugImage = loadImage(loadAsset("wave.png"));
     mDebugSurface = processPixeletedImage(mDebugImage, stepDiv, mNumPixels);
     mDebugTex = gl::Texture2d::create(mDebugSurface);
-    mDebug = false;
+
     
     //calculate height depending on the aspect ratio of the image
     //scaling ??
@@ -159,6 +165,8 @@ void ImageReceiverApp::setup()
     mTexBounds   = ci::Area(0, 0, width, height);
     
     CI_LOG_I(width<<" "<<height);
+    
+
     
     
     //create params
@@ -173,7 +181,17 @@ void ImageReceiverApp::mouseDown( MouseEvent event )
 
 void ImageReceiverApp::keyDown(KeyEvent event)
 {
-    
+    switch (event.getChar()) {
+        case 'a':
+            cleanReceivedImage();
+            break;
+        case 's':
+            saveImage();
+            break;
+            
+        default:
+            break;
+    }
 }
 
 void ImageReceiverApp::update()
@@ -198,27 +216,59 @@ void ImageReceiverApp::draw()
     
     
     
-    if(mTexture){
+    if(mReceiveTex){
         gl::ScopedColor col;
         gl::ScopedMatrices  mat;
         gl::color(1, 1, 1);
         gl::translate(ci::ivec2( 0.0*(getWindowWidth()/3.0), getWindowHeight()/5.0));
-        gl::draw(mTexture, mTexBounds);
+        gl::draw(mReceiveTex, mTexBounds);
     }
     
     
     if(mDebug){
         if(mDebugTex){
-            gl::ScopedColor col;
-            gl::ScopedMatrices  mat;
-            gl::color(1, 1, 1);
-            gl::translate(ci::ivec2( 1.0*(getWindowWidth()/3.0), getWindowHeight()/5.0));
-            gl::draw(mDebugTex, mTexBounds);
+            {
+                gl::ScopedColor col;
+                gl::ScopedMatrices  mat;
+                gl::color(1, 1, 1);
+                gl::translate(ci::ivec2( 1.0*(getWindowWidth()/3.0), getWindowHeight()/5.0));
+                gl::draw(mDebugTex, mTexBounds);
+            }
+            
+            
+            //draw text
+            TextLayout simple;
+            simple.setFont( mFont );
+            simple.setColor( Color( 0.8, 0.8, 0.8f ) );
+            
+            std::string rgbStr = "("+ to_string(mReciveColor.r)+", "+to_string(mReciveColor.g)+", "+ to_string(mReciveColor.b)+")";
+            std::string indexStr = "["+to_string(mPixelCount.x)+", "+to_string(mPixelCount.y)+"]";
+            
+            uint8_t grayValue = ceil(int(mReciveColor.r * 255.0));
+            
+            uint8_t result[8];
+            std::string byteStr;
+            for(int i = 0; i < 8; ++i) {
+                result[i] = 0 != (grayValue & (1 << i));
+                byteStr += to_string(result[i]);
+            }
+            
+            simple.addLine(rgbStr);
+            simple.addCenteredLine(indexStr);
+            simple.addCenteredLine(byteStr);
+            mTextTexture = gl::Texture2d::create( simple.render( true, false ) );
+            
+            if(mTextTexture){
+                gl::translate(ci::vec2(mTexBounds.getWidth()/4.5, mTexBounds.getHeight() ));
+                gl::color(0.6, 0.6, 0.6);
+                gl::draw(mTextTexture, vec2(0, 0));
+            }
+
         }
     }
     
     // border
-    gl::drawStrokedRect(Rectf(margin,margin+mSentImage.getSize()));
+   // gl::drawStrokedRect(Rectf(margin,margin+mSentImage.getSize()));
     
     // cursor
     if(mIsRecord){
@@ -278,17 +328,28 @@ void ImageReceiverApp::processPort(double now)
                 simple.setColor(Color::white());
                 simple.addLine(std::to_string(value));
                 
-                mReceivedImage.setPixel(indexToCoord(mPixelCount),Color8u::gray(value));
-                saveImage();
+                mReciveColor = Color8u::gray(value);
                 
-                mPixelCount++;
-                mPixelCursor = ivec2(indexToCoord(mPixelCount)*stepDiv+margin);
+                mReceivedImage.setPixel(mPixelCount, mReciveColor);
+                
+                mPixelCount.x++;
+                if(mPixelCount.x > mNumPixels.x){
+                    mPixelCount.y++;
+                    mPixelCount.x = 0;
+                }
+                
+                if(mPixelCount.y > mNumPixels.y){
+                    mDone = true;
+                    
+                }
+                
+                mPixelCursor = ivec2(mPixelCount.x * stepDiv.x, mPixelCount.y * stepDiv.y);
                 
                 mIsRecord = false;
                 mIsPlay = true;
                 
                 // update mTexture
-                mTexture = gl::Texture::create(mReceivedImage,mFormat);
+                mReceiveTex = gl::Texture::create(mReceivedImage, mFormatTex);
                 
             }else if(mLastString.find("found head")!=string::npos){
                 CI_LOG_D("found head");
@@ -331,6 +392,21 @@ void ImageReceiverApp::initPort(){
         //exit( -1 );
     }
     
+}
+
+void ImageReceiverApp::cleanReceivedImage()
+{
+    
+    mPixelCount = ci::ivec2(0, 0);
+    
+    Surface8u::Iter iter(mReceivedImage.getIter());
+    while(iter.line()){
+        while(iter.pixel()){
+            iter.r() = 0;
+            iter.g() = 0;
+            iter.b() = 0;
+        }
+    }
 }
 
 int ImageReceiverApp::coordToIndex(int x, int y){
