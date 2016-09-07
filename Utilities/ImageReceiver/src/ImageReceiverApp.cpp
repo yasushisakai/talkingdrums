@@ -44,12 +44,12 @@ private:
     int  coordToIndex(const int x, const int y);
     ivec2  indexToCoord(const int id);
     
-    Surface             mSentImage;
+    Surface8u           mSentImage;
     Surface8u           mReceivedImage;
     
     void                cleanReceivedImage();
     
-    ci::ColorA8u        mReciveColor;
+    ci::ColorA8u        mReceiveColor;
     ci::ivec2           mPixelCount;
     
     
@@ -103,6 +103,8 @@ private:
     bool                mIsPlay;
     bool                mDone;
     
+    uint8_t             floatColorToInt(float inVal);
+    
     //params gui
     params::InterfaceGlRef	mParams;
 };
@@ -116,7 +118,7 @@ void ImageReceiverApp::setup()
     initPort();
     
     // we want crispy pixels
-    mFormatTex.setMagFilter(GL_NEAREST); 
+    mFormatTex.setMagFilter(GL_NEAREST);
     
     //FONT
     mFont = Font("Arial", 20);
@@ -126,7 +128,8 @@ void ImageReceiverApp::setup()
     mLastRead = 0;
     
     mPixelCount   = ci::ivec2(0, 0);
-    mReciveColor  = ci::ColorA8u(0, 0, 0);
+    mPixelCursor  = ci::ivec2(0, 0);
+    mReceiveColor = ci::ColorA8u(0, 0, 0);
     
     //Sequence
     sequenceState = WAIT_START;
@@ -142,7 +145,7 @@ void ImageReceiverApp::setup()
     mDebugTex = gl::Texture2d::create(mDebugSurface);
     
     // This holds what got from them...
-    mReceivedImage = Surface(mNumPixels.x, mNumPixels.y, false);
+    mReceivedImage = Surface8u(mNumPixels.x, mNumPixels.y, false);
     mReceiveTex  =  gl::Texture2d::create(mReceivedImage, mFormatTex);
     
     //file image with black
@@ -176,6 +179,7 @@ void ImageReceiverApp::keyDown(KeyEvent event)
         case 's':
             saveImage();
             break;
+            
             
         default:
             break;
@@ -223,21 +227,45 @@ void ImageReceiverApp::draw()
             simple.setFont( mFont );
             simple.setColor( Color( 0.8, 0.8, 0.8f ) );
             
-            std::string rgbStr = "("+ to_string(mReciveColor.r)+", "+to_string(mReciveColor.g)+", "+ to_string(mReciveColor.b)+")";
+            ci::ColorA realCol = mDebugSurface.getPixel(ci::ivec2(mPixelCount));
+            
+            std::string  rgbColorStr = "("+ to_string(floatColorToInt(mReceiveColor.r))+", "+to_string(floatColorToInt(mReceiveColor.g))+", "+ to_string(floatColorToInt(mReceiveColor.b))+")";
+            std::string  realColorStr = "("+ to_string(floatColorToInt(realCol.r))+", "+to_string(floatColorToInt(realCol.g))+", "+ to_string(floatColorToInt(realCol.b))+")";
+            
             std::string indexStr = "["+to_string(mPixelCount.x)+", "+to_string(mPixelCount.y)+"]";
             
-            uint8_t grayValue = ceil(int(mReciveColor.r * 255.0));
+            //
+            float lumaReceive = 0.2126 * mReceiveColor.r + 0.7152 * mReceiveColor.g + 0.0722 * mReceiveColor.b;
+            float lumaReal = 0.2126 * realCol.r + 0.7152 * realCol.g + 0.0722 * realCol.b;
             
-            uint8_t result[8];
-            std::string byteStr;
+            uint8_t grayReceiver = floatColorToInt(lumaReceive);
+            uint8_t grayReal     = floatColorToInt(lumaReal);
+            
+            
+            uint8_t resultReceive[8];
+            uint8_t resultReal[8];
+            
+            std::string byteRec;
+            std::string byteReal;
+            
             for(int i = 0; i < 8; ++i) {
-                result[i] = 0 != (grayValue & (1 << i));
-                byteStr += to_string(result[i]);
+                resultReceive[i] = 0 != (grayReceiver & (1 << i));
+                byteRec += to_string(resultReceive[i]);
             }
             
-            simple.addLine(rgbStr);
+            for(int i = 0; i < 8; ++i) {
+                resultReal[i] = 0 != (grayReal & (1 << i));
+                byteReal += to_string(resultReal[i]);
+            }
+            
+            string bytesComp = byteRec +" - "+ byteReal;
+        
+        
+        
+            simple.addLine(rgbColorStr +" - "+ realColorStr) ;
             simple.addCenteredLine(indexStr);
-            simple.addCenteredLine(byteStr);
+            
+            simple.addCenteredLine(bytesComp);
             mTextTexture = gl::Texture2d::create( simple.render( true, false ) );
             
             if(mTextTexture){
@@ -256,12 +284,12 @@ void ImageReceiverApp::draw()
     
     // cursor
     if(mIsRecord){
-        gl::color(Color(1,0,0));
+        gl::color(Color(1, 0, 0));
     }else if(mIsPlay){
-        gl::color(Color(0,1,0));
+        gl::color(Color(0, 1, 0));
     }
     
-    gl::drawStrokedRect(Rectf(mPixelCursor, mPixelCursor+stepDiv));
+    gl::drawStrokedRect(Rectf(mPixelCursor, mPixelCursor + stepDiv));
     
     mParams->draw();
     
@@ -303,7 +331,7 @@ void ImageReceiverApp::processPort(double now)
                 
                 string string_bits = mLastString.substr(5);
                 uint8_t value = 0;
-                for (int i =0;i<8;i++){
+                for (int i = 0;i < 8; i++){
                     value |= (string_bits[i]=='1') << (7-i);
                 }
                 
@@ -312,9 +340,9 @@ void ImageReceiverApp::processPort(double now)
                 simple.setColor(Color::white());
                 simple.addLine(std::to_string(value));
                 
-                mReciveColor = Color8u::gray(value);
+                mReceiveColor = Color8u::gray(value);
                 
-                mReceivedImage.setPixel(mPixelCount, mReciveColor);
+                mReceivedImage.setPixel(mPixelCount, mReceiveColor);
                 
                 mPixelCount.x++;
                 if(mPixelCount.x > mNumPixels.x){
@@ -322,6 +350,7 @@ void ImageReceiverApp::processPort(double now)
                     mPixelCount.x = 0;
                 }
                 
+                //finish getting the image
                 if(mPixelCount.y > mNumPixels.y){
                     mDone = true;
                     
@@ -389,6 +418,7 @@ void ImageReceiverApp::cleanReceivedImage()
         }
     }
     
+    console()<<"clean images"<<std::endl;
 
 }
 
@@ -450,6 +480,13 @@ Surface ImageReceiverApp::processPixeletedImage(const Surface input, ci::ivec2 s
     }
     
     return pixelImage;
+}
+
+uint8_t ImageReceiverApp::floatColorToInt(float inVal)
+{
+    union { float f; uint32_t i; } u;
+    u.f = 32768.0f + inVal * (255.0f / 256.0f);
+    return (uint8_t)u.i;
 }
 
 

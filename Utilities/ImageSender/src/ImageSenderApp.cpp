@@ -44,6 +44,8 @@ public:
     //PORT
     void initPort();
     
+    uint8_t floatColorToInt(float inVal);
+    
 private:
     
     ci::Surface         mSendImage;
@@ -416,7 +418,11 @@ void ImageSenderApp::processPixels(double currentTime)
                 std::string rgbStr = "("+ to_string(mCurrentColor.r)+", "+to_string(mCurrentColor.g)+", "+ to_string(mCurrentColor.b)+")";
                 std::string indexStr = "["+to_string(mIteraPixel.x)+", "+to_string(mIteraPixel.y)+"]";
                 
-                uint8_t grayValue = ceil(int(mCurrentColor.r * 255.0));
+                //https://en.wikipedia.org/wiki/Luma_(video)
+                
+                float luma = 0.2126 * mCurrentColor.r + 0.7152 * mCurrentColor.g + 0.0722 * mCurrentColor.b;
+                
+                uint8_t grayValue = floatColorToInt(luma);
                 
                 uint8_t result[8];
                 std::string byteStr;
@@ -518,6 +524,14 @@ void ImageSenderApp::processPixels(double currentTime)
     }
     
 }
+
+uint8_t ImageSenderApp::floatColorToInt(float inVal)
+{
+    union { float f; uint32_t i; } u;
+    u.f = 32768.0f + inVal * (255.0f / 256.0f);
+    return (uint8_t)u.i;
+}
+
 
 CINDER_APP( ImageSenderApp,  RendererGl( RendererGl::Options().msaa( 16 ) ), [] (App::Settings * settings){
     
