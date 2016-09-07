@@ -6,6 +6,8 @@
 #include "cinder/ImageIo.h"
 #include "cinder/Utilities.h"
 #include "cinder/params/Params.h"
+#include "cinder/Rand.h"
+
 
 #include <vector>
 
@@ -26,8 +28,6 @@ const ci::ivec2 windowSize(1280 + 640, 720);
 const ci::ivec2 stepDiv(80, 80);
 // the original image is pixelated by 20;
 
-
-
 const ci::ivec2 margin(5,5);
 
 class ImageReceiverApp : public App {
@@ -39,9 +39,7 @@ public:
     void draw() override;
     void saveImage();
     
-    
 private:
-    
     
     int  coordToIndex(const int x, const int y);
     ivec2  indexToCoord(const int id);
@@ -114,35 +112,21 @@ void ImageReceiverApp::setup()
     
     setWindowSize(windowSize);
     
-    mSentImage = loadImage(loadAsset("wave.png")); // kinda cheating but none the less...
-    ivec2 receivedImageSize = mSentImage.getSize() / stepDiv;
-    
-    // This holds what got from them...
-    mReceivedImage = Surface(receivedImageSize.x, receivedImageSize.y, false);
-    
-    
-    //file image with black
-    cleanReceivedImage();
-
-    
-    // we want crispy pixels
-    
-    mFormatTex.setMagFilter(GL_NEAREST);
-    
-    
-    
-    mFont = Font("Arial", 20);
-    
     //initialize port
     initPort();
+    
+    // we want crispy pixels
+    mFormatTex.setMagFilter(GL_NEAREST); 
+    
+    //FONT
+    mFont = Font("Arial", 20);
     
     // timer stuff
     mLastUpdate = 0;
     mLastRead = 0;
     
-    mPixelCount  = ci::ivec2(0, 0);
-    mReciveColor = ci::ColorA8u(0, 0, 0);
-
+    mPixelCount   = ci::ivec2(0, 0);
+    mReciveColor  = ci::ColorA8u(0, 0, 0);
     
     //Sequence
     sequenceState = WAIT_START;
@@ -156,8 +140,14 @@ void ImageReceiverApp::setup()
     Surface mDebugImage = loadImage(loadAsset("wave.png"));
     mDebugSurface = processPixeletedImage(mDebugImage, stepDiv, mNumPixels);
     mDebugTex = gl::Texture2d::create(mDebugSurface);
-
     
+    // This holds what got from them...
+    mReceivedImage = Surface(mNumPixels.x, mNumPixels.y, false);
+    mReceiveTex  =  gl::Texture2d::create(mReceivedImage, mFormatTex);
+    
+    //file image with black
+    cleanReceivedImage();
+
     //calculate height depending on the aspect ratio of the image
     //scaling ??
     float width  = getWindowWidth()/3.0;
@@ -165,9 +155,7 @@ void ImageReceiverApp::setup()
     mTexBounds   = ci::Area(0, 0, width, height);
     
     CI_LOG_I(width<<" "<<height);
-    
 
-    
     
     //create params
     mParams = params::InterfaceGl::create( getWindow(), "App parameters", toPixels( ivec2( 200, 200 ) ) );
@@ -197,13 +185,9 @@ void ImageReceiverApp::keyDown(KeyEvent event)
 void ImageReceiverApp::update()
 {
     
-    
     double now = getElapsedSeconds();
     
-    
     processPort(now);
-    
-    
     
     gl::clear(Color::black());
     
@@ -213,8 +197,6 @@ void ImageReceiverApp::draw()
 {
     
     gl::clear(Color::black());
-    
-    
     
     if(mReceiveTex){
         gl::ScopedColor col;
@@ -259,7 +241,9 @@ void ImageReceiverApp::draw()
             mTextTexture = gl::Texture2d::create( simple.render( true, false ) );
             
             if(mTextTexture){
-                gl::translate(ci::vec2(mTexBounds.getWidth()/4.5, mTexBounds.getHeight() ));
+                gl::ScopedMatrices  mat;
+                gl::ScopedColor col;
+                gl::translate(ci::vec2(mTexBounds.getWidth()/2.5 + 1.0*(getWindowWidth()/3.0), mTexBounds.getHeight() +  getWindowHeight()/5.0 ));
                 gl::color(0.6, 0.6, 0.6);
                 gl::draw(mTextTexture, vec2(0, 0));
             }
@@ -399,14 +383,13 @@ void ImageReceiverApp::cleanReceivedImage()
     
     mPixelCount = ci::ivec2(0, 0);
     
-    Surface8u::Iter iter(mReceivedImage.getIter());
-    while(iter.line()){
-        while(iter.pixel()){
-            iter.r() = 0;
-            iter.g() = 0;
-            iter.b() = 0;
+    for(int i = 0; i < mReceivedImage.getSize().x; i++){
+        for(int j = 0; j < mReceivedImage.getSize().y; j++){
+            mReceivedImage.setPixel(ci::ivec2(i, j), ci::ColorA8u(0, 0, 0));
         }
     }
+    
+
 }
 
 int ImageReceiverApp::coordToIndex(int x, int y){

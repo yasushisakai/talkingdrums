@@ -331,4 +331,5 @@ dependencies: \
   ../../../../Cinder_lib/Cinder/include/boost/integer.hpp \
   ../../../../Cinder_lib/Cinder/include/boost/integer_fwd.hpp \
   ../../../../Cinder_lib/Cinder/include/boost/detail/basic_pointerbuf.hpp \
-  ../../../../Cinder_lib/Cinder/include/cinder/params/Params.h
+  ../../../../Cinder_lib/Cinder/include/cinder/params/Params.h \
+  ../../../../Cinder_lib/Cinder/include/cinder/Rand.h
