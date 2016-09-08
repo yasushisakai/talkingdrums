@@ -32,7 +32,7 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = false;
+bool const DEBUG = true;
 bool const careHeader = true; // cares about the header or not
 
 
@@ -47,7 +47,7 @@ bool debugSequence[] = {1, 0, 0, 1, 1, 0, 0, 1};
 
 ///Signal Processing
 int signalMin, signalMax;
-const int signalThreshold = 300; // 50-1024 we may need to make this dynamic
+const int signalThreshold = 280; // 50-1024 we may need to make this dynamic
 
 /// PWM-ing the Solenoid will need additional test 0-255
 byte const solenoid_pwm = 200;
@@ -140,6 +140,7 @@ void loop() {
 
           bool valueHit = isHit();
 
+          // 
           // recording the sequence
           //
           if (isRecord) {
@@ -158,12 +159,10 @@ void loop() {
               sequenceState = ANALYZE;
             }
           }
-          
-
           //
           // detecting the right header
           //
-          if (!isRecord) {
+          else if (!isRecord) {
 
             headerSequence[bitIndex] = valueHit;
             isHead = true;
