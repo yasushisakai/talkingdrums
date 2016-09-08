@@ -29,18 +29,18 @@ bool const DEBUG = true;
 bool const DEBUG_PORT = false;
 
 ///Sequence
-byte sequenceState = 0;
-byte sequenceIndex = 0;
-byte bitIndex = 0;
+uint8_t sequenceState = 0;
+uint8_t sequenceIndex = 0;
+uint8_t bitIndex = 0;
 
 bool lock, isRecord;
 bool recording[SEQITER][SEQBITS];
 bool playSequence[SEQBITS];
-bool debugSequence[] = {1, 0, 0, 1, 1, 0, 0, 1};
+bool debugSequence[ ] = {1, 0, 0, 1, 1, 0, 0, 1};
 
 //HEADER HEBITS = 3;
-bool playHeader[] = {1, 1, 0};
-int headerIndex = 0;
+bool playHeader[ ] = {1, 1, 0};
+uint8_t headerIndex = 0;
 
 ///Signal Processing
 int signalMin, signalMax;
@@ -143,6 +143,7 @@ void loop() {
     lock = false;
     // Serial.flush();
 
+    //Serial.println("got");
     clockCounter++;
   }
 
@@ -301,7 +302,7 @@ void loop() {
 
             sequenceIndex = 0;
             bitIndex = 0;
-            sequenceState = LISTEN;
+            sequenceState = HEADER_PLAY;
 
             if (DEBUG) {
               Serial.print("Number cycles");

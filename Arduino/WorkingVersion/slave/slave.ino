@@ -177,8 +177,6 @@ void loop() {
               }
             }
           }
-
-
           //
           // recording the sequence
           //
