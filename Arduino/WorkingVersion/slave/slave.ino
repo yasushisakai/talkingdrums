@@ -126,6 +126,7 @@ void loop() {
             }
 
             sequenceState = LISTEN;
+            TimeKeeper::signalLimit  = 1;
           }
         }
         break;
@@ -139,10 +140,31 @@ void loop() {
 
           bool valueHit = isHit();
 
+          // recording the sequence
+          //
+          if (isRecord) {
+            if (DEBUG) {
+              Serial.print("L: ");
+              Serial.print(", ");
+              Serial.print(sequenceIndex);
+              Serial.print(", ");
+              Serial.print(bitIndex);
+              Serial.print(", ");
+              Serial.println(valueHit);
+            }
+            recording[sequenceIndex][bitIndex] = valueHit;
+            bitIndex++;
+            if (bitIndex >= SEQBITS) {
+              sequenceState = ANALYZE;
+            }
+          }
+          
+
           //
           // detecting the right header
           //
           if (!isRecord) {
+
             headerSequence[bitIndex] = valueHit;
             isHead = true;
 
@@ -177,28 +199,10 @@ void loop() {
               }
             }
           }
-          //
-          // recording the sequence
-          //
-          if (isRecord) {
-            if (DEBUG) {
-              Serial.print("L: ");
-              Serial.print(", ");
-              Serial.print(sequenceIndex);
-              Serial.print(", ");
-              Serial.print(bitIndex);
-              Serial.print(", ");
-              Serial.println(valueHit);
-            }
-            recording[sequenceIndex][bitIndex] = valueHit;
-            bitIndex++;
-            if (bitIndex >= SEQBITS) {
-              sequenceState = ANALYZE;
-            }
-          }
-
+    
           if (DEBUG) Serial.println(clockCounter);
         }
+
         break;
 
       case ANALYZE: {
@@ -238,7 +242,7 @@ void loop() {
               Serial.print(playSequence[i]);
 
             Serial.println();
-            
+
             //
             // prints the recordings
             //
@@ -341,7 +345,7 @@ void loop() {
             returns to PULSE_PLAY if there is iterations left to play
             (may not need this phase though)
           */
-          
+
           // the whole process (including the first head detection) is 61 steps.
           // head + (SEQBITS + gap)*SEQITER + head + (SEQBITS + gap) * SEQITER + RESET
           // 3 + (8+1)*3 + 3 + (8+1)*3 + 1 = 30 + 30 + 1 = 61
@@ -349,18 +353,18 @@ void loop() {
 
           // starting from 0, so end is 60
 
-            if (DEBUG) Serial.println("L: RESET");
-            if (DEBUG) Serial.println(clockCounter);
+          if (DEBUG) Serial.println("L: RESET");
+          if (DEBUG) Serial.println(clockCounter);
 
-            clockCounter = 0;
-            sequenceState = LISTEN;
+          clockCounter = 0;
+          sequenceState = LISTEN;
 
-            // reset values
-            bitIndex = 0;
-            sequenceIndex = 0;
-            resetSequence();
+          // reset values
+          bitIndex = 0;
+          sequenceIndex = 0;
+          resetSequence();
 
-            isRecord = false;
+          isRecord = false;
 
 
           if (DEBUG) Serial.println(clockCounter);

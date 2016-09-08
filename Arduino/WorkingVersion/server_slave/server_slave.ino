@@ -25,7 +25,7 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = false;
+bool const DEBUG = true;
 bool const DEBUG_PORT = false;
 
 ///Sequence
@@ -169,47 +169,6 @@ void loop() {
           }
         }
         break;
-
-      case LISTEN:  //use it to send activating code
-        {
-
-          bitIndex++;
-          if (bitIndex >= SEQBITS) {
-            sequenceState = ANALYZE;
-          }
-
-          if (DEBUG) Serial.print(bitIndex);
-          if (DEBUG) Serial.print(" LISTEN ");
-          if (DEBUG) Serial.println(clockCounter);
-
-
-        }
-        break;
-
-      case ANALYZE:  //read the incomming msg from the computer
-        {
-
-          if (DEBUG) Serial.print("Analyze: ");
-
-          sequenceIndex++;
-          bitIndex = 0;
-
-          if (sequenceIndex > SEQITER) {
-            isRecord = false;
-            sequenceIndex = 0;
-            sequenceState = RESET;
-            if (DEBUG) Serial.println("Done Analyze");
-
-          } else {
-            sequenceState = LISTEN;
-            if (DEBUG) Serial.println(sequenceIndex);
-
-          }
-
-
-          if (DEBUG) Serial.println(clockCounter);
-        }
-        break;
       case HEADER_PLAY:
         {
 
@@ -262,7 +221,7 @@ void loop() {
           if (sequenceIndex >= SEQITER) {
 
             //go to reset
-            sequenceState = ANALYZE;
+            sequenceState = RESET;
             requestByte = true;
             readInBytes = false;
             sequenceIndex = 0;
@@ -285,16 +244,18 @@ void loop() {
             (may not need this phase though)
           */
 
-          if (DEBUG) Serial.println("RESET");
+          if (DEBUG) Serial.print("RESET WAIT ");
 
-          //if (Serial.available() > 0) {
-          if (readInBytes) {
-            if (DEBUG) Serial.println("incoming bytes");
+          if (clockCounter > 61) {
 
-            int val = Serial.readBytes(byteMSG8, 1);
+            //if (Serial.available() > 0) {
+            if (readInBytes) {
+              if (DEBUG) Serial.println("incoming bytes");
 
-            //Reset values when an array of bits is received
-           // if (val > 0) {
+              int val = Serial.readBytes(byteMSG8, 1);
+
+              //Reset values when an array of bits is received
+              // if (val > 0) {
 
               byteMSG8[0] = B10010110;
               if (DEBUG) Serial.println("clean Serial");
@@ -330,24 +291,23 @@ void loop() {
                 }
               } //for
 
-//            } //got msg
+              //            } //got msg
 
-          }
+            }
 
-          //send byte request and read
-          if (requestByte) {
-            if (DEBUG) Serial.println("request bytes");
+            //send byte request and read
+            if (requestByte) {
+              if (DEBUG) Serial.println("request bytes");
 
-            Serial.write('s');
-            requestByte = false;
-            readInBytes = true;
-          }
-
-
+              Serial.write('s');
+              requestByte = false;
+              readInBytes = true;
+            }
 
 
+          } //case RESET
 
-        } //case RESET
+        }// clockCounter break
 
         if (DEBUG) Serial.println(clockCounter);
         break;
