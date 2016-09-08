@@ -32,7 +32,7 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = true;
+bool const DEBUG = false;
 bool const careHeader = true; // cares about the header or not
 
 
@@ -47,7 +47,7 @@ bool debugSequence[] = {1, 0, 0, 1, 1, 0, 0, 1};
 
 ///Signal Processing
 int signalMin, signalMax;
-const int signalThreshold = 500; // 50-1024 we may need to make this dynamic
+const int signalThreshold = 300; // 50-1024 we may need to make this dynamic
 
 /// PWM-ing the Solenoid will need additional test 0-255
 byte const solenoid_pwm = 200;
@@ -341,8 +341,6 @@ void loop() {
             returns to PULSE_PLAY if there is iterations left to play
             (may not need this phase though)
           */
-
-          Serial.println("L: end");
           
           // the whole process (including the first head detection) is 61 steps.
           // head + (SEQBITS + gap)*SEQITER + head + (SEQBITS + gap) * SEQITER + RESET
@@ -350,7 +348,6 @@ void loop() {
           // https://docs.google.com/spreadsheets/d/1OzL0YygAY_DSaA0wT8SLMD5zovmk4wVnEPwZ80VJpbA/edit#gid=0
 
           // starting from 0, so end is 60
-          if (clockCounter == 60) {
 
             if (DEBUG) Serial.println("L: RESET");
             if (DEBUG) Serial.println(clockCounter);
@@ -365,7 +362,6 @@ void loop() {
 
             isRecord = false;
 
-          }
 
           if (DEBUG) Serial.println(clockCounter);
 
@@ -406,6 +402,10 @@ bool isHit() {
   //
   signalMax = 0;
   signalMin = 1024;
+
+  valueHit = peakToPeak > signalThreshold;
+
+  return valueHit;
 }
 
 
