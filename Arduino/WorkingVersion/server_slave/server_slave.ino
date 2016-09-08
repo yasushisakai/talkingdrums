@@ -193,13 +193,13 @@ void loop() {
 
           sequenceIndex++;
           bitIndex = 0;
-          
+
           if (sequenceIndex > SEQITER) {
             isRecord = false;
             sequenceIndex = 0;
             sequenceState = RESET;
             if (DEBUG) Serial.println("Done Analyze");
-            
+
           } else {
             sequenceState = LISTEN;
             if (DEBUG) Serial.println(sequenceIndex);
@@ -294,41 +294,43 @@ void loop() {
             int val = Serial.readBytes(byteMSG8, 1);
 
             //Reset values when an array of bits is received
-            //  if (val > 0) {
-            if (DEBUG) Serial.println("clean Serial");
+           // if (val > 0) {
 
-            readInBytes = true;
-            requestByte = false;
+              byteMSG8[0] = B10010110;
+              if (DEBUG) Serial.println("clean Serial");
 
-            sequenceIndex = 0;
-            bitIndex = 0;
-            sequenceState = HEADER_PLAY;
+              readInBytes = true;
+              requestByte = false;
 
-            if (DEBUG) {
-              Serial.print("Number cycles");
-              Serial.println(clockCounter);
-            }
-            clockCounter = 0;
+              sequenceIndex = 0;
+              bitIndex = 0;
+              sequenceState = HEADER_PLAY;
 
-            Serial.flush();
-
-            //clean
-            for (int i = 0; i < 10; i++) {
-              char f = Serial.read();
-            }
-
-            for (int i = 0; i < 8; i++) {
-              playSequence[i] = (bitRead(byteMSG8[0], i) == 1 ? true : false);
-            }
-
-            //reset listen values
-            for (char i = 0; i < SEQBITS; i++) {
-              for (char j = 0; j < SEQITER; j++) {
-                recording[j][i] = false;
+              if (DEBUG) {
+                Serial.print("Number cycles");
+                Serial.println(clockCounter);
               }
-            } //for
+              clockCounter = 0;
 
-            // } //got msg
+              Serial.flush();
+
+              //clean
+              for (int i = 0; i < 10; i++) {
+                char f = Serial.read();
+              }
+
+              for (int i = 0; i < 8; i++) {
+                playSequence[i] = (bitRead(byteMSG8[0], i) == 1 ? true : false);
+              }
+
+              //reset listen values
+              for (char i = 0; i < SEQBITS; i++) {
+                for (char j = 0; j < SEQITER; j++) {
+                  recording[j][i] = false;
+                }
+              } //for
+
+//            } //got msg
 
           }
 
