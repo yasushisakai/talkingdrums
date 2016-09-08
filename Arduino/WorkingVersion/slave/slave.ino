@@ -47,7 +47,11 @@ bool debugSequence[] = {1, 0, 0, 1, 1, 0, 0, 1};
 
 ///Signal Processing
 int signalMin, signalMax;
-const int signalThreshold = 280; // 50-1024 we may need to make this dynamic
+
+float avgValue    = 0;
+int counterSignal = 0;
+
+const int signalThreshold = 260; // 50-1024 we may need to make this dynamic
 
 /// PWM-ing the Solenoid will need additional test 0-255
 byte const solenoid_pwm = 200;
@@ -84,10 +88,22 @@ void loop() {
   //collect signal readings
   if (sequenceState == LISTEN || sequenceState == WAIT_START) {
     int micValue = analogRead(MIC_PIN);
-    if (micValue < 1023 && micValue > 50) { // for weird readings??
-      if (micValue > signalMax) signalMax = micValue;
-      if (micValue < signalMin) signalMin = micValue;
-    }
+
+    avgValue += micValue;
+
+    if (counterSignal >= 5) {
+      avgValue /= 5.0;
+      if (avgValue < 1023 && avgValue > 50) { // for weird readings??
+          if (avgValue > signalMax) avgValue = micValue;
+          if (avgValue < signalMin) avgValue = micValue;
+        }
+
+        counterSignal = 0;
+        avgValue = 0;
+      }
+
+    counterSignal++;
+
   }
 
   // updates the timeKeeper
@@ -159,6 +175,8 @@ void loop() {
               sequenceState = ANALYZE;
             }
           }
+
+
           //
           // detecting the right header
           //
@@ -198,7 +216,7 @@ void loop() {
               }
             }
           }
-    
+
           if (DEBUG) Serial.println(clockCounter);
         }
 
@@ -392,8 +410,8 @@ bool isHit() {
   int peakToPeak = abs(signalMax - signalMin); // abs... weird stuff happens
 
   // show heartbeat
-  unsigned long timeFrame = timeKeeper.timeFrameChar();
   if (DEBUG) {
+    unsigned long timeFrame = timeKeeper.timeFrameChar();
     Serial.print("L: ");
     Serial.print(timeFrame);
     Serial.print(", ");

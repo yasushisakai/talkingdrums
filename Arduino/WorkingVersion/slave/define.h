@@ -24,7 +24,7 @@
 //we might want to constain the number of bits to 8
 //this way we can use byte
 
-#define INTERVAL 50
+#define INTERVAL 30
 // this interval is for the outputs, LED and solenoid
 
 ///  modes
