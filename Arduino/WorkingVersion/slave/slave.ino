@@ -32,7 +32,7 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = true;
+bool const DEBUG = false;
 bool const careHeader = true; // cares about the header or not
 
 
@@ -88,21 +88,10 @@ void loop() {
   //collect signal readings
   if (sequenceState == LISTEN || sequenceState == WAIT_START) {
     int micValue = analogRead(MIC_PIN);
-
-    avgValue += micValue;
-
-    if (counterSignal >= 5) {
-      avgValue /= 5.0;
-      if (avgValue < 1023 && avgValue > 50) { // for weird readings??
-          if (avgValue > signalMax) avgValue = micValue;
-          if (avgValue < signalMin) avgValue = micValue;
-        }
-
-        counterSignal = 0;
-        avgValue = 0;
-      }
-
-    counterSignal++;
+    if (micValue < 1023 && micValue > 50) { // for weird readings??
+      if (micValue > signalMax) signalMax = micValue;
+      if (micValue < signalMin) signalMin = micValue;
+    }
 
   }
 
@@ -156,7 +145,6 @@ void loop() {
 
           bool valueHit = isHit();
 
-          // 
           // recording the sequence
           //
           if (isRecord) {
@@ -180,7 +168,7 @@ void loop() {
           //
           // detecting the right header
           //
-          else if (!isRecord) {
+          if (!isRecord) {
 
             headerSequence[bitIndex] = valueHit;
             isHead = true;
