@@ -257,7 +257,7 @@ void loop() {
               //Reset values when an array of bits is received
               // if (val > 0) {
 
-              byteMSG8[0] = B10010110;
+              byteMSG8[0] = B00010011;
               if (DEBUG) Serial.println("clean Serial");
 
               readInBytes = true;
