@@ -49,7 +49,7 @@ bool recording[SEQITER][SEQBITS];
 bool playSequence[SEQBITS];
 bool correctHeader[] = {1, 1, 0};
 bool headerSequence[sizeof(correctHeader) / sizeof(bool)];
-bool debugSequence[] = {1, 0, 0, 1, 1, 0, 0, 1};
+bool debugSequence[] = {0, 0, 0, 1, 0, 0, 1, 1};
 
 ///Signal Processing
 int signalMin, signalMax;
@@ -57,7 +57,7 @@ int signalMin, signalMax;
 float avgValue    = 0;
 int counterSignal = 0;
 
-const int signalThreshold = 900; // 50-1024 we may need to make this dynamic
+const int signalThreshold = 400; // 50-1024 we may need to make this dynamic
 
 /// PWM-ing the Solenoid will need additional test 0-255
 byte const solenoid_pwm = 255;
@@ -112,19 +112,19 @@ void loop() {
   uint8_t valueByte = B00000001;
   delay(1);
   if (checkServer(nrf24, valueByte)) {
-    if (valueByte == TICK && timeKeeper.getTimeFrame() > TIMEFRAMEINTERVAL) {
+    if (valueByte == TICK && timeKeeper.getTimeTick() > TIMEFRAMEINTERVAL) {
       valueByte = TOCK;
-      timeKeeper.hit();
+      timeKeeper.tick();
       lock = false;
       clockCounter++;
 
-      Serial.print("MSG ");
-      Serial.println(timeKeeper.getTimeFrame());
+      if (DEBUG) {
+        Serial.print("MSG ");
+        Serial.println(timeKeeper.getTimeTick());
+      }
+
     }
   }
-
-  timeKeeper.updateTimeFrame();
-
 
   if (!lock) {
     switch (sequenceState) {
@@ -132,13 +132,7 @@ void loop() {
       //wait for debug time
       case WAIT:
         {
-          if (DEBUG) {
-            Serial.print("T: ");
-            Serial.print(timeKeeper.getTimeFrame());
-            Serial.print(" ");
-            Serial.println(timeKeeper.checkHit());
-          }
-
+          debugTimes();
         }
         break;
       case WAIT_START: {
@@ -168,6 +162,8 @@ void loop() {
             1. listens for the right header
             2. listens for the sequence
           */
+
+          if (DEBUG) Serial.println("LISTEN");
 
           bool valueHit = isHit();
 
@@ -230,7 +226,7 @@ void loop() {
             }
           }
 
-          //if (DEBUG) Serial.println(clockCounter);
+          if (DEBUG) Serial.println(clockCounter);
         }
 
         break;
@@ -240,14 +236,14 @@ void loop() {
             collects and analyses the readings
             gets the average
           */
-
           sequenceIndex++;
           bitIndex = 0;
 
           if (sequenceIndex < SEQITER) {
+            if (DEBUG) Serial.println("WAIT ANALYZE");
             sequenceState = LISTEN;
           } else {
-
+            if (DEBUG) Serial.println("ANALYZING");
             //
             // gets the average and defines what it heard to "playSequence"
             //
@@ -325,6 +321,7 @@ void loop() {
           /*
             plays single pulse
           */
+          if (DEBUG) Serial.println("PLAY");
 
           if (isHead) {
             if (headerSequence[bitIndex]) timeKeeper.hit();
@@ -411,27 +408,37 @@ void loop() {
     lock = !lock;
   }
 
+  //update times (now - prev)
+  timeKeeper.updateTimes();
+
   // outputs
   bool hit = timeKeeper.checkHit();
+  digitalWrite(LED_PIN, timeKeeper.checkTick());
 
   if (hit) {
-    digitalWrite(LED_PIN, hit);
     analogWrite(SOL_PIN, solenoid_pwm);
-
-    //Serial.print(hit);
-    //Serial.print(" ");
-    //Serial.println(timeKeeper.getTimeFrame());
   } else {
-    digitalWrite(LED_PIN, 0);
     analogWrite(SOL_PIN, 0);
-
-    //Serial.print(hit);
-    //Serial.print(" ");
-    //Serial.println(timeKeeper.getTimeFrame());
   }
 
 }
 
+
+
+
+bool debugTimes()
+{
+  if (DEBUG) {
+    Serial.print("T: ");
+    Serial.print(timeKeeper.getTimeHit());
+    Serial.print(" ");
+    Serial.print(timeKeeper.getTimeTick());
+    Serial.print(" ");
+    Serial.print(timeKeeper.checkHit());
+    Serial.print(" ");
+    Serial.println(timeKeeper.checkTick());
+  }
+}
 
 bool isHit() {
 
@@ -447,7 +454,7 @@ bool isHit() {
 
   // show heartbeat
   if (DEBUG) {
-    unsigned long timeFrame = timeKeeper.getTimeFrame();
+    unsigned long timeFrame = timeKeeper.getTimeHit();
     Serial.print("L: ");
     Serial.print(timeFrame);
     Serial.print(", ");

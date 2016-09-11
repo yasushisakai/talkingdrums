@@ -25,7 +25,7 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = true;
+bool const DEBUG = false;
 bool const DEBUG_PORT = false;
 
 ///Sequence
@@ -134,9 +134,9 @@ void loop() {
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
   uint8_t valueByte = B00000001;
   delay(1);
-  if (checkServer(nrf24, valueByte) && timeKeeper.getTimeFrame() > TIMEFRAMEINTERVAL) {
+  if (checkServer(nrf24, valueByte) && timeKeeper.getTimeTick() > TIMEFRAMEINTERVAL) {
     valueByte = TOCK;
-    timeKeeper.hit();
+    timeKeeper.tick();
     lock = false;
     // Serial.flush();
 
@@ -144,7 +144,7 @@ void loop() {
     clockCounter++;
   }
 
-  timeKeeper.updateTimeFrame();
+
 
   //while not in the look read the serial port for incoming color
   if (!lock) {
@@ -197,7 +197,7 @@ void loop() {
           if ( playSequence[bitIndex]) timeKeeper.hit();
 
           bitIndex++;
-          if (bitIndex == SEQBITS) {
+          if (bitIndex >= SEQBITS) {
             if (DEBUG) Serial.println("");
 
             bitIndex = 0;
@@ -315,22 +315,17 @@ void loop() {
   }
 
   // outputs
+  //update times (now - prev)
+  timeKeeper.updateTimes();
+
+  // outputs
   bool hit = timeKeeper.checkHit();
+  digitalWrite(LED_PIN, timeKeeper.checkTick());
 
   if (hit) {
-    digitalWrite(LED_PIN, hit);
     analogWrite(SOL_PIN, solenoid_pwm);
-
-    //Serial.print(hit);
-    //Serial.print(" ");
-    //Serial.println(timeKeeper.getTimeFrame());
   } else {
-    digitalWrite(LED_PIN, 0);
     analogWrite(SOL_PIN, 0);
-
-    //Serial.print(hit);
-    //Serial.print(" ");
-    //Serial.println(timeKeeper.getTimeFrame());
   }
   
   turnOnLEDs(byteMSG8[0]);

@@ -33,18 +33,21 @@ class TimeKeeper {
     // waits untill signalCount hits the signalLimit
     // resets the signalCount once it does.
 
-    unsigned long timeFrame;
+    unsigned long timeTick;
+    unsigned long timeHit;
 
     TimeKeeper();
     
     void cycle(unsigned long t);
-    void updateTimeFrame();
+    void updateTimes();
     
     void hit();
     void tick();
     
     bool checkHit();
     bool checkTick();
-    unsigned long getTimeFrame();
+    
+    unsigned long getTimeHit();
+    unsigned long getTimeTick();
 };
 #endif
