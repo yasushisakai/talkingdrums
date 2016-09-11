@@ -69,7 +69,7 @@ void setup() {
   digitalWrite(SOL_PIN, LOW);
 
   //sequence
-  sequenceState = WAIT_START; // new wait!!!
+  sequenceState = WAIT; // new wait!!!
   bitIndex = sequenceIndex = 0;
   lock = true;
   isRecord = false;
@@ -85,6 +85,12 @@ void setup() {
 }
 
 void loop() {
+
+  unsigned long cTime = millis();
+  // updates the timeKeeper
+  timeKeeper.cycle(cTime);
+
+
   //collect signal readings
   if (sequenceState == LISTEN || sequenceState == WAIT_START) {
     int micValue = analogRead(MIC_PIN);
@@ -95,26 +101,40 @@ void loop() {
 
   }
 
-  // updates the timeKeeper
-  timeKeeper.cycle();
-
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
   uint8_t value;
   delay(1);
   if (checkServer(nrf24, value)) {
-    if (value == TICK && timeKeeper.timeFrame > TIMEFRAMEINTERVAL) {
+    if (value == TICK && timeKeeper.getTimeFrame() > TIMEFRAMEINTERVAL) {
       value = TOCK;
-      timeKeeper.tick();
-      timeKeeper.flash();
+      timeKeeper.hit();
       lock = false;
-
       clockCounter++;
+      
+      //Serial.print("got ");
+      //Serial.println(timeKeeper.getTimeFrame());
     }
   }
 
+  timeKeeper.updateTimeFrame();
+
+
   if (!lock) {
     switch (sequenceState) {
+
+      //wait for debug time
+      case WAIT:
+        {
+          if (DEBUG) {
+            Serial.print("T: ");
+            Serial.print(timeKeeper.getTimeFrame());
+            Serial.print(" ");
+            Serial.println(timeKeeper.checkHit());
+          }
+          
+        }
+        break;
       case WAIT_START: {
           /*
             initial wait for 3 cycles for a stable mic reading
@@ -381,14 +401,24 @@ void loop() {
   }
 
   // outputs
-  digitalWrite(LED_PIN, timeKeeper.checkFlash());
-  digitalWrite(SOL_PIN, timeKeeper.checkHit());
+  bool hit = timeKeeper.checkHit();
 
-  if (timeKeeper.checkHit()) {
+  if (hit) {
+    digitalWrite(LED_PIN, hit);
     analogWrite(SOL_PIN, solenoid_pwm);
+
+    //Serial.print(hit);
+    //Serial.print(" ");
+    //Serial.println(timeKeeper.getTimeFrame());
   } else {
+    digitalWrite(LED_PIN, 0);
     analogWrite(SOL_PIN, 0);
+
+    //Serial.print(hit);
+    //Serial.print(" ");
+    //Serial.println(timeKeeper.getTimeFrame());
   }
+
 }
 
 
@@ -399,7 +429,7 @@ bool isHit() {
 
   // show heartbeat
   if (DEBUG) {
-    unsigned long timeFrame = timeKeeper.timeFrameChar();
+    unsigned long timeFrame = timeKeeper.getTimeFrame();
     Serial.print("L: ");
     Serial.print(timeFrame);
     Serial.print(", ");

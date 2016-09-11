@@ -138,7 +138,7 @@ void loop() {
   uint8_t valueByte = B00000001;
   delay(1);
   if (checkServer(nrf24, valueByte) && timeKeeper.getTimeFrame() > TIMEFRAMEINTERVAL) {
-    timeKeeper.tick();
+    timeKeeper.hit();
     timeKeeper.flash();
     lock = false;
     // Serial.flush();

@@ -10,7 +10,6 @@ TimeKeeper::TimeKeeper() {
   this->timeFrame   = 0;
   this->lastTick    = 0; // last time when '1' came from server
   this->lastHit     = 0;
-  this->lastFlash   = 0;
 }
 
 bool static TimeKeeper::wait() {
@@ -21,35 +20,33 @@ bool static TimeKeeper::wait() {
   return flag;
 }
 
-void TimeKeeper::cycle() {
-  this->currentTime = millis();
-  this->timeFrame = this->currentTime - this->lastTick;
+void TimeKeeper::cycle(unsigned long t) {
+  this->currentTime = t;
 }
 
-void TimeKeeper::tick() {
-  this->lastTick = this->currentTime;
+void TimeKeeper::updateTimeFrame()
+{
+  this->timeFrame = this->currentTime - this->lastHit;
 }
 
 void TimeKeeper::hit() {
   this->lastHit = this->currentTime;
 }
 
-void TimeKeeper::flash() {
-  this->lastFlash = this->currentTime;
+void TimeKeeper::tick() {
+  this->lastTick = this->currentTime;
 }
+
 
 bool TimeKeeper::checkHit() {
-  return (this->currentTime - this->lastHit) < this->interval;
+  return (this->timeFrame) < this->interval;
 }
 
-bool TimeKeeper::checkFlash() {
-  return (this->currentTime - this->lastFlash) < this->interval;
+bool TimeKeeper::checkTick() {
+  return (this->currentTime - this->lastTick) < this->interval;
 }
 
-unsigned long TimeKeeper::timeFrameChar() {
-  if (this->timeFrame <= 100L) {
-    return 0L;
-  }
+unsigned long TimeKeeper::getTimeFrame(){
   return this->timeFrame;
 }
 
