@@ -32,13 +32,19 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = false;
+bool const DEBUG = true;
 bool const careHeader = true; // cares about the header or not
 
 
 ///Sequence
-byte sequenceState, sequenceIndex, bitIndex;
-bool lock, isRecord, isHead;
+byte sequenceState = 0;
+byte sequenceIndex = 0;
+byte bitIndex      = 0;
+
+bool lock = true;
+bool isRecord = false;
+bool isHead = true;
+
 bool recording[SEQITER][SEQBITS];
 bool playSequence[SEQBITS];
 bool correctHeader[] = {1, 1, 0};
@@ -51,10 +57,10 @@ int signalMin, signalMax;
 float avgValue    = 0;
 int counterSignal = 0;
 
-const int signalThreshold = 260; // 50-1024 we may need to make this dynamic
+const int signalThreshold = 900; // 50-1024 we may need to make this dynamic
 
 /// PWM-ing the Solenoid will need additional test 0-255
-byte const solenoid_pwm = 200;
+byte const solenoid_pwm = 255;
 
 //clock cyles keepers
 uint8_t clockCounter = 0;
@@ -69,7 +75,7 @@ void setup() {
   digitalWrite(SOL_PIN, LOW);
 
   //sequence
-  sequenceState = WAIT; // new wait!!!
+  sequenceState = WAIT_START; // new wait!!!
   bitIndex = sequenceIndex = 0;
   lock = true;
   isRecord = false;
@@ -103,17 +109,17 @@ void loop() {
 
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
-  uint8_t value;
+  uint8_t valueByte = B00000001;
   delay(1);
-  if (checkServer(nrf24, value)) {
-    if (value == TICK && timeKeeper.getTimeFrame() > TIMEFRAMEINTERVAL) {
-      value = TOCK;
+  if (checkServer(nrf24, valueByte)) {
+    if (valueByte == TICK && timeKeeper.getTimeFrame() > TIMEFRAMEINTERVAL) {
+      valueByte = TOCK;
       timeKeeper.hit();
       lock = false;
       clockCounter++;
-      
-      //Serial.print("got ");
-      //Serial.println(timeKeeper.getTimeFrame());
+
+      Serial.print("MSG ");
+      Serial.println(timeKeeper.getTimeFrame());
     }
   }
 
@@ -132,7 +138,7 @@ void loop() {
             Serial.print(" ");
             Serial.println(timeKeeper.checkHit());
           }
-          
+
         }
         break;
       case WAIT_START: {
@@ -170,7 +176,6 @@ void loop() {
           if (isRecord) {
             if (DEBUG) {
               Serial.print("L: ");
-              Serial.print(", ");
               Serial.print(sequenceIndex);
               Serial.print(", ");
               Serial.print(bitIndex);
@@ -225,7 +230,7 @@ void loop() {
             }
           }
 
-          if (DEBUG) Serial.println(clockCounter);
+          //if (DEBUG) Serial.println(clockCounter);
         }
 
         break;
@@ -250,8 +255,14 @@ void loop() {
               float average = 0.0;
               for (int j = 0; j < SEQITER; j++) {
                 average += recording[j][i];
+                if (DEBUG) {
+                  Serial.print(" ");
+                  Serial.print(average);
+                  Serial.print(" ");
+                }
               }
               playSequence[i] = average >= 0.5 * SEQITER;
+              if (DEBUG) Serial.println(playSequence[i]);
             }
 
             sequenceIndex = 0;
@@ -427,22 +438,29 @@ bool isHit() {
   bool valueHit = false;
   int peakToPeak = abs(signalMax - signalMin); // abs... weird stuff happens
 
-  // show heartbeat
-  if (DEBUG) {
-    unsigned long timeFrame = timeKeeper.getTimeFrame();
-    Serial.print("L: ");
-    Serial.print(timeFrame);
-    Serial.print(", ");
-    Serial.println(peakToPeak);
-  }
-
+  valueHit = peakToPeak > signalThreshold;
   //
   // reset signal Max and Min
   //
   signalMax = 0;
   signalMin = 1024;
 
-  valueHit = peakToPeak > signalThreshold;
+  // show heartbeat
+  if (DEBUG) {
+    unsigned long timeFrame = timeKeeper.getTimeFrame();
+    Serial.print("L: ");
+    Serial.print(timeFrame);
+    Serial.print(", ");
+    Serial.print(peakToPeak);
+    Serial.print(", ");
+    Serial.print(bitIndex);
+    Serial.print(", ");
+    Serial.println(valueHit);
+  }
+
+
+
+
 
   return valueHit;
 }

@@ -25,7 +25,7 @@
 //we might want to constain the number of bits to 8
 //this way we can use byte
 
-#define INTERVAL 30
+const unsigned long  INTERVAL          = 50L;
 // this interval is for the outputs, LED and solenoid
 
 ///  modes
