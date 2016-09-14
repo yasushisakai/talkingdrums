@@ -1,69 +1,61 @@
 #include "Arduino.h"
 #include "TimeKeeper.h"
 
-uint8_t static TimeKeeper::signalCount = 0;
-uint8_t static TimeKeeper::signalLimit = 3;
+
+uint8_t  TimeKeeper::signalCount = 0;
+uint8_t  TimeKeeper::signalLimit = 3;
 
 TimeKeeper::TimeKeeper() {
-  this->currentTime = 0L;
-  this->timeFrame   = 0L;
-  this->lastTick    = 0L; // last time when '1' came from server
-  this->lastHit     = 0L;
-  this->lastFlash   = 0L;
-  this->interval    = 0L;
+  this->currentTime = 0;
+  this->timeHit     = 0;
+  this->timeTick    = 0;
+  
+  this->lastTick    = 0; // last time when '1' came from server
+  this->lastHit     = 0;
 }
-
-
-void TimeKeeper::setInterval(unsigned long const & inter)
-{
-  interval = inter;
-}
-
 
 bool static TimeKeeper::wait() {
   bool flag = signalCount >= signalLimit;
   if (!flag) {
-    TimeKeeper::signalCount = 0; // refresh the signal Count
+    signalCount = 0; // refresh the signal Count
   }
   return flag;
 }
 
-void TimeKeeper::cycle(unsigned long & cTime) {
-  this->currentTime = cTime;
-  this->timeFrame = this->currentTime - this->lastTick;
+void TimeKeeper::cycle(unsigned long t) {
+  this->currentTime = t;
 }
 
-void TimeKeeper::tick() {
-  this->lastTick = this->currentTime;
+void TimeKeeper::updateTimes(){
+  this->timeTick = this->currentTime - this->lastTick;
+  this->timeHit  = this->currentTime - this->lastHit;
 }
 
 void TimeKeeper::hit() {
   this->lastHit = this->currentTime;
 }
 
-void TimeKeeper::flash() {
-  this->lastFlash = this->currentTime;
+void TimeKeeper::tick() {
+  this->lastTick = this->currentTime;
 }
 
 
 bool TimeKeeper::checkHit() {
-  return (this->currentTime - this->lastHit) < this->interval;
+  return (this->timeHit ) < this->interval;
 }
 
-bool TimeKeeper::checkFlash() {
-  return (this->currentTime - this->lastFlash) < this->interval;
+bool TimeKeeper::checkTick() {
+  return (this->timeTick ) < this->interval;
 }
 
-unsigned long TimeKeeper::getTimeFrameLimit() {
-  if (this->timeFrame < 100L) {
-    return 0L;
-  }
-  return this->timeFrame;
+unsigned long TimeKeeper::getTimeTick(){
+  return this->timeTick;
 }
 
-unsigned long TimeKeeper::getTimeFrame() {
-  return this->timeFrame;
+unsigned long TimeKeeper::getTimeHit(){
+  return this->timeHit;
 }
+
 
 
 

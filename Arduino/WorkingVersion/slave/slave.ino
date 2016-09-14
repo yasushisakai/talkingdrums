@@ -32,18 +32,24 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = false;
+bool const DEBUG = true;
 bool const careHeader = true; // cares about the header or not
 
 
 ///Sequence
-byte sequenceState, sequenceIndex, bitIndex;
-bool lock, isRecord, isHead;
+byte sequenceState = 0;
+byte sequenceIndex = 0;
+byte bitIndex      = 0;
+
+bool lock = true;
+bool isRecord = false;
+bool isHead = true;
+
 bool recording[SEQITER][SEQBITS];
 bool playSequence[SEQBITS];
 bool correctHeader[] = {1, 1, 0};
 bool headerSequence[sizeof(correctHeader) / sizeof(bool)];
-bool debugSequence[] = {1, 0, 0, 1, 1, 0, 0, 1};
+bool debugSequence[] = {0, 0, 0, 1, 0, 0, 1, 1};
 
 ///Signal Processing
 int signalMin, signalMax;
@@ -51,7 +57,7 @@ int signalMin, signalMax;
 float avgValue    = 0;
 int counterSignal = 0;
 
-const int signalThreshold = 260; // 50-1024 we may need to make this dynamic
+const int signalThreshold = 400; // 50-1024 we may need to make this dynamic
 
 /// PWM-ing the Solenoid will need additional test 0-255
 byte const solenoid_pwm = 255;
@@ -85,6 +91,12 @@ void setup() {
 }
 
 void loop() {
+
+  unsigned long cTime = millis();
+  // updates the timeKeeper
+  timeKeeper.cycle(cTime);
+
+
   //collect signal readings
   if (sequenceState == LISTEN || sequenceState == WAIT_START) {
     int micValue = analogRead(MIC_PIN);
@@ -95,26 +107,34 @@ void loop() {
 
   }
 
-  // updates the timeKeeper
-  timeKeeper.cycle();
-
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
-  uint8_t value;
+  uint8_t valueByte = B00000001;
   delay(1);
-  if (checkServer(nrf24, value)) {
-    if (value == TICK && timeKeeper.timeFrame > TIMEFRAMEINTERVAL) {
-      value = TOCK;
+  if (checkServer(nrf24, valueByte)) {
+    if (valueByte == TICK && timeKeeper.getTimeTick() > TIMEFRAMEINTERVAL) {
+      valueByte = TOCK;
       timeKeeper.tick();
-      timeKeeper.flash();
       lock = false;
-
       clockCounter++;
+
+      if (DEBUG) {
+        Serial.print("MSG ");
+        Serial.println(timeKeeper.getTimeTick());
+      }
+
     }
   }
 
   if (!lock) {
     switch (sequenceState) {
+
+      //wait for debug time
+      case WAIT:
+        {
+          debugTimes();
+        }
+        break;
       case WAIT_START: {
           /*
             initial wait for 3 cycles for a stable mic reading
@@ -143,6 +163,8 @@ void loop() {
             2. listens for the sequence
           */
 
+          if (DEBUG) Serial.println("LISTEN");
+
           bool valueHit = isHit();
 
           // recording the sequence
@@ -150,7 +172,6 @@ void loop() {
           if (isRecord) {
             if (DEBUG) {
               Serial.print("L: ");
-              Serial.print(", ");
               Serial.print(sequenceIndex);
               Serial.print(", ");
               Serial.print(bitIndex);
@@ -216,14 +237,14 @@ void loop() {
             collects and analyses the readings
             gets the average
           */
-
           sequenceIndex++;
           bitIndex = 0;
 
           if (sequenceIndex < SEQITER) {
+            if (DEBUG) Serial.println("WAIT ANALYZE");
             sequenceState = LISTEN;
           } else {
-
+            if (DEBUG) Serial.println("ANALYZING");
             //
             // gets the average and defines what it heard to "playSequence"
             //
@@ -231,8 +252,14 @@ void loop() {
               float average = 0.0;
               for (int j = 0; j < SEQITER; j++) {
                 average += recording[j][i];
+                if (DEBUG) {
+                  Serial.print(" ");
+                  Serial.print(average);
+                  Serial.print(" ");
+                }
               }
               playSequence[i] = average >= 0.5 * SEQITER;
+              if (DEBUG) Serial.println(playSequence[i]);
             }
 
             sequenceIndex = 0;
@@ -295,6 +322,7 @@ void loop() {
           /*
             plays single pulse
           */
+          if (DEBUG) Serial.println("PLAY");
 
           if (isHead) {
             if (headerSequence[bitIndex]) timeKeeper.hit();
@@ -381,39 +409,66 @@ void loop() {
     lock = !lock;
   }
 
-  // outputs
-  digitalWrite(LED_PIN, timeKeeper.checkFlash());
-  digitalWrite(SOL_PIN, timeKeeper.checkHit());
+  //update times (now - prev)
+  timeKeeper.updateTimes();
 
-  if (timeKeeper.checkHit()) {
+  // outputs
+  bool hit = timeKeeper.checkHit();
+  digitalWrite(LED_PIN, timeKeeper.checkTick());
+
+  if (hit) {
     analogWrite(SOL_PIN, solenoid_pwm);
   } else {
     analogWrite(SOL_PIN, 0);
   }
+
 }
 
+
+
+
+bool debugTimes()
+{
+  if (DEBUG) {
+    Serial.print("T: ");
+    Serial.print(timeKeeper.getTimeHit());
+    Serial.print(" ");
+    Serial.print(timeKeeper.getTimeTick());
+    Serial.print(" ");
+    Serial.print(timeKeeper.checkHit());
+    Serial.print(" ");
+    Serial.println(timeKeeper.checkTick());
+  }
+}
 
 bool isHit() {
 
   bool valueHit = false;
   int peakToPeak = abs(signalMax - signalMin); // abs... weird stuff happens
 
-  // show heartbeat
-  if (DEBUG) {
-    unsigned long timeFrame = timeKeeper.timeFrameChar();
-    Serial.print("L: ");
-    Serial.print(timeFrame);
-    Serial.print(", ");
-    Serial.println(peakToPeak);
-  }
-
+  valueHit = peakToPeak > signalThreshold;
   //
   // reset signal Max and Min
   //
   signalMax = 0;
   signalMin = 1024;
 
-  valueHit = peakToPeak > signalThreshold;
+  // show heartbeat
+  if (DEBUG) {
+    unsigned long timeFrame = timeKeeper.getTimeHit();
+    Serial.print("L: ");
+    Serial.print(timeFrame);
+    Serial.print(", ");
+    Serial.print(peakToPeak);
+    Serial.print(", ");
+    Serial.print(bitIndex);
+    Serial.print(", ");
+    Serial.println(valueHit);
+  }
+
+
+
+
 
   return valueHit;
 }

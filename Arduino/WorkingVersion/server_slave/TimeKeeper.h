@@ -15,16 +15,15 @@
 
 class TimeKeeper {
   private:
-    unsigned long interval; //ms
+    static const unsigned long interval = INTERVAL; //ms
+    // the number of cycles to wait for aggregate data readings
 
     unsigned long currentTime;
-    unsigned long lastTick;
+    
     unsigned long lastHit;
-    unsigned long lastFlash;
-    unsigned long timeFrame;
+    unsigned long lastTick;
 
   public:
-
     uint8_t static signalCount;
 
     // the number of cycles to wait for aggregate data readings
@@ -34,16 +33,21 @@ class TimeKeeper {
     // waits untill signalCount hits the signalLimit
     // resets the signalCount once it does.
 
-    TimeKeeper();
-    void cycle(unsigned long & cTime);
-    void setInterval(unsigned long const & inter);
-    void tick();
-    void hit();
-    void flash();
-    bool checkHit();
-    bool checkFlash();
-    unsigned long getTimeFrameLimit();
+    unsigned long timeTick;
+    unsigned long timeHit;
 
-    unsigned long getTimeFrame();
+    TimeKeeper();
+    
+    void cycle(unsigned long t);
+    void updateTimes();
+    
+    void hit();
+    void tick();
+    
+    bool checkHit();
+    bool checkTick();
+    
+    unsigned long getTimeHit();
+    unsigned long getTimeTick();
 };
 #endif

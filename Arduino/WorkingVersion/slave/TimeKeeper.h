@@ -19,10 +19,9 @@ class TimeKeeper {
     // the number of cycles to wait for aggregate data readings
 
     unsigned long currentTime;
-    unsigned long lastTick;
-
+    
     unsigned long lastHit;
-    unsigned long lastFlash;
+    unsigned long lastTick;
 
   public:
     uint8_t static signalCount;
@@ -34,15 +33,21 @@ class TimeKeeper {
     // waits untill signalCount hits the signalLimit
     // resets the signalCount once it does.
 
-    unsigned long timeFrame;
+    unsigned long timeTick;
+    unsigned long timeHit;
 
     TimeKeeper();
-    void cycle();
-    void tick();
+    
+    void cycle(unsigned long t);
+    void updateTimes();
+    
     void hit();
-    void flash();
+    void tick();
+    
     bool checkHit();
-    bool checkFlash();
-    unsigned long timeFrameChar();
+    bool checkTick();
+    
+    unsigned long getTimeHit();
+    unsigned long getTimeTick();
 };
 #endif
