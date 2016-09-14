@@ -35,7 +35,7 @@ const unsigned long TIMEFRAMEINTERVAL  = 60L;
 //this way we can use byte
 
 // this interval is for the outputs, LED and solenoid
-const unsigned long  INTERVAL          = 35L;
+const unsigned long  INTERVAL          = 10L;
 
 // MODES
 // we can do enum if we want

@@ -54,7 +54,7 @@ int counterSignal = 0;
 const int signalThreshold = 260; // 50-1024 we may need to make this dynamic
 
 /// PWM-ing the Solenoid will need additional test 0-255
-byte const solenoid_pwm = 200;
+byte const solenoid_pwm = 255;
 
 //clock cyles keepers
 uint8_t clockCounter = 0;
@@ -155,7 +155,8 @@ void loop() {
               Serial.print(", ");
               Serial.print(bitIndex);
               Serial.print(", ");
-              Serial.println(valueHit);
+              Serial.print(valueHit);
+              Serial.print(" ");
             }
             recording[sequenceIndex][bitIndex] = valueHit;
             bitIndex++;
