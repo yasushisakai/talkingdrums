@@ -34,7 +34,7 @@ TimeKeeper timeKeeper;
 ///DEBUG
 bool const DEBUG = true;
 bool const DEBUG_TIME = false;
-bool const careHeader = false; // cares about the header or not
+bool const careHeader = true; // cares about the header or not
 
 
 ///Sequence
@@ -43,8 +43,12 @@ byte sequenceIndex = 0;
 byte bitIndex      = 0;
 
 bool lock      = true;
-bool isRecord  = false;
-bool isHead    = false;
+
+//HEADER
+bool isRecordHeader = false;
+bool isHead         = false;
+bool isFirstHit     = true;
+uint8_t numHeaderBits   = 0;
 
 bool recording[SEQITER][SEQBITS];
 bool playSequence[SEQBITS];
@@ -58,7 +62,7 @@ int signalMin, signalMax;
 float avgValue    = 0;
 int counterSignal = 0;
 
-const int signalThreshold = 400; // 50-1024 we may need to make this dynamic
+const int signalThreshold = 700; // 50-1024 we may need to make this dynamic
 
 /// PWM-ing the Solenoid will need additional test 0-255
 byte const solenoid_pwm = 255;
@@ -79,6 +83,9 @@ void setup() {
   sequenceState = WAIT_START; // new wait!!!
   bitIndex = sequenceIndex = 0;
 
+
+  numHeaderBits =  (sizeof(correctHeader) / sizeof(bool));
+
   resetSequence(); //resets recording, play and head Sequence
 
   //signal
@@ -96,7 +103,7 @@ void loop() {
 
 
   //collect signal readings
-  if (sequenceState == LISTEN || sequenceState == WAIT_START) {
+  if (sequenceState == LISTEN_HEADER || sequenceState == LISTEN_SEQUENCE || sequenceState == WAIT_START) {
     int micValue = analogRead(MIC_PIN);
     if (micValue < 1023 && micValue > 50) { // for weird readings??
       if (micValue > signalMax) signalMax = micValue;
@@ -149,8 +156,8 @@ void loop() {
               Serial.print(" ");
             }
 
-            sequenceState = LISTEN;
-            TimeKeeper::signalLimit  = 1;
+            sequenceState = LISTEN_HEADER;
+            TimeKeeper::signalLimit  = 2;
           }
           TimeKeeper::signalCount++;
 
@@ -158,91 +165,114 @@ void loop() {
 
         }
         break;
+      case LISTEN_HEADER:
+        {
+          if (DEBUG) Serial.print("LISTEN HEADER ");
 
-      case LISTEN: {
+          bool valueHit = isHit();
+
+          if (isRecordHeader) {
+
+            headerSequence[bitIndex] = valueHit;
+            bitIndex ++;
+
+            isHead = true;
+
+            //Analyze to pass to the next stage
+            if (bitIndex == numHeaderBits) {
+              if (DEBUG)Serial.print("AH ");
+              for (uint8_t i = 0; i < numHeaderBits; i++) {
+                if (headerSequence[i] != correctHeader[i]) {
+                  isHead = false;
+                  break;
+                }
+              }
+
+              //RESET HEADER
+              //if didn't found the header then reset the values of headerSequence
+              if (isHead == false) {
+                for (uint8_t i = 0; i < numHeaderBits; i++) {
+                  headerSequence[i] = false;
+                }
+                isRecordHeader = false;
+                bitIndex = 0;
+                isFirstHit = true;
+                valueHit = false;
+                if (DEBUG) Serial.print("RH ");
+              }
+
+              // forces the head to pass if careHead is off.
+              if (!careHeader) {
+                isHead = true;
+              }
+            }
+
+
+            if (DEBUG) Serial.print("B: ");
+            if (DEBUG) Serial.print(bitIndex);
+            if (DEBUG) Serial.print(" ");
+
+            if (isHead && bitIndex == numHeaderBits) {
+              Serial.println("L: found head"); // notify head detection to ImageReciever
+
+              if (DEBUG) {
+                Serial.print("L: h=");
+                for (uint8_t i = 0; i < numHeaderBits; i++)
+                  Serial.print(headerSequence[i]);
+                Serial.println();
+              }
+
+              //go to listen the sequence  and RESET values
+              bitIndex = 0; //reset!
+              clockCounter = 3;
+              valueHit = false;
+              sequenceState = LISTEN_SEQUENCE;
+
+            }
+          }
+
+
+
+          //if we found a hit then we can start anaylzing the header
+          if (isFirstHit && valueHit) {
+            headerSequence[bitIndex] = valueHit;
+            bitIndex ++;
+            isRecordHeader = true;
+            isFirstHit     = false;
+            if (DEBUG) Serial.print("FH ");
+          }
+
+
+          if (DEBUG) Serial.println(clockCounter);
+
+        }
+        break;
+      case LISTEN_SEQUENCE: {
           /*
             listens
             1. listens for the right header
             2. listens for the sequence
           */
 
-          if (DEBUG) Serial.print("LISTEN ");
+          if (DEBUG) Serial.print("LISTEN SEQUENCE");
 
           bool valueHit = isHit();
 
-          // recording the sequence
-          //
-          if (isRecord) {
-            if (DEBUG) {
-              Serial.print("L: ");
-              Serial.print(sequenceIndex);
-              Serial.print(", ");
-              Serial.print(bitIndex);
-              Serial.print(", ");
-              Serial.print(valueHit);
-              Serial.print(" ");
-            }
-            recording[sequenceIndex][bitIndex] = valueHit;
-            bitIndex++;
-            if (bitIndex >= SEQBITS) {
-              sequenceState = ANALYZE;
-            }
+          if (DEBUG) {
+            Serial.print("L: ");
+            Serial.print(sequenceIndex);
+            Serial.print(", ");
+            Serial.print(bitIndex);
+            Serial.print(", ");
+            Serial.print(valueHit);
+            Serial.print(" ");
+          }
+          recording[sequenceIndex][bitIndex] = valueHit;
+          bitIndex++;
+          if (bitIndex >= SEQBITS) {
+            sequenceState = ANALYZE;
           }
 
-
-          //
-          // detecting the right header
-          //
-          if (!isRecord) {
-
-            headerSequence[bitIndex] = valueHit;
-            isHead = true;
-            bitIndex ++;
-
-            //Analyze to pass to the next stage
-            int numBits =  (sizeof(correctHeader) / sizeof(bool));
-
-            if (bitIndex == numBits) {
-              for (uint8_t i = 0; i <= numBits; i++) {
-                if (headerSequence[i] != correctHeader[i]) {
-                  bitIndex = 0;
-                  isHead = false;
-                  break;
-                }
-              }
-
-              // forces the head to pass if careHead is off.
-              if (!careHeader) {
-                isHead = true;
-                bitIndex = 3;
-              }
-
-            }
-
-            if (isHead) {
-
-              if (DEBUG) Serial.print("B: ");
-              if (DEBUG) Serial.print(bitIndex);
-              if (DEBUG) Serial.print(" ");
-
-
-              if (bitIndex >= sizeof(correctHeader) / sizeof(bool)) {
-                Serial.println("L: found head"); // notify head detection to ImageReciever
-
-                if (DEBUG && !careHeader) {
-                  Serial.print("L: h=");
-                  for (uint8_t i = 0; i < sizeof(headerSequence) / sizeof(bool); i++)
-                    Serial.print(headerSequence[i]);
-                  Serial.println();
-                }
-
-                isRecord = true;
-                bitIndex = 0; //reset!
-                clockCounter = 3;
-              }
-            }
-
-          }
 
           if (DEBUG) Serial.println(clockCounter);
         }
@@ -259,7 +289,7 @@ void loop() {
 
           if (sequenceIndex < SEQITER) {
             if (DEBUG) Serial.print("WAIT ANALYZE  ");
-            sequenceState = LISTEN;
+            sequenceState = LISTEN_SEQUENCE;
           } else {
             if (DEBUG) Serial.print("ANALYZING  ");
             //
@@ -349,7 +379,7 @@ void loop() {
             bitIndex++;
 
             if (DEBUG) Serial.print(headerSequence[bitIndex]);
-            
+
             if (bitIndex >= sizeof(correctHeader) / sizeof(bool)) {
               isHead = false;
               bitIndex = 0;
@@ -379,7 +409,7 @@ void loop() {
           sequenceIndex++;
 
           // did it play it for enough times??
-          if (sequenceIndex > SEQITER) {
+          if (sequenceIndex == SEQITER) {
             // yes, proceed to reset
             sequenceState = RESET;
           } else {
@@ -388,6 +418,7 @@ void loop() {
             if (DEBUG) {
               Serial.print("L: playing= ");
               Serial.print(sequenceIndex);
+              Serial.print(" ");
             }
           }
 
@@ -411,15 +442,17 @@ void loop() {
           if (DEBUG) Serial.print("L: RESET ");
 
           clockCounter = 0;
-          sequenceState = LISTEN;
+          sequenceState = WAIT_START;
 
           // reset values
           bitIndex = 0;
           sequenceIndex = 0;
+
+          isFirstHit     = true;
+          isRecordHeader = false;
+          isHead         = false;
+
           resetSequence();
-
-          isRecord = false;
-
 
           if (DEBUG) Serial.println(clockCounter);
 
@@ -474,9 +507,9 @@ bool isHit() {
   signalMin = 1024;
 
   // show heartbeat
-  /*
-    if (DEBUG) {
-    unsigned long timeFrame = timeKeeper.getTimeHit();
+
+  if (DEBUG) {
+    unsigned long timeFrame = timeKeeper.getTimeTick();
     Serial.print("H: ");
     Serial.print(timeFrame);
     Serial.print(", ");
@@ -484,9 +517,10 @@ bool isHit() {
     Serial.print(", ");
     Serial.print(bitIndex);
     Serial.print(", ");
-    Serial.println(valueHit);
-    }
-  */
+    Serial.print(valueHit);
+    Serial.print(" ");
+  }
+
 
 
   return valueHit;
@@ -497,15 +531,15 @@ bool isHit() {
 
 void resetSequence() {
   //reset sequences
-  for (char i = 0; i < SEQBITS; i++) {
+  for (uint8_t i = 0; i < SEQBITS; i++) {
     playSequence[i] = false;
-    for (char j = 0; j < SEQITER; j++) {
+    for (uint8_t j = 0; j < SEQITER; j++) {
       recording[j][i] = false;
     }
   }
 
   //reset header
-  for (uint8_t i = 0; i < sizeof(correctHeader) / sizeof(bool); i++) {
+  for (uint8_t i = 0; i < numHeaderBits; i++) {
     headerSequence[i] = false;
   }
 

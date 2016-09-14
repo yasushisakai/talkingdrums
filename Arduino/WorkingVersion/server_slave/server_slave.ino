@@ -57,7 +57,7 @@ bool readInBytes = false;
 //incoming msg, keep it as an array in case we need to
 //read values bigger than a byte
 byte byteMSG8[] = {
-  B00000000
+  B00010011
 };
 
 //clock cyles keepers

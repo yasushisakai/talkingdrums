@@ -32,11 +32,12 @@ const unsigned long  INTERVAL          = 50L;
 // we can do enum if we want
 #define WAIT 0
 #define WAIT_START 1
-#define LISTEN 2
-#define ANALYZE 3
-#define HEADER_PLAY 4
-#define PULSE_PLAY 5
-#define WAIT_PLAY 6
-#define RESET 7
+#define LISTEN_HEADER 2
+#define LISTEN_SEQUENCE 3
+#define ANALYZE 4
+#define HEADER_PLAY 5
+#define PULSE_PLAY 6
+#define WAIT_PLAY 7
+#define RESET 8
 
 #endif
