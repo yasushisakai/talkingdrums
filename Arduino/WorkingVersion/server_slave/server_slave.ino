@@ -26,6 +26,7 @@ TimeKeeper timeKeeper;
 
 ///DEBUG
 bool const DEBUG = true;
+bool const DEBUG_TIME = false;
 bool const DEBUG_PORT = false;
 
 ///Sequence
@@ -140,6 +141,11 @@ void loop() {
     lock = false;
     // Serial.flush();
     clockCounter++;
+
+    if (DEBUG_TIME) {
+      Serial.print("MSG ");
+      Serial.println(timeKeeper.getTimeTick());
+    }
   }
   delay(2);
 

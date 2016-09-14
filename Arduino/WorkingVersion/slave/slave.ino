@@ -33,7 +33,8 @@ TimeKeeper timeKeeper;
 
 ///DEBUG
 bool const DEBUG = true;
-bool const careHeader = true; // cares about the header or not
+bool const DEBUG_TIME = false;
+bool const careHeader = false; // cares about the header or not
 
 
 ///Sequence
@@ -41,9 +42,9 @@ byte sequenceState = 0;
 byte sequenceIndex = 0;
 byte bitIndex      = 0;
 
-bool lock = true;
-bool isRecord = false;
-bool isHead = true;
+bool lock      = true;
+bool isRecord  = false;
+bool isHead    = false;
 
 bool recording[SEQITER][SEQBITS];
 bool playSequence[SEQBITS];
@@ -77,9 +78,6 @@ void setup() {
   //sequence
   sequenceState = WAIT_START; // new wait!!!
   bitIndex = sequenceIndex = 0;
-  lock = true;
-  isRecord = false;
-  isHead = false;
 
   resetSequence(); //resets recording, play and head Sequence
 
@@ -110,7 +108,7 @@ void loop() {
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
   uint8_t valueByte = B00000001;
-  delay(1);
+
   if (checkServer(nrf24, valueByte)) {
     if (valueByte == TICK && timeKeeper.getTimeTick() > TIMEFRAMEINTERVAL) {
       valueByte = TOCK;
@@ -118,13 +116,14 @@ void loop() {
       lock = false;
       clockCounter++;
 
-      if (DEBUG) {
+      if (DEBUG_TIME) {
         Serial.print("MSG ");
         Serial.println(timeKeeper.getTimeTick());
       }
 
     }
   }
+  delay(2);
 
   if (!lock) {
     switch (sequenceState) {
@@ -140,19 +139,23 @@ void loop() {
             initial wait for 3 cycles for a stable mic reading
           */
 
-          TimeKeeper::signalCount++;
           if (!TimeKeeper::wait()) {
 
             if (DEBUG) {
               Serial.print("L: WAIT_START ");
               Serial.print(TimeKeeper::signalLimit);
               Serial.print(" ");
-              Serial.println(TimeKeeper::signalCount);
+              Serial.print(TimeKeeper::signalCount);
+              Serial.print(" ");
             }
 
             sequenceState = LISTEN;
             TimeKeeper::signalLimit  = 1;
           }
+          TimeKeeper::signalCount++;
+
+          if (DEBUG) Serial.println(clockCounter);
+
         }
         break;
 
@@ -163,7 +166,7 @@ void loop() {
             2. listens for the sequence
           */
 
-          if (DEBUG) Serial.println("LISTEN");
+          if (DEBUG) Serial.print("LISTEN ");
 
           bool valueHit = isHit();
 
@@ -194,22 +197,35 @@ void loop() {
 
             headerSequence[bitIndex] = valueHit;
             isHead = true;
+            bitIndex ++;
 
-            for (uint8_t i = 0; i <= bitIndex; i++) {
-              if (headerSequence[i] != correctHeader[i]) {
-                bitIndex = 0;
-                isHead = false;
-                break;
+            //Analyze to pass to the next stage
+            int numBits =  (sizeof(correctHeader) / sizeof(bool));
+
+            if (bitIndex == numBits) {
+              for (uint8_t i = 0; i <= numBits; i++) {
+                if (headerSequence[i] != correctHeader[i]) {
+                  bitIndex = 0;
+                  isHead = false;
+                  break;
+                }
               }
-            }
 
-            // forces the head to pass if careHead is off.
-            if (!careHeader) {
-              isHead = true;
+              // forces the head to pass if careHead is off.
+              if (!careHeader) {
+                isHead = true;
+                bitIndex = 3;
+              }
+
             }
 
             if (isHead) {
-              bitIndex ++;
+
+              if (DEBUG) Serial.print("B: ");
+              if (DEBUG) Serial.print(bitIndex);
+              if (DEBUG) Serial.print(" ");
+
+
               if (bitIndex >= sizeof(correctHeader) / sizeof(bool)) {
                 Serial.println("L: found head"); // notify head detection to ImageReciever
 
@@ -222,9 +238,10 @@ void loop() {
 
                 isRecord = true;
                 bitIndex = 0; //reset!
-                clockCounter = 2;
+                clockCounter = 3;
               }
             }
+
           }
 
           if (DEBUG) Serial.println(clockCounter);
@@ -241,10 +258,10 @@ void loop() {
           bitIndex = 0;
 
           if (sequenceIndex < SEQITER) {
-            if (DEBUG) Serial.println("WAIT ANALYZE");
+            if (DEBUG) Serial.print("WAIT ANALYZE  ");
             sequenceState = LISTEN;
           } else {
-            if (DEBUG) Serial.println("ANALYZING");
+            if (DEBUG) Serial.print("ANALYZING  ");
             //
             // gets the average and defines what it heard to "playSequence"
             //
@@ -264,6 +281,9 @@ void loop() {
 
             sequenceIndex = 0;
             sequenceState = PULSE_PLAY;
+
+            //make sure that we are going to play the header
+            isHead = true;
 
             //
             //
@@ -322,11 +342,14 @@ void loop() {
           /*
             plays single pulse
           */
-          if (DEBUG) Serial.println("PLAY");
+          if (DEBUG) Serial.print("PLAY  ");
 
           if (isHead) {
             if (headerSequence[bitIndex]) timeKeeper.hit();
             bitIndex++;
+
+            if (DEBUG) Serial.print(headerSequence[bitIndex]);
+            
             if (bitIndex >= sizeof(correctHeader) / sizeof(bool)) {
               isHead = false;
               bitIndex = 0;
@@ -340,18 +363,17 @@ void loop() {
 
             bitIndex++;
             if (bitIndex == SEQBITS) {
-              if (DEBUG) Serial.println("");
               bitIndex = 0;
               sequenceState = WAIT_PLAY;
             }
-
-            if (DEBUG) Serial.println(clockCounter);
           }
+
+          if (DEBUG) Serial.println(clockCounter);
         }
         break;
       case WAIT_PLAY:
         {
-          if (DEBUG)Serial.println("Waiting play");
+          if (DEBUG)Serial.print("Waiting play ");
 
           bitIndex = 0;
           sequenceIndex++;
@@ -364,9 +386,8 @@ void loop() {
             // nope go back playing
             sequenceState = PULSE_PLAY;
             if (DEBUG) {
-              Serial.print("L: playing=");
+              Serial.print("L: playing= ");
               Serial.print(sequenceIndex);
-              Serial.print(", ");
             }
           }
 
@@ -387,8 +408,7 @@ void loop() {
 
           // starting from 0, so end is 60
 
-          if (DEBUG) Serial.println("L: RESET");
-          if (DEBUG) Serial.println(clockCounter);
+          if (DEBUG) Serial.print("L: RESET ");
 
           clockCounter = 0;
           sequenceState = LISTEN;
@@ -454,9 +474,10 @@ bool isHit() {
   signalMin = 1024;
 
   // show heartbeat
-  if (DEBUG) {
+  /*
+    if (DEBUG) {
     unsigned long timeFrame = timeKeeper.getTimeHit();
-    Serial.print("L: ");
+    Serial.print("H: ");
     Serial.print(timeFrame);
     Serial.print(", ");
     Serial.print(peakToPeak);
@@ -464,10 +485,8 @@ bool isHit() {
     Serial.print(bitIndex);
     Serial.print(", ");
     Serial.println(valueHit);
-  }
-
-
-
+    }
+  */
 
 
   return valueHit;
