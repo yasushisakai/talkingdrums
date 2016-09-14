@@ -13,6 +13,8 @@
 #define LED_PIN_02 4
 #define LED_PIN_03 A1
 #define LED_PIN_04 A2
+
+
 #define LED_PIN_05 A3
 #define LED_PIN_06 A4
 #define LED_PIN_07 A5
@@ -35,11 +37,7 @@ const unsigned long TIMEFRAMEINTERVAL  = 60L;
 //this way we can use byte
 
 // this interval is for the outputs, LED and solenoid
-<<<<<<< HEAD
-const unsigned long  INTERVAL          = 10L;
-=======
 const unsigned long  INTERVAL          = 50L;
->>>>>>> 3ed2c12a3b7038b3523bc298053ca4c3bf10b1f3
 
 // MODES
 // we can do enum if we want

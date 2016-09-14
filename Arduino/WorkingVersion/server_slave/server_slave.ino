@@ -25,7 +25,7 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = false;
+bool const DEBUG = true;
 bool const DEBUG_PORT = false;
 
 ///Sequence
@@ -133,17 +133,15 @@ void loop() {
   // unlocks if we recieve somthing from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
   uint8_t valueByte = B00000001;
-  delay(1);
+
   if (checkServer(nrf24, valueByte) && timeKeeper.getTimeTick() > TIMEFRAMEINTERVAL) {
     valueByte = TOCK;
     timeKeeper.tick();
     lock = false;
     // Serial.flush();
-
-    //Serial.println("got");
     clockCounter++;
   }
-
+  delay(2);
 
 
   //while not in the look read the serial port for incoming color
@@ -187,7 +185,6 @@ void loop() {
 
       case PULSE_PLAY:
         {
-
           /*
              plays single pulse
           */
@@ -198,8 +195,6 @@ void loop() {
 
           bitIndex++;
           if (bitIndex >= SEQBITS) {
-            if (DEBUG) Serial.println("");
-
             bitIndex = 0;
             sequenceState = WAIT_PLAY;
           }
@@ -210,7 +205,7 @@ void loop() {
       case WAIT_PLAY:
         {
 
-          if (DEBUG)Serial.println("Waiting play");
+          if (DEBUG)Serial.print("Waiting play ");
 
           bitIndex = 0;
           sequenceIndex ++;
@@ -279,7 +274,7 @@ void loop() {
               }
 
               for (int i = 0; i < 8; i++) {
-                playSequence[i] = (bitRead(byteMSG8[0], i) == 1 ? true : false);
+                playSequence[i] = (bitRead(byteMSG8[0], 7 - i ) == 1 ? true : false);
               }
 
               //reset listen values
@@ -327,7 +322,7 @@ void loop() {
   } else {
     analogWrite(SOL_PIN, 0);
   }
-  
+
   turnOnLEDs(byteMSG8[0]);
 
 }
