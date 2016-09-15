@@ -25,7 +25,7 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = false;
+bool const DEBUG = true;
 bool const DEBUG_TIME = false;
 bool const DEBUG_PORT = false;
 
@@ -187,7 +187,7 @@ void loop() {
             if (headerSequence == SEQITER) {
               bitIndex = 0;
               headerSequence = 0;
-              headerIndex= 0;
+              headerIndex = 0;
               sequenceState = PULSE_PLAY; // not going to wait_play
             }
           }
@@ -251,7 +251,7 @@ void loop() {
 
           if (DEBUG) Serial.print("RESET WAIT ");
 
-          if (clockCounter > 70) {
+          if (clockCounter > 80) {
 
             //if (Serial.available() > 0) {
             if (readInBytes) {
