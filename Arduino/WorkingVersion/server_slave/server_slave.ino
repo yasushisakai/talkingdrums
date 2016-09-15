@@ -42,6 +42,7 @@ bool debugSequence[ ] = {1, 0, 0, 1, 1, 0, 0, 1};
 //HEADER HEBITS = 3;
 bool playHeader[ ] = {1, 1, 0};
 uint8_t headerIndex = 0;
+uint8_t headerSequence = 0;
 
 ///Signal Processing
 int signalMin, signalMax;
@@ -181,9 +182,14 @@ void loop() {
 
           headerIndex++;
           if (headerIndex >= HEBITS) {
-            sequenceState = PULSE_PLAY; // not going to wait_play
+            headerSequence++;
             headerIndex = 0;
-            bitIndex = 0;
+            if (headerSequence == SEQITER) {
+              bitIndex = 0;
+              headerSequence = 0;
+              headerIndex= 0;
+              sequenceState = PULSE_PLAY; // not going to wait_play
+            }
           }
 
         }
@@ -264,6 +270,7 @@ void loop() {
 
               sequenceIndex = 0;
               bitIndex = 0;
+              headerSequence = 0;
               sequenceState = HEADER_PLAY;
 
               if (DEBUG) {
