@@ -31,6 +31,9 @@
 RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
+//define what sequence or process to execute
+bool isTestMic = true;
+
 ///DEBUG
 bool const DEBUG = true;
 bool const DEBUG_TIME = false;
@@ -42,6 +45,7 @@ byte sequenceState = 0;
 byte sequenceIndex = 0;
 byte bitIndex      = 0;
 
+bool micHit    = false;
 bool lock      = true;
 
 //HEADER
@@ -59,10 +63,17 @@ bool debugSequence[] = {0, 0, 0, 1, 0, 0, 1, 1};
 ///Signal Processing
 int signalMin, signalMax;
 
-float avgValue    = 0;
-int counterSignal = 0;
+float avgValue        = 0;
+uint8_t counterSignal = 0;
+uint8_t indexBuffer   = 0;
+bool firstCalibration = true;
 
-const int signalThreshold = 700; // 50-1024 we may need to make this dynamic
+float buffSignal[30];
+uint8_t maxBuffer = sizeof(buffSignal) / sizeof(float);
+
+bool ledTick = false;
+
+float signalThreshold = 2.2; // 50-1024 we may need to make this dynamic
 
 /// PWM-ing the Solenoid will need additional test 0-255
 byte const solenoid_pwm = 255;
@@ -101,44 +112,49 @@ void loop() {
   // updates the timeKeeper
   timeKeeper.cycle(cTime);
 
-
   //collect signal readings
-  if (sequenceState == LISTEN_HEADER || sequenceState == LISTEN_SEQUENCE || sequenceState == WAIT_START) {
+  if (sequenceState <= 5) {
     int micValue = analogRead(MIC_PIN);
-    if (micValue < 1023 && micValue > 50) { // for weird readings??
+    if (micValue > 50 && micValue < 1023) {
       if (micValue > signalMax) signalMax = micValue;
       if (micValue < signalMin) signalMin = micValue;
     }
-
   }
+
+
 
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
   uint8_t valueByte = B00000001;
-
-  if (checkServer(nrf24, valueByte)) {
-    if (valueByte == TICK && timeKeeper.getTimeTick() > TIMEFRAMEINTERVAL) {
-      valueByte = TOCK;
-      timeKeeper.tick();
-      lock = false;
-      clockCounter++;
-
-      if (DEBUG_TIME) {
-        Serial.print("MSG ");
-        Serial.println(timeKeeper.getTimeTick());
-      }
-
+  valueByte = checkServer(nrf24);
+  if (valueByte == TICK && timeKeeper.getTimeTick() > TIMEFRAMEINTERVAL) {
+    timeKeeper.tick();
+    if (DEBUG_TIME) {
+      Serial.print("MSG ");
+      Serial.print(valueByte);
+      Serial.print(" ");
+      Serial.println(timeKeeper.getTimeTick());
     }
+    lock = false;
+    clockCounter++;
+    valueByte = TOCK;
+
   }
-  delay(2);
+
+
 
   if (!lock) {
     switch (sequenceState) {
 
       //wait for debug time
-      case WAIT:
+      case WAIT_DEBUG:
         {
           debugTimes();
+        }
+        break;
+      case TEST_MIC:
+        {
+          micHit = isHit();
         }
         break;
       case WAIT_START: {
@@ -156,7 +172,7 @@ void loop() {
               Serial.print(" ");
             }
 
-            sequenceState = LISTEN_HEADER;
+            sequenceState = CALIBRATE_MIC;
             TimeKeeper::signalLimit  = 2;
           }
           TimeKeeper::signalCount++;
@@ -165,16 +181,31 @@ void loop() {
 
         }
         break;
+      case CALIBRATE_MIC:
+        {
+          if (DEBUG) Serial.println("CALIBRATING");
+          float pTp = getPeak();
+          bool finishCalibration = micCalibration(pTp);
+          if (finishCalibration) {
+            if (isTestMic) {
+              sequenceState =  TEST_MIC;
+            } else {
+              sequenceState = LISTEN_HEADER;
+            }
+          }
+        }
+        break;
+
       case LISTEN_HEADER:
         {
           if (DEBUG) Serial.print("LISTEN HEADER ");
 
-          bool valueHit = isHit();
+          micHit = isHit();
 
           if (isRecordHeader) {
 
-            headerSequence[bitIndex] = valueHit;
-            bitIndex ++;
+            headerSequence[bitIndex] = micHit;
+            bitIndex++;
 
             isHead = true;
 
@@ -197,7 +228,7 @@ void loop() {
                 isRecordHeader = false;
                 bitIndex = 0;
                 isFirstHit = true;
-                valueHit = false;
+                micHit = false;
                 if (DEBUG) Serial.print("RH ");
               }
 
@@ -225,7 +256,7 @@ void loop() {
               //go to listen the sequence  and RESET values
               bitIndex = 0; //reset!
               clockCounter = 3;
-              valueHit = false;
+              micHit = false;
               sequenceState = LISTEN_SEQUENCE;
 
             }
@@ -234,8 +265,8 @@ void loop() {
 
 
           //if we found a hit then we can start anaylzing the header
-          if (isFirstHit && valueHit) {
-            headerSequence[bitIndex] = valueHit;
+          if (isFirstHit && micHit) {
+            headerSequence[bitIndex] = micHit;
             bitIndex ++;
             isRecordHeader = true;
             isFirstHit     = false;
@@ -256,7 +287,7 @@ void loop() {
 
           if (DEBUG) Serial.print("LISTEN SEQUENCE");
 
-          bool valueHit = isHit();
+          micHit = isHit();
 
           if (DEBUG) {
             Serial.print("L: ");
@@ -264,10 +295,10 @@ void loop() {
             Serial.print(", ");
             Serial.print(bitIndex);
             Serial.print(", ");
-            Serial.print(valueHit);
+            Serial.print(micHit);
             Serial.print(" ");
           }
-          recording[sequenceIndex][bitIndex] = valueHit;
+          recording[sequenceIndex][bitIndex] = micHit;
           bitIndex++;
           if (bitIndex >= SEQBITS) {
             sequenceState = ANALYZE;
@@ -279,7 +310,8 @@ void loop() {
 
         break;
 
-      case ANALYZE: {
+      case ANALYZE:
+        {
           /*
             collects and analyses the readings
             gets the average
@@ -467,13 +499,18 @@ void loop() {
 
   // outputs
   bool hit = timeKeeper.checkHit();
-  digitalWrite(LED_PIN, timeKeeper.checkTick());
+  //bool tick =  timeKeeper.checkTick();
+  //digitalWrite(LED_PIN, tick);
+
+
+  digitalWrite(LED_PIN, micHit);
 
   if (hit) {
     analogWrite(SOL_PIN, solenoid_pwm);
   } else {
     analogWrite(SOL_PIN, 0);
   }
+
 
 }
 
@@ -497,14 +534,9 @@ bool debugTimes()
 bool isHit() {
 
   bool valueHit = false;
-  int peakToPeak = abs(signalMax - signalMin); // abs... weird stuff happens
+  float peakToPeak =  ((signalMax - signalMin) * 5.0) / 1024.0; // abs... weird stuff happens
 
   valueHit = peakToPeak > signalThreshold;
-  //
-  // reset signal Max and Min
-  //
-  signalMax = 0;
-  signalMin = 1024;
 
   // show heartbeat
 
@@ -519,11 +551,91 @@ bool isHit() {
     Serial.print(", ");
     Serial.print(valueHit);
     Serial.print(" ");
+    Serial.print(signalMax);
+    Serial.print(" ");
+    Serial.println(signalMin);
+  }
+
+  signalMax = 0;
+  signalMin = 1024;
+
+  return valueHit;
+}
+
+float getPeak() {
+
+  float peakToPeak =  ((signalMax - signalMin) * 5.0) / 1024.0; // abs... weird stuff happens
+
+  // show heartbeat
+  if (DEBUG) {
+    unsigned long timeFrame = timeKeeper.getTimeTick();
+    Serial.print("H: ");
+    Serial.print(timeFrame);
+    Serial.print(", ");
+    Serial.print(peakToPeak);
+    Serial.print(" ");
+    Serial.print(signalMax);
+    Serial.print(" ");
+    Serial.println(signalMin);
+  }
+
+  signalMax = 0;
+  signalMin = 1024;
+
+  return peakToPeak;
+}
+
+bool micCalibration(float & pTp)
+{
+  bool finish = false;
+  //dynamically change threshold based on the avg of maxBuffer steps
+  buffSignal[indexBuffer] = pTp;
+  indexBuffer++;
+
+  //dont read the first 5 values
+  if (firstCalibration) {
+    if ( indexBuffer >= 6) {
+      indexBuffer = 0;
+      firstCalibration = false;
+    }
+
   }
 
 
+  if (indexBuffer >= maxBuffer) {
+    indexBuffer = 0;
 
-  return valueHit;
+    float minThres = 5.0;
+    float maxThres = 0.0;
+    float avgThres = 0.0;
+
+    for (int i = 0;  i < maxBuffer; i++) {
+      float val = buffSignal[i];
+      if (val > maxThres) maxThres = val;
+      if (val < minThres) minThres = val;
+      avgThres += val;
+    }
+    avgThres /= (float)maxBuffer;
+    float diffThres = maxThres - minThres;
+    if (DEBUG) {
+
+      Serial.print(minThres);
+      Serial.print("  ");
+      Serial.print(maxThres);
+      Serial.print("  ");
+      Serial.print(signalThreshold);
+      Serial.print("  ");
+      Serial.print(diffThres);
+      Serial.print("  new: ");
+    }
+
+    //new threshold
+    signalThreshold =  avgThres + (diffThres) * 0.85; //85% sensitive
+    if (DEBUG)Serial.println(signalThreshold);
+    finish = true;
+  }
+
+  return finish;
 }
 
 

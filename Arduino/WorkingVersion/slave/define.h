@@ -30,14 +30,20 @@ const unsigned long  INTERVAL          = 50L;
 
 ///  modes
 // we can do enum if we want
-#define WAIT 0
-#define WAIT_START 1
-#define LISTEN_HEADER 2
-#define LISTEN_SEQUENCE 3
-#define ANALYZE 4
-#define HEADER_PLAY 5
-#define PULSE_PLAY 6
-#define WAIT_PLAY 7
-#define RESET 8
+
+//TEST
+#define WAIT_DEBUG 0
+#define TEST_MIC 1
+#define WAIT_START 2
+#define CALIBRATE_MIC 3
+
+
+#define LISTEN_HEADER 4
+#define LISTEN_SEQUENCE 5
+#define ANALYZE 6
+#define HEADER_PLAY 7
+#define PULSE_PLAY 8
+#define WAIT_PLAY 9
+#define RESET 10
 
 #endif

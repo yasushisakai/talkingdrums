@@ -245,7 +245,7 @@ void loop() {
 
           if (DEBUG) Serial.print("RESET WAIT ");
 
-          if (clockCounter > 100) {
+          if (clockCounter > 70) {
 
             //if (Serial.available() > 0) {
             if (readInBytes) {

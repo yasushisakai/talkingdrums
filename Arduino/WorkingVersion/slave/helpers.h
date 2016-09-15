@@ -7,7 +7,7 @@
 */
 
 bool initNRF(RH_NRF24 &_nrf);
-bool checkServer(RH_NRF24 &_nrf, uint8_t &value);
+uint8_t checkServer(RH_NRF24 &_nrf);
 bool timer(unsigned long const & currentTime, unsigned long const & previousTime, unsigned long const &interval);
 
 // memo:

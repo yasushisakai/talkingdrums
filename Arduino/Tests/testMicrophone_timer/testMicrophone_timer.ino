@@ -26,54 +26,80 @@ int solenoidPin = 4;
 float voltage = 5.0;
 float voltsThres = 1.5;
 
+unsigned long pTime = 0L;
+
+unsigned long duration = 100L;
+
+unsigned int signalMax = 0;
+unsigned int signalMin = 1024;
+
+double volts;
 
 void setup()
 {
   Serial.begin(9600);
   pinMode(ledPin, OUTPUT);
   pinMode(solenoidPin, OUTPUT);
+
+  pTime = millis();
 }
 
 void loop()
 {
   unsigned long start = millis(); // Start of sample window
-  unsigned int peakToPeak = 0;   // peak-to-peak level
 
-  unsigned int signalMax = 0;
-  unsigned int signalMin = 1024;
-
-  while (millis() - start < sampleWindow)
+  knock = analogRead(0);
+  if (knock < 1024)  //This is the max of the 10-bit ADC so this loop will include all readings
   {
-    knock = analogRead(0);
-    if (knock < 1024)  //This is the max of the 10-bit ADC so this loop will include all readings
-    {
-      if (knock > signalMax)
-      {
-        signalMax = knock;  // save just the max levels
-      }
-      else if (knock < signalMin)
-      {
-        signalMin = knock;  // save just the min levels
-      }
-    }
+    if (knock > signalMax) signalMax = knock;  // save just the max levels
+    if (knock < signalMin) signalMin = knock;  // save just the min levels
   }
-  peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
-  double volts = (peakToPeak * voltage) / 1024;  // convert to volts
 
-  
-  Serial.println(volts);
+
+  if (timer(start, pTime, duration)) {
+
+    unsigned int  peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
+    volts = (peakToPeak * voltage) / 1024;  // convert to volts
+
+    Serial.print("new ");
+    Serial.print(pTime);
+    Serial.print(" ");
+    Serial.println(volts);
+
+    if (volts >= voltsThres)
+    {
+      //turn on LED
+      digitalWrite(ledPin, HIGH);
+    }
+    else
+    {
+      //turn LED off
+      digitalWrite(ledPin, LOW);
+    }
+
+    pTime = start;
+    signalMax = 0;
+    signalMin = 1024;
+
+  }
+
   if (volts >= voltsThres)
   {
     //turn on LED
     digitalWrite(ledPin, HIGH);
-    digitalWrite(solenoidPin, HIGH);
-    delay(50);
-    digitalWrite(solenoidPin,LOW);
+    Serial.println("on");
   }
   else
   {
     //turn LED off
     digitalWrite(ledPin, LOW);
-    digitalWrite(solenoidPin, LOW);
   }
+
+
 }
+
+bool timer(unsigned long const & currentTime, unsigned long const & previousTime, unsigned long const &interval) {
+  return (currentTime - previousTime) >= interval;
+}
+
+
