@@ -25,7 +25,7 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = true;
+bool const DEBUG = false;
 bool const DEBUG_TIME = false;
 bool const DEBUG_PORT = false;
 
@@ -256,7 +256,7 @@ void loop() {
               //Reset values when an array of bits is received
               // if (val > 0) {
 
-              byteMSG8[0] = B00010011;
+              //byteMSG8[0] = B00010011;
               if (DEBUG) Serial.println("clean Serial");
 
               readInBytes = true;

@@ -32,7 +32,7 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 //define what sequence or process to execute
-bool isTestMic = true;
+bool isTestMic = false;
 
 ///DEBUG
 bool const DEBUG = true;
@@ -139,8 +139,8 @@ void loop() {
     lock = false;
     clockCounter++;
     valueByte = TOCK;
-
   }
+  delay(1);
 
 
 
@@ -172,8 +172,8 @@ void loop() {
               Serial.print(TimeKeeper::signalCount);
               Serial.print(" ");
             }
-
             sequenceState = CALIBRATE_MIC;
+
             TimeKeeper::signalLimit  = 2;
           }
           TimeKeeper::signalCount++;
@@ -258,6 +258,7 @@ void loop() {
               bitIndex = 0; //reset!
               clockCounter = 3;
               micHit = false;
+              isFirstHit = true;
               sequenceState = LISTEN_SEQUENCE;
 
             }
@@ -475,7 +476,7 @@ void loop() {
           if (DEBUG) Serial.print("L: RESET ");
 
           clockCounter = 0;
-          sequenceState = WAIT_START;
+          sequenceState = LISTEN_HEADER;
 
           // reset values
           bitIndex = 0;
@@ -537,8 +538,8 @@ bool isHit() {
   bool valueHit = false;
   float peakToPeak =  ((signalMax - signalMin) * 5.0) / 1024.0; // abs... weird stuff happens
 
-  
-  valueHit = (peakToPeak * hitSensitivity )> signalThreshold;
+
+  valueHit = (peakToPeak * hitSensitivity ) > signalThreshold;
 
   // show heartbeat
 
