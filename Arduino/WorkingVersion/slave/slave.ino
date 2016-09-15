@@ -62,6 +62,7 @@ bool debugSequence[] = {0, 0, 0, 1, 0, 0, 1, 1};
 
 ///Signal Processing
 int signalMin, signalMax;
+float hitSensitivity = 0.99; //signal clean
 
 float avgValue        = 0;
 uint8_t counterSignal = 0;
@@ -536,7 +537,8 @@ bool isHit() {
   bool valueHit = false;
   float peakToPeak =  ((signalMax - signalMin) * 5.0) / 1024.0; // abs... weird stuff happens
 
-  valueHit = peakToPeak > signalThreshold;
+  
+  valueHit = (peakToPeak * hitSensitivity )> signalThreshold;
 
   // show heartbeat
 
@@ -589,7 +591,7 @@ bool micCalibration(float & pTp)
 {
   bool finish = false;
   //dynamically change threshold based on the avg of maxBuffer steps
-  buffSignal[indexBuffer] = pTp;
+  buffSignal[indexBuffer] = pTp * hitSensitivity;
   indexBuffer++;
 
   //dont read the first 5 values
@@ -600,7 +602,6 @@ bool micCalibration(float & pTp)
     }
 
   }
-
 
   if (indexBuffer >= maxBuffer) {
     indexBuffer = 0;
@@ -630,14 +631,13 @@ bool micCalibration(float & pTp)
     }
 
     //new threshold
-    signalThreshold =  avgThres + (diffThres) * 0.85; //85% sensitive
+    signalThreshold =  avgThres + (diffThres) * 0.82; //78% sensitive
     if (DEBUG)Serial.println(signalThreshold);
     finish = true;
   }
 
   return finish;
 }
-
 
 
 
