@@ -35,7 +35,7 @@ TimeKeeper timeKeeper;
 bool isTestMic = false;
 
 ///DEBUG
-bool const DEBUG = true;
+bool const DEBUG = false;
 bool const DEBUG_TIME = false;
 bool const careHeader = true; // cares about the header or not
 
@@ -57,7 +57,7 @@ uint8_t numHeaderBits   = 0;
 bool recording[SEQITER][SEQBITS];
 bool playSequence[SEQBITS];
 bool correctHeader[] = {1, 1, 0};
-bool headerSequence[sizeof(correctHeader) / sizeof(bool)];
+bool headerSequence[SEQITER * (sizeof(correctHeader) / sizeof(bool))];
 bool debugSequence[] = {0, 0, 0, 1, 0, 0, 1, 1};
 
 ///Signal Processing
@@ -96,7 +96,7 @@ void setup() {
   bitIndex = sequenceIndex = 0;
 
 
-  numHeaderBits =  (sizeof(correctHeader) / sizeof(bool));
+  numHeaderBits =  ((sizeof(correctHeader) / sizeof(bool)) * SEQITER);
 
   resetSequence(); //resets recording, play and head Sequence
 
@@ -213,8 +213,22 @@ void loop() {
             //Analyze to pass to the next stage
             if (bitIndex == numHeaderBits) {
               if (DEBUG)Serial.print("AH ");
-              for (uint8_t i = 0; i < numHeaderBits; i++) {
-                if (headerSequence[i] != correctHeader[i]) {
+              Serial.println("");
+              for (int i = 0; i < numHeaderBits; i++) {
+                Serial.print(headerSequence[i]);
+              }
+              Serial.println("");
+              double headers[3];
+              for (uint8_t i = 0; i < SEQITER; i++) headers[i] = 0.0;
+
+              for (uint8_t i = 0; i < SEQITER; i++) {
+                for (uint8_t j = 0; j < 3; j++) {
+                  headers[i] +=  headerSequence[i * SEQITER + j];
+                }
+              }
+
+              for (uint8_t i = 0; i < 3; i++) {
+                if (correctHeader[i] != (headers[i] / SEQITER) > 0.5 ) {
                   isHead = false;
                   break;
                 }
