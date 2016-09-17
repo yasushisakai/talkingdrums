@@ -218,21 +218,26 @@ void loop() {
                 Serial.print(headerSequence[i]);
               }
               Serial.println("");
-              double headers[3];
+              
+              
+              double headers[SEQITER];
               for (uint8_t i = 0; i < SEQITER; i++) headers[i] = 0.0;
 
               for (uint8_t i = 0; i < SEQITER; i++) {
                 for (uint8_t j = 0; j < 3; j++) {
-                  headers[i] +=  headerSequence[i * SEQITER + j];
+                  headers[i] +=  headerSequence[i + j*SEQITER];
                 }
               }
 
-              for (uint8_t i = 0; i < 3; i++) {
+              int countCheck = 0;
+              for (uint8_t i = 0; i < SEQITER; i++) {
                 if (correctHeader[i] != (headers[i] / SEQITER) > 0.5 ) {
-                  isHead = false;
-                  break;
+                countCheck++;
                 }
               }
+
+              //OK to have one error, its the header..
+              isHead = (countCheck <= 1) : true ? false;
 
               //RESET HEADER
               //if didn't found the header then reset the values of headerSequence
