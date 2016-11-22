@@ -19,6 +19,7 @@
 
 RH_NRF24 nrf24;
 
+bool DEBUG = false;
 bool isSend = true;
 unsigned long previousTime;
 int counter;
@@ -30,11 +31,15 @@ bool LED_STATE; // is always same with isSend?
 uint8_t data [] = {B00000001};
 
 void setup() {
+  if(DEBUG){
+    //Serial.begin(9600);
+  }
+  
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
   delay(1000);
 
-  initNRF(nrf24);
+  initNRF(nrf24, DEBUG);
 
   previousTime = millis();
   counter = 0;

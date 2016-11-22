@@ -36,7 +36,7 @@ bool isTestMic = false;
 
 ///DEBUG
 bool const DEBUG = false;
-bool const DEBUG_TIME = false;
+bool const DEBUG_TIME = true;
 bool const careHeader = true; // cares about the header or not
 
 
@@ -92,7 +92,7 @@ void setup() {
   digitalWrite(SOL_PIN, LOW);
 
   //sequence
-  sequenceState = WAIT_START; // new wait!!!
+  sequenceState = WAIT_DEBUG;//WAIT_START; // new wait!!!
   bitIndex = sequenceIndex = 0;
 
 
@@ -236,8 +236,8 @@ void loop() {
                 }
               }
 
-              //OK to have one error, its the header..
-              isHead = (countCheck <= 1) : true ? false;
+              //OK to have one error, its the header
+              isHead = (countCheck <= 1) ? true : false;
 
               //RESET HEADER
               //if didn't found the header then reset the values of headerSequence
@@ -520,11 +520,13 @@ void loop() {
 
   // outputs
   bool hit = timeKeeper.checkHit();
-  //bool tick =  timeKeeper.checkTick();
-  //digitalWrite(LED_PIN, tick);
 
+  //use LED for feedback clock
+  bool tick =  timeKeeper.checkTick();
+  digitalWrite(LED_PIN, tick);
 
-  digitalWrite(LED_PIN, micHit);
+  //use mic has feedback device.
+ // digitalWrite(LED_PIN, micHit);
 
   if (hit) {
     analogWrite(SOL_PIN, solenoid_pwm);
