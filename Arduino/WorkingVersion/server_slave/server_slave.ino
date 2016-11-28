@@ -25,7 +25,7 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 ///DEBUG
-bool const DEBUG = true;
+bool const DEBUG = false;
 bool const DEBUG_TIME = false;
 bool const DEBUG_PORT = false;
 
@@ -251,7 +251,7 @@ void loop() {
 
           if (DEBUG) Serial.print("RESET WAIT ");
 
-          //if (clockCounter > 70) {
+          if (clockCounter > 70) {
 
             //if (Serial.available() > 0) {
             if (readInBytes) {
@@ -313,7 +313,7 @@ void loop() {
 
           } //case RESET
 
-        //}// clockCounter break
+        }// clockCounter break
 
         if (DEBUG) Serial.println(clockCounter);
         break;
