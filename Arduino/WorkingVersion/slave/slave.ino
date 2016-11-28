@@ -35,8 +35,13 @@ TimeKeeper timeKeeper;
 bool isTestMic = true;
 
 ///DEBUG
+<<<<<<< HEAD
 bool const DEBUG = true;
 bool const DEBUG_TIME = false;
+=======
+bool const DEBUG = false;
+bool const DEBUG_TIME = true;
+>>>>>>> b8ca194d2cb2d1e0cf55898692c0db54f7532fba
 bool const careHeader = true; // cares about the header or not
 
 
@@ -92,7 +97,7 @@ void setup() {
   digitalWrite(SOL_PIN, LOW);
 
   //sequence
-  sequenceState = WAIT_START; // new wait!!!
+  sequenceState = WAIT_DEBUG;//WAIT_START; // new wait!!!
   bitIndex = sequenceIndex = 0;
 
 
@@ -236,7 +241,11 @@ void loop() {
                 }
               }
 
+<<<<<<< HEAD
               //OK to have one error, its the header..
+=======
+              //OK to have one error, its the header
+>>>>>>> b8ca194d2cb2d1e0cf55898692c0db54f7532fba
               isHead = (countCheck <= 1) ? true : false;
 
               //RESET HEADER
@@ -520,11 +529,13 @@ void loop() {
 
   // outputs
   bool hit = timeKeeper.checkHit();
-  //bool tick =  timeKeeper.checkTick();
-  //digitalWrite(LED_PIN, tick);
 
+  //use LED for feedback clock
+  bool tick =  timeKeeper.checkTick();
+  digitalWrite(LED_PIN, tick);
 
-  digitalWrite(LED_PIN, micHit);
+  //use mic has feedback device.
+ // digitalWrite(LED_PIN, micHit);
 
   if (hit) {
     analogWrite(SOL_PIN, solenoid_pwm);
