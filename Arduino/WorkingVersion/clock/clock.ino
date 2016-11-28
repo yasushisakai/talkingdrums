@@ -30,6 +30,7 @@ bool LED_STATE; // is always same with isSend?
 uint8_t data [] = {B00000001};
 
 void setup() {
+  Serial.begin(9600);
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
   delay(1000);

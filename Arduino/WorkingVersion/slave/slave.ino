@@ -32,10 +32,10 @@ RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
 
 //define what sequence or process to execute
-bool isTestMic = false;
+bool isTestMic = true;
 
 ///DEBUG
-bool const DEBUG = false;
+bool const DEBUG = true;
 bool const DEBUG_TIME = false;
 bool const careHeader = true; // cares about the header or not
 
@@ -237,7 +237,7 @@ void loop() {
               }
 
               //OK to have one error, its the header..
-              isHead = (countCheck <= 1) : true ? false;
+              isHead = (countCheck <= 1) ? true : false;
 
               //RESET HEADER
               //if didn't found the header then reset the values of headerSequence
@@ -638,20 +638,26 @@ bool micCalibration(float & pTp)
     }
     avgThres /= (float)maxBuffer;
     float diffThres = maxThres - minThres;
+
+    float dbV = log(5.0/diffThres);
+
+    //Gain =  60V/V
     if (DEBUG) {
 
       Serial.print(minThres);
       Serial.print("  ");
       Serial.print(maxThres);
       Serial.print("  ");
-      Serial.print(signalThreshold);
+      Serial.print(avgThres);
       Serial.print("  ");
       Serial.print(diffThres);
+      Serial.print(" ");
+      Serial.print(dbV);
       Serial.print("  new: ");
     }
 
     //new threshold
-    signalThreshold =  avgThres + (diffThres) * 0.82; //78% sensitive
+    signalThreshold = avgThres + dbV*1.1;
     if (DEBUG)Serial.println(signalThreshold);
     finish = true;
   }
