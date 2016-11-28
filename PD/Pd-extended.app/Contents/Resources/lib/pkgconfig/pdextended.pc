@@ -1,0 +1,22 @@
+# Pure data pkg-config file
+# LATER: shouldn't "--libs" output all flags for building an external?
+
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+###############################
+# variables
+# the default file-extension for externals (e.g. "l_i386")
+extension=d_fat
+# where to install externals
+externaldir=${libdir}/pd/extra
+
+###############################
+# core configuration
+Name: pd
+Description: Pure data externals
+Version: 0.43.1
+Cflags: -I${includedir}/pd -DPD -fPIC
+Libs: -bundle -undefined dynamic_lookup

@@ -49,7 +49,7 @@ int signalMin, signalMax;
 const int signalThreshold = 800; // 50-1024 we may need to make this dynamic
 
 /// PWM-ing the Solenoid will need additional test 0-255
-byte const solenoid_pwm = 155;
+byte const solenoid_pwm = 255;
 
 //Serial Port
 bool requestByte = false;

@@ -1,0 +1,14 @@
+# Gem pkg-config file
+
+prefix=/.
+exec_prefix=${prefix}
+libdir=/./extra
+includedir=${prefix}/include
+
+###############################
+# core configuration
+Name: Gem
+Description: Gem plugins and externals
+Version: 0.93.3.1
+Cflags: -I${includedir}/Gem
+Libs: 

@@ -455,7 +455,7 @@ void ImageSenderApp::processPixels(double currentTime)
                     console()<<"Got msg  S "<< mSerialDuratinT * 1000 <<std::endl;
                     
                     //request a Bytes.
-                    mSerial->writeByte('a'); //added
+                    //mSerial->writeByte('a'); //added
                     mNexIteration = true;
                     
                 }
