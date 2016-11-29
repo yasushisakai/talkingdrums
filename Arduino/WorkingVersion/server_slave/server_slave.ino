@@ -71,24 +71,28 @@ void setup() {
   //enable pins
   pinMode(LED_PIN, OUTPUT);
   pinMode(SOL_PIN, OUTPUT);
-  pinMode(LED_PIN_00, OUTPUT);
-  pinMode(LED_PIN_01, OUTPUT);
-  pinMode(LED_PIN_02, OUTPUT);
+  /*
+    pinMode(LED_PIN_00, OUTPUT);
+    pinMode(LED_PIN_01, OUTPUT);
+    pinMode(LED_PIN_02, OUTPUT);
+  */
 
   //turn on pin test
   digitalWrite(LED_PIN, HIGH);
-  // digitalWrite(SOL_PIN, HIGH);
+  digitalWrite(SOL_PIN, HIGH);
 
   //LEDS
-  digitalWrite(LED_PIN_00, HIGH);
-  digitalWrite(LED_PIN_01, HIGH);
-  digitalWrite(LED_PIN_02, HIGH);
+  /*
+    digitalWrite(LED_PIN_00, HIGH);
+    digitalWrite(LED_PIN_01, HIGH);
+    digitalWrite(LED_PIN_02, HIGH);
 
-  analogWrite(LED_PIN_03, 255);
-  analogWrite(LED_PIN_04, 255);
-  analogWrite(LED_PIN_05, 255);
-  analogWrite(LED_PIN_06, 255);
-  analogWrite(LED_PIN_07, 255);
+    analogWrite(LED_PIN_03, 255);
+    analogWrite(LED_PIN_04, 255);
+    analogWrite(LED_PIN_05, 255);
+    analogWrite(LED_PIN_06, 255);
+    analogWrite(LED_PIN_07, 255);
+  */
   delay(1000);
 
   //turn off
@@ -259,45 +263,45 @@ void loop() {
 
               int val = Serial.readBytes(byteMSG8, 1);
 
-              //Reset values when an array of bits is received
-              // if (val > 0) {
+              // Reset values when an array of bits is received
+              if (val > 0) {
 
-              //byteMSG8[0] = B00010011;
-              if (DEBUG) Serial.println("clean Serial");
+                //byteMSG8[0] = B00010011;
+                if (DEBUG) Serial.println("clean Serial");
 
-              readInBytes = true;
-              requestByte = false;
+                readInBytes = true;
+                requestByte = false;
 
-              sequenceIndex = 0;
-              bitIndex = 0;
-              headerSequence = 0;
-              sequenceState = HEADER_PLAY;
+                sequenceIndex = 0;
+                bitIndex = 0;
+                headerSequence = 0;
+                sequenceState = HEADER_PLAY;
 
-              if (DEBUG) {
-                Serial.print("Number cycles");
-                Serial.println(clockCounter);
-              }
-              clockCounter = 0;
-
-              Serial.flush();
-
-              //clean
-              for (int i = 0; i < 10; i++) {
-                char f = Serial.read();
-              }
-
-              for (int i = 0; i < 8; i++) {
-                playSequence[i] = (bitRead(byteMSG8[0], 7 - i ) == 1 ? true : false);
-              }
-
-              //reset listen values
-              for (char i = 0; i < SEQBITS; i++) {
-                for (char j = 0; j < SEQITER; j++) {
-                  recording[j][i] = false;
+                if (DEBUG) {
+                  Serial.print("Number cycles");
+                  Serial.println(clockCounter);
                 }
-              } //for
+                clockCounter = 0;
 
-              //            } //got msg
+                Serial.flush();
+
+                //clean
+                for (int i = 0; i < 10; i++) {
+                  char f = Serial.read();
+                }
+
+                for (int i = 0; i < 8; i++) {
+                  playSequence[i] = (bitRead(byteMSG8[0], 7 - i ) == 1 ? true : false);
+                }
+
+                //reset listen values
+                for (char i = 0; i < SEQBITS; i++) {
+                  for (char j = 0; j < SEQITER; j++) {
+                    recording[j][i] = false;
+                  }
+                } //for
+
+              } //got msg
 
             }
 
@@ -336,6 +340,6 @@ void loop() {
     analogWrite(SOL_PIN, 0);
   }
 
-  turnOnLEDs(byteMSG8[0]);
+  // turnOnLEDs(byteMSG8[0]);
 
 }
