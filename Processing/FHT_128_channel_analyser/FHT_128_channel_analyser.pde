@@ -1,23 +1,23 @@
 /*  FHT_128_channel_analyser.pde
-
-    an open-source display for spectrum analyser
-    Copyright (C) 2013  Jürgen Rimmelspacher
-
-    For use with "processing": http://processing.org/
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ 
+ an open-source display for spectrum analyser
+ Copyright (C) 2013  Jürgen Rimmelspacher
+ 
+ For use with "processing": http://processing.org/
+ 
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 final int X_OFFSET  =  40;                     // x-distance to left upper corner of window
 final int Y_OFFSET  =  60;                     // y-distance to left upper corner of window
@@ -35,7 +35,9 @@ color graphColor = color(25, 25, 250);
 PFont fontGraph;
 import processing.serial.*;
 Serial port;
-int[] inBuffer = new int[128];
+
+int numBins = 64;
+int[] inBuffer = new int[numBins]; 
 
 void draw_grid()                               // draw grid an title
 { 
@@ -49,8 +51,7 @@ void draw_grid()                               // draw grid an title
     { 
       line (x+X_OFFSET, Y_OFFSET, x+X_OFFSET, Y_MAX+Y_OFFSET+10);
       count=0;
-    }
-    else
+    } else
     {
       line (x+X_OFFSET, Y_OFFSET, x+X_OFFSET, Y_MAX+Y_OFFSET);
     }    
@@ -82,13 +83,16 @@ void serialEvent(Serial p)                      // ISR triggerd by "port.buffer(
 
 void setup() 
 { 
-  size(X_WINDOW, Y_WINDOW);                      // size of window
+
+  size(726, 396);   
+  println(X_WINDOW, Y_WINDOW);
+  // size of window
   noStroke();
   fontGraph = loadFont("ArialUnicodeMS-48.vlw");
   textFont(fontGraph, 12);
-  println(Serial.list());                        // show available COM-ports
-  port = new Serial(this, "COM7", 115200);
-  port.buffer(129);                              // 1 start-byte + 128 data-bytes 
+  printArray(Serial.list());                        // show available COM-ports
+  port = new Serial(this, Serial.list()[1], 115200);
+  port.buffer(numBins + 1);                              // 1 start-byte + 128 data-bytes 
   fontA = loadFont("ArialUnicodeMS-48.vlw");
   textFont(fontA, 16);
 }
@@ -99,8 +103,7 @@ void draw()
 
   draw_grid();
 
-  for (int i=0; i<128; i++)
-  { 
+  for (int i = 0; i < numBins; i++) { 
     fill(graphColor);
     rect(i*X_DIST+X_OFFSET+X_DIST-COL_WIDTH/2, height-BOT_DIST, COL_WIDTH, -inBuffer[i]);
     if ( X_ENUM == count || 0 == count)
@@ -110,4 +113,5 @@ void draw()
     }
     count++;
   }
+  
 }
