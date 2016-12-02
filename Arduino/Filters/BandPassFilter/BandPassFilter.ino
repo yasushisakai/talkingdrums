@@ -24,8 +24,8 @@ int sensorPin = A0;
 int sensorValue = 0;
 //0.05
 //0.4
-float EMA_a_low = 0.1;     //initialization of EMA alpha (cutoff-frequency)
-float EMA_a_high = 0.4;
+float EMA_a_low = 0.08;     //initialization of EMA alpha (cutoff-frequency)
+float EMA_a_high = 0.5;
 
 int EMA_S_low = 0;          //initialization of EMA S
 int EMA_S_high = 0;
@@ -80,7 +80,7 @@ void setup() {
   // 0 to 0.5
  
   f = 0.1; //0 -0.5
-  bw = 0.005;
+  bw = 0.001;
 
   // Band-pass filter.
   //
@@ -118,7 +118,7 @@ void loop() {
     highpass = sensorValue - EMA_S_low;     //find the high-pass as before (for comparison)
     bandpass = EMA_S_high - EMA_S_low;
 
-    buf[ buffer_index ] = (float)sensorValue;
+    buf[ buffer_index ] = bandpass;//(float)sensorValue;
     buffer_index++;
   }
 

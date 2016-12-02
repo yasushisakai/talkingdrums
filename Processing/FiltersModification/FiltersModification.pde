@@ -70,6 +70,7 @@ void setup() {
   // I know that the first port in the serial list on my mac
   // is always my  Keyspan adaptor, so I open Serial.list()[0].
   // Open whatever port is the one you're using.
+  
   myPort = new Serial(this, Serial.list()[1], 115200);
   myPort.clear();
   // Throw out the first reading, in case we started reading 
@@ -132,26 +133,26 @@ void setup() {
   //control
   cp5 = new ControlP5(this);
   cp5.addSlider("EMA_a_low")
-    .setPosition(20, 170)
-    .setSize(200, 20)
-    .setRange(0.0, 1.0)
+    .setPosition(20, 50)
+    .setSize(300, 20)
+    .setRange(0.0, 0.5)
     .setValue(EMA_a_low);
 
   cp5.addSlider("EMA_a_high")
-    .setPosition(20, 140)
-    .setSize(200, 20)
+    .setPosition(20, 80)
+    .setSize(300, 20)
     .setRange(0.0, 1.0)
     .setValue(EMA_a_high);
 
   cp5.addSlider("f")
-    .setPosition(20, 200)
-    .setSize(200, 20)
+    .setPosition(20, 110)
+    .setSize(300, 20)
     .setRange(0.0, 0.2)
     .setValue(f);
 
   cp5.addSlider("bw")
-    .setPosition(20, 230)
-    .setSize(200, 20)
+    .setPosition(20, 140)
+    .setSize(300, 20)
     .setRange(0.0, 0.1)
     .setValue(bw);
 
@@ -179,7 +180,7 @@ void draw() {
     buffer_index = 0;
     buffer_full = false;
 
-    println(cTime - pTime+" filter done");
+   // println(cTime - pTime+" filter done");
     pTime = millis();
   }
 
@@ -243,10 +244,8 @@ void serialEvent (Serial myPort) {
     inString = trim(inString);
     // convert to an int and map to the screen height:
     float inByte = float(inString);
-    // println(inByte);
-    sensorValue = inByte;
 
-    cleanSignal(sensorValue);
+    cleanSignal(int(inByte));
 
     //inByte = map(inByte, 0, 1023, 0, height);
     sensorPoints.remove(0);
@@ -271,7 +270,7 @@ int getCurrentSensorValue() {
   return outValue;
 }
 
-void cleanSignal(float inValue) {
+void cleanSignal(int inValue) {
 
   // read analog input, divide by 4 to make the range 0-255:
   if ( buffer_index >= BUFFER_SIZE ) {
@@ -283,10 +282,10 @@ void cleanSignal(float inValue) {
 
     if (inValue > 0) {
 
-      EMA_S_low  = (EMA_a_low * sensorValue) + ((1 - EMA_a_low) * EMA_S_low);    //run the EMA
-      EMA_S_high = (EMA_a_high * sensorValue) + ((1 - EMA_a_high) * EMA_S_high);
+      EMA_S_low  = (EMA_a_low * inValue) + ((1 - EMA_a_low) * EMA_S_low);    //run the EMA
+      EMA_S_high = (EMA_a_high * inValue) + ((1 - EMA_a_high) * EMA_S_high);
 
-      highpass = sensorValue - EMA_S_low;     //find the high-pass as before (for comparison)
+      highpass = inValue  - EMA_S_low;     //find the high-pass as before (for comparison)
       bandpass = EMA_S_high  - EMA_S_low;
 
       buf[ buffer_index ] = (float)bandpass;
@@ -310,7 +309,8 @@ void f() {
   a2 = ( r * r ) - k;
   b1 = 2 * r * cos( 2 * PI * f );
   b2 = 0 - ( r * r );
-  println("updated");
+  
+  println(f+" updated");
 }
 
 void bw() {
@@ -325,5 +325,5 @@ void bw() {
   b1 = 2 * r * cos( 2 * PI * f );
   b2 = 0 - ( r * r );
 
-  println("updated");
+  println(bw+" updated");
 }
