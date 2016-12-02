@@ -25,7 +25,7 @@ final int BOT_DIST  =  80;                     // distance to bottom line of win
 final int COL_WIDTH =   4;                     // column widt
 final int Y_DIST    =  64;                     // distance horizontal lines
 final int X_DIST    =   5;                     // distance vertical lines
-final int X_MAX     = (128+1)*X_DIST+1;        // x-axis lenght
+final int X_MAX     = (256+1)*X_DIST+1;        // x-axis lenght
 final int Y_MAX     = 256;                     // y-axis lenght
 final int X_WINDOW  = X_MAX + 2*X_OFFSET;      // window width
 final int Y_WINDOW  = Y_MAX+BOT_DIST+Y_OFFSET; // window height
@@ -36,7 +36,7 @@ PFont fontGraph;
 import processing.serial.*;
 Serial port;
 
-int numBins = 64;
+int numBins = 256;
 int[] inBuffer = new int[numBins]; 
 
 void draw_grid()                               // draw grid an title
@@ -84,7 +84,7 @@ void serialEvent(Serial p)                      // ISR triggerd by "port.buffer(
 void setup() 
 { 
 
-  size(726, 396);   
+  size(1, 396);   
   println(X_WINDOW, Y_WINDOW);
   // size of window
   noStroke();
@@ -106,12 +106,16 @@ void draw()
   for (int i = 0; i < numBins; i++) { 
     fill(graphColor);
     rect(i*X_DIST+X_OFFSET+X_DIST-COL_WIDTH/2, height-BOT_DIST, COL_WIDTH, -inBuffer[i]);
-    if ( X_ENUM == count || 0 == count)
-    { 
+    if ( X_ENUM == count || 0 == count) { 
       text(i, (i+1)*X_DIST+X_OFFSET-COL_WIDTH/2, height-BOT_DIST+25);
       count=0;
     }
     count++;
   }
   
+  save(frameCount+".png");
+
+  if (frameCount  > 1200) {
+    exit();
+  }
 }

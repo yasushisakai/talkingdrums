@@ -16,8 +16,11 @@ Verify the result against the maximum timer counter value (31250 < 65536 success
 
 */
 
+// Define various ADC prescaler
+const unsigned char PS_16 = (1 << ADPS2);
+const unsigned char PS_32 = (1 << ADPS2) | (1 << ADPS0);
+const unsigned char PS_64 = (1 << ADPS2) | (1 << ADPS1);
 const unsigned char PS_128 = (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
-
 
 #include <SPI.h>
 #include <RH_NRF24.h>
@@ -38,8 +41,6 @@ unsigned long duration = 100L;
 void setup() {
   Serial.begin(115200); // use the serial port
 
-  //TIMSK0 = 0; // turn off timer0 for lower jitter
-  ADCSRA = 0xe5; // set the adc to free running mode
   ADCSRA &= ~PS_128;
   ADCSRA |= PS_64;
   ADMUX = 0x40; // use adc0
@@ -66,6 +67,7 @@ void loop() {
 
   unsigned long start = millis();
 
+
   // Now wait for a reply
   uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
   uint8_t len = sizeof(buf);
@@ -73,50 +75,13 @@ void loop() {
   if (nrf24.recv(buf, &len)) {
     Serial.println(start - pTime);
     pTime = start;
-
   }
 
-  //Serial.write(255); // send a start byte
-  //Serial.write(fht_log_out, FHT_N / 2); // send out the data
-  // Serial.write(fht_init, FHT_N / 2); // send out the data
-
-  // Serial.println(counterCycles);
+  
 
 }
 
-bool timer(unsigned long const & currentTime, unsigned long const & previousTime, unsigned long const &interval) {
-  return (currentTime - previousTime) >= interval;
-}
-
-
-void fillBuffer() {
-  for (int i = 0 ; i < numSamples ; i++) { // save 256 samples
-    while (!(ADCSRA & 0x10)); // wait for adc to be ready
-    ADCSRA = 0xf5; // restart adc
-    byte m = ADCL; // fetch adc data
-    byte j = ADCH;
-    int k = (j << 8) | m; // form into an int
-    k -= 0x0200; // form into a signed int
-    k <<= 6; // form into a 16b signed int
-
-    fht_input[i] = k; // put real data into bins
-
-
-  }
-}
 
 
 
-void fillInitBuffer() {
-  for (int i = 0 ; i < numSamples ; i++) { // save 256 samples
-    while (!(ADCSRA & 0x10)); // wait for adc to be ready
-    ADCSRA = 0xf5; // restart adc
-    byte m = ADCL; // fetch adc data
-    byte j = ADCH;
-    int k = (j << 8) | m; // form into an int
-    k -= 0x0200; // form into a signed int
-    k <<= 6; // form into a 16b signed int
-  }
-
-}
 

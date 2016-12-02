@@ -17,7 +17,7 @@ unsigned long  duration = 100L;
 unsigned long  pTime;
 
 //normal 112us
-
+//2Hz  -> 20000 values
 void setup() {
   Serial.begin(9600);
 

@@ -21,7 +21,7 @@ RH_NRF24 nrf24;
 int numberCycles = 100;
 int counterCycles = 0;
 
-uint8_t fht_init[FHT_N];
+int fht_init[FHT_N];
 float fhtSt = 0;
 
 //timer
