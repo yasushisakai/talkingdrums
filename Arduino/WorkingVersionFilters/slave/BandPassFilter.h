@@ -71,6 +71,7 @@ class BandPassFilter {
         highpass = sensorValue - EMA_S_low;     //find the high-pass as before (for comparison)
         bandpass = EMA_S_high - EMA_S_low;
 
+  
         buf[ buffer_index ] = bandpass;//(float)sensorValue;
         buffer_index++;
       }

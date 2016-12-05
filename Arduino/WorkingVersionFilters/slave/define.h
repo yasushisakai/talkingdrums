@@ -26,7 +26,7 @@
 //we might want to constain the number of bits to 8
 //this way we can use byte
 
-const unsigned long  HIT_INTERVAL          = 30L;
+const unsigned long  HIT_INTERVAL          = 35L;
 // this interval is for the outputs, LED and solenoid
 
 
