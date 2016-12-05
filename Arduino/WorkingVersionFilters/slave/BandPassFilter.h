@@ -123,9 +123,10 @@ class BandPassFilter {
     //return if there is hit
     bool isHit() {
       if (signalMax - signalMin > THRESHOLD_PEAK) { //TODO create thresholdPeak dynamically
-       // Serial.print(signalMax);
-       // Serial.print(" ");
-       //  Serial.println(signalMin);
+        // Serial.print(signalMax);
+        // Serial.print(" ");
+        //  Serial.println(signalMin);
+        resetSignalMinMax();
         return true;
       }
       return false;

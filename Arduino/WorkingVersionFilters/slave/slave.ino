@@ -143,27 +143,24 @@ void loop() {
 
   if (timeKeeperNRF.checkTick() ) {
     valueByte = checkServer(nrf24);
-  }
 
-  if (valueByte == TICK && timeKeeper.getTimeTick() > TIME_MIN_INTERVAL) {
-    timeKeeper.tick();
-    timeKeeperNRF.tick();
+    if (valueByte == TICK) {
+      timeKeeper.tick();
+      timeKeeperNRF.tick();
 
-    if (DEBUG_TIME) {
-      Serial.print("MSG ");
-      Serial.print(valueByte);
-      Serial.print(" ");
-      Serial.println(timeKeeper.getTimeTick());
+      if (DEBUG_TIME) {
+        Serial.print("MSG ");
+        Serial.print(valueByte);
+        Serial.print(" ");
+        Serial.println(timeKeeper.getTimeTick());
+      }
+      lock = false;
+      clockCounter++;
+      valueByte = TOCK;
+      //Serial.println("reset");
     }
-    lock = false;
-    clockCounter++;
-    valueByte = TOCK;
-    //Serial.println("reset");
-
+    
   }
-
-
-
 
 
   if (!lock) {
@@ -179,15 +176,7 @@ void loop() {
       case TEST_MIC:
         {
           micHit = bandPassFilter.isHit();
-          bandPassFilter.resetSignalMinMax();
-          /*Serial.print(micHit == true ? 1 : 0);
 
-            indexMic++;
-            if(indexMic >= 8){
-            Serial.println();
-            indexMic=0;
-            }
-          */
           if (micHit == true) {
             //enable solenoid a single hit 30ms
             timeKeeper.hit();
@@ -198,7 +187,7 @@ void loop() {
         {
 
           hitTemp = debugSequence[itri];
-          if(hitTemp == true){
+          if (hitTemp == true) {
             timeKeeper.hit();
           }
 
@@ -589,8 +578,6 @@ void loop() {
 
   //  use mic has feedback device.
   //digitalWrite(LED_PIN, micHit);
-
-
 
 
 }
