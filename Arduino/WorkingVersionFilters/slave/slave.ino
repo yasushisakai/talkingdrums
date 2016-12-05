@@ -31,6 +31,7 @@
 // Objects
 RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
+TimeKeeper timeKeeperNRF;
 
 //define what sequence or process to execute
 bool isTestMic = true;
@@ -60,6 +61,8 @@ bool correctHeader[] = {1, 1, 0};
 bool headerSequence[SEQITER * (sizeof(correctHeader) / sizeof(bool))];
 bool debugSequence[] = {0, 0, 0, 1, 0, 0, 1, 1};
 
+//temp hit
+bool hitTemp = false;
 
 bool firstCalibration = true;
 
@@ -80,7 +83,17 @@ BandPassFilter bandPassFilter(f_s, bw_s, EMA_a_low_s, EMA_a_high_s, BUFFER_SIZE)
 
 //mic value
 int micValue = 0;
-int indexMic =0;
+int indexMic = 0;
+
+//calibrate numers of NF calls
+//in theory we are only going to chance the time once,
+//if we change the time, we can recalibrate using the incomming values.
+unsigned long nrfTime     = 90L;
+unsigned long nrfCallTime = 10L;
+
+//iterators
+uint8_t itri = 0;
+uint8_t itrj = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -92,7 +105,7 @@ void setup() {
   digitalWrite(SOL_PIN, LOW);
 
   //sequence
-  sequenceState = TEST_MIC;//WAIT_DEBUG;//WAIT_START; // new wait!!!
+  sequenceState = TEST_SOLENOID;//WAIT_DEBUG;//WAIT_START; // new wait!!!
   bitIndex = sequenceIndex = 0;
 
   numHeaderBits =  ((sizeof(correctHeader) / sizeof(bool)) * SEQITER);
@@ -100,6 +113,10 @@ void setup() {
   resetSequence(); //resets recording, play and head Sequence
 
   initNRF(nrf24);
+
+  //set intervals
+  timeKeeper.setInterval(HIT_INTERVAL);
+  timeKeeperNRF.setInterval(nrfTime);
 }
 
 void loop() {
@@ -107,9 +124,11 @@ void loop() {
   unsigned long cTime = millis();
   // updates the timeKeeper
   timeKeeper.cycle(cTime);
+  timeKeeperNRF.cycle(cTime);
+
 
   //collect signal readings
-  if (sequenceState <= 5) {
+  if (sequenceState <= 8) {
     micValue = analogRead(MIC_PIN);
     bandPassFilter.fillWindow(cTime, micValue, false, false);
   }
@@ -118,12 +137,18 @@ void loop() {
 
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
-  uint8_t valueByte = B00000001;
-  //valueByte = checkServer(nrf24);
-  //if (valueByte == TICK && timeKeeper.getTimeTick() > TIMEFRAMEINTERVAL) {
+  uint8_t valueByte = B00000000;
 
-  if (timeKeeper.getTimeTick() > TIMEFRAMEINTERVAL) {
+  //only check server the last 10 ms of the global time.
+
+  if (timeKeeperNRF.checkTick() ) {
+    valueByte = checkServer(nrf24);
+  }
+
+  if (valueByte == TICK && timeKeeper.getTimeTick() > TIME_MIN_INTERVAL) {
     timeKeeper.tick();
+    timeKeeperNRF.tick();
+
     if (DEBUG_TIME) {
       Serial.print("MSG ");
       Serial.print(valueByte);
@@ -155,17 +180,34 @@ void loop() {
         {
           micHit = bandPassFilter.isHit();
           bandPassFilter.resetSignalMinMax();
-          Serial.print(micHit == true ? 1 : 0);
-          
-          indexMic++;
-          if(indexMic >= 8){
+          /*Serial.print(micHit == true ? 1 : 0);
+
+            indexMic++;
+            if(indexMic >= 8){
             Serial.println();
             indexMic=0;
+            }
+          */
+          if (micHit == true) {
+            //enable solenoid a single hit 30ms
+            timeKeeper.hit();
           }
-          
         }
         break;
+      case TEST_SOLENOID:
+        {
 
+          hitTemp = debugSequence[itri];
+          if(hitTemp == true){
+            timeKeeper.hit();
+          }
+
+          //reset counter
+          itri++;
+          if (itri >= 8)
+            itri = 0;
+        }
+        break;
       //init values sequence
       case WAIT_START: {
           /*
@@ -199,6 +241,15 @@ void loop() {
 
 
           sequenceState = LISTEN_HEADER;
+
+        }
+        break;
+      /*
+        obtain the max  time tick from the RF. then only call RF methods only at the las 10ms,
+        to save energy and process time.
+      */
+      case CALIBRATE_TIME:
+        {
 
         }
         break;
@@ -523,24 +574,24 @@ void loop() {
 
   //update times (now - prev)
   timeKeeper.updateTimes();
+  timeKeeperNRF.updateTimes();
 
-  // outputs
-  bool hit = timeKeeper.checkHit();
+  if (timeKeeper.checkHit()) {
+    analogWrite(SOL_PIN, solenoid_pwm);
+  } else {
+    //analogWrite(SOL_PIN, 0);
+  }
+
 
   //use LED for feedback clock
   //bool tick =  timeKeeper.checkTick();
   //digitalWrite(LED_PIN, tick);
 
   //  use mic has feedback device.
-  digitalWrite(LED_PIN, micHit);
+  //digitalWrite(LED_PIN, micHit);
 
-  /*
-    if (hit) {
-      analogWrite(SOL_PIN, solenoid_pwm);
-    } else {
-      analogWrite(SOL_PIN, 0);
-    }
-  */
+
+
 
 }
 

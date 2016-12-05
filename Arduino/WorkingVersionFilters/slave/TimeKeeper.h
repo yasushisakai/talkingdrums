@@ -15,7 +15,7 @@
 
 class TimeKeeper {
   private:
-    static const unsigned long interval = INTERVAL; //ms
+    unsigned long interval; //ms
     // the number of cycles to wait for aggregate data readings
 
     unsigned long currentTime;
@@ -37,6 +37,8 @@ class TimeKeeper {
     unsigned long timeHit;
 
     TimeKeeper();
+
+    void setInterval(unsigned long duration);
     
     void cycle(unsigned long t);
     void updateTimes();
@@ -46,6 +48,8 @@ class TimeKeeper {
     
     bool checkHit();
     bool checkTick();
+
+    void resetHit();
     
     unsigned long getTimeHit();
     unsigned long getTimeTick();

@@ -25,7 +25,7 @@ int sensorValue = 0;
 //0.05
 //0.4
 float EMA_a_low = 0.08;     //initialization of EMA alpha (cutoff-frequency)
-float EMA_a_high = 0.5;
+float EMA_a_high = 0.4;
 
 int EMA_S_low = 0;          //initialization of EMA S
 int EMA_S_high = 0;
@@ -79,8 +79,8 @@ void setup() {
   // sampling rate, and therefore in the range of
   // 0 to 0.5
  
-  f = 0.1; //0 -0.5
-  bw = 0.001;
+  f = 0.01; //0 -0.5
+  bw = 0.05;
 
   // Band-pass filter.
   //

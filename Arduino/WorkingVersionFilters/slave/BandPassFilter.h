@@ -65,7 +65,7 @@ class BandPassFilter {
         buffer_index = 0;
         buffer_full = true;
       } else if ( buffer_full == false ) {
-        EMA_S_low  = (EMA_a_low   * sensorValue) + ((1 - EMA_a_low) * EMA_S_low);    //run the EMA
+        EMA_S_low  = (EMA_a_low  * sensorValue) + ((1 - EMA_a_low) * EMA_S_low);    //run the EMA
         EMA_S_high = (EMA_a_high * sensorValue) + ((1 - EMA_a_high) * EMA_S_high);
 
         highpass = sensorValue - EMA_S_low;     //find the high-pass as before (for comparison)
@@ -80,7 +80,6 @@ class BandPassFilter {
 
         if (output > signalMax) signalMax = output;
         if (output < signalMin) signalMin = output;
-
 
         if (printValue) {
           Serial.println(output);
@@ -103,15 +102,15 @@ class BandPassFilter {
       // We work from 2 because we read back by 2 elements.
       // out[0] and out[1] are never set, so we clear them.
       out[0] = out[1] = 0;
-
+      sum = 0;
       for ( itr = 2; itr < BUFFER_SIZE; itr++ ) {
-        out[itr] = a0 * buf[itr];
+        out[itr] =  a0 * buf[itr];
         out[itr] += a1 * buf[itr - 1];
         out[itr] += a2 * buf[itr - 2];
         out[itr] += b1 * out[itr - 1];
         out[itr] += b2 * out[itr - 2];
 
-        //if ( out[itr] < 0 ) out[itr] *= -1;
+        if ( out[itr] < 0 ) out[itr] *= -1;
         sum += out[itr];
       }
 

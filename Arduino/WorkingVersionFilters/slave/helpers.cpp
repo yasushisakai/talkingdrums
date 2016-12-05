@@ -27,6 +27,7 @@ uint8_t checkServer(RH_NRF24 &_nrf) {
   
   if (_nrf.recv(buf, &len)) {
     value = buf[0];
+    value = B00000001;
   }
 
   return value;

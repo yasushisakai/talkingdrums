@@ -25,6 +25,7 @@ void setup() {
   for (int i =0; i < 20; i++) {
     points.add(0);
   }
+  
 }
 
 void draw() {
@@ -32,7 +33,7 @@ void draw() {
     myString = myPort.readStringUntil(lf);
     if (myString != null) {
       myString = trim(myString);
-      value = int(myString);
+      //value = int(myString);
 
 
       points.remove(0);
@@ -49,7 +50,7 @@ void draw() {
     int yVal = (Integer)points.get(i);
 
     //if (yVal > 150) {
-     // println(yVal);
+      println(yVal);
       vertex(i*30 + 200, 500 - yVal);
     //}
   }

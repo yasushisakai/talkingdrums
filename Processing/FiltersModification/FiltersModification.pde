@@ -187,10 +187,11 @@ void draw() {
   //draw smooth signal
   noFill();
   strokeWeight(2);
-  stroke(255, 0, 0);
+  stroke(255);
   beginShape();
   for (int i = 0; i < sensorPoints.size(); i++) {
     float yVal = (Float)sensorPoints.get(i);
+    
     vertex(i*30 + 200, 800 - yVal);
   }
   endShape();
@@ -202,6 +203,7 @@ void draw() {
   beginShape();
   for (int i = 0; i < pointsEMS.size(); i++) {
     float yVal = (Float)pointsEMS.get(i);
+    println(yVal);
     vertex(i*30 + 200, 500 - yVal);
   }
   endShape();
