@@ -33,7 +33,7 @@ void draw() {
     myString = myPort.readStringUntil(lf);
     if (myString != null) {
       myString = trim(myString);
-      //value = int(myString);
+      value = int(myString);
 
 
       points.remove(0);
