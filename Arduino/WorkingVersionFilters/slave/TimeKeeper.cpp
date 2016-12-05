@@ -52,6 +52,10 @@ bool TimeKeeper::checkTick() {
   return (this->timeTick < this->interval);
 }
 
+bool TimeKeeper::isTick() {
+  return (this->timeTick > this->interval);
+}
+
 unsigned long TimeKeeper::getTimeTick() {
   return this->timeTick;
 }

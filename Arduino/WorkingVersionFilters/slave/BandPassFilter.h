@@ -113,10 +113,10 @@ class BandPassFilter {
         if ( out[itr] < 0 ) out[itr] *= -1;
         sum += out[itr];
       }
-
+     
       sum /= (BUFFER_SIZE - 2);
-
-      return int(sum);
+      //Serial.println(sum);
+      return int(sum + 0.55);
     }
 
 

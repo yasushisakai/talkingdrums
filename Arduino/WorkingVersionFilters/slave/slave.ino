@@ -46,6 +46,7 @@ byte sequenceState = 0;
 byte sequenceIndex = 0;
 byte bitIndex      = 0;
 
+//hit solenoid if the microphone reads hit, or the sequence has a 1
 bool micHit    = false;
 bool lock      = true;
 
@@ -61,9 +62,6 @@ bool correctHeader[] = {1, 1, 0};
 bool headerSequence[SEQITER * (sizeof(correctHeader) / sizeof(bool))];
 bool debugSequence[] = {0, 0, 0, 1, 0, 0, 1, 1};
 
-//temp hit
-bool hitTemp = false;
-
 bool firstCalibration = true;
 
 float buffSignal[30];
@@ -72,7 +70,7 @@ uint8_t maxBuffer = sizeof(buffSignal) / sizeof(float);
 bool ledTick = false;
 
 /// PWM-ing the Solenoid will need additional test 0-255
-byte const solenoid_pwm = 255;
+byte const solenoid_pwm = 155;
 
 //clock cyles keepers
 uint8_t clockCounter = 0;
@@ -89,11 +87,18 @@ int indexMic = 0;
 //in theory we are only going to chance the time once,
 //if we change the time, we can recalibrate using the incomming values.
 unsigned long nrfTime     = 90L;
-unsigned long nrfCallTime = 10L;
+unsigned long nrfCallTime = 20L;
 
 //iterators
 uint8_t itri = 0;
 uint8_t itrj = 0;
+
+//tmp conter
+unsigned long tempConter = 0;
+
+unsigned long cTime =0;
+
+uint8_t valueByte = B00000000;
 
 void setup() {
   Serial.begin(115200);
@@ -101,11 +106,15 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   pinMode(SOL_PIN, OUTPUT);
 
+  
+  digitalWrite(LED_PIN, HIGH);
+  delay(100);
+
   digitalWrite(LED_PIN, LOW);
   digitalWrite(SOL_PIN, LOW);
 
   //sequence
-  sequenceState = TEST_SOLENOID;//WAIT_DEBUG;//WAIT_START; // new wait!!!
+  sequenceState = TEST_MIC;//WAIT_DEBUG;//WAIT_START; // new wait!!!
   bitIndex = sequenceIndex = 0;
 
   numHeaderBits =  ((sizeof(correctHeader) / sizeof(bool)) * SEQITER);
@@ -121,7 +130,7 @@ void setup() {
 
 void loop() {
 
-  unsigned long cTime = millis();
+  cTime = millis();
   // updates the timeKeeper
   timeKeeper.cycle(cTime);
   timeKeeperNRF.cycle(cTime);
@@ -130,24 +139,25 @@ void loop() {
   //collect signal readings
   if (sequenceState <= 8) {
     micValue = analogRead(MIC_PIN);
-    bandPassFilter.fillWindow(cTime, micValue, false, false);
+    bandPassFilter.fillWindow(cTime, micValue, true, false);
   }
 
 
 
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
-  uint8_t valueByte = B00000000;
+  
 
   //only check server the last 10 ms of the global time.
+  if (timeKeeperNRF.isTick() ) {
+    valueByte = checkServer(nrf24); //10ms  -30count
 
-  if (timeKeeperNRF.checkTick() ) {
-    valueByte = checkServer(nrf24);
-
-    if (valueByte == TICK) {
+    //    Serial.println(valueByte);
+    
+    if (valueByte == TICK && timeKeeper.getTimeTick() >= TIME_MIN_INTERVAL) {
       timeKeeper.tick();
       timeKeeperNRF.tick();
-
+      
       if (DEBUG_TIME) {
         Serial.print("MSG ");
         Serial.print(valueByte);
@@ -159,7 +169,7 @@ void loop() {
       valueByte = TOCK;
       //Serial.println("reset");
     }
-    
+
   }
 
 
@@ -181,13 +191,14 @@ void loop() {
             //enable solenoid a single hit 30ms
             timeKeeper.hit();
           }
+          
         }
         break;
       case TEST_SOLENOID:
         {
 
-          hitTemp = debugSequence[itri];
-          if (hitTemp == true) {
+          micHit = debugSequence[itri];
+          if (micHit == true) {
             timeKeeper.hit();
           }
 
@@ -260,24 +271,24 @@ void loop() {
             if (bitIndex == numHeaderBits) {
               if (DEBUG)Serial.print("AH ");
               Serial.println("");
-              for (int i = 0; i < numHeaderBits; i++) {
-                Serial.print(headerSequence[i]);
+              for (itri = 0; itri < numHeaderBits; itri++) {
+                Serial.print(headerSequence[itri]);
               }
               Serial.println("");
 
 
               double headers[SEQITER];
-              for (uint8_t i = 0; i < SEQITER; i++) headers[i] = 0.0;
+              for (itri = 0; itri < SEQITER; itri++) headers[itri] = 0.0;
 
-              for (uint8_t i = 0; i < SEQITER; i++) {
-                for (uint8_t j = 0; j < 3; j++) {
-                  headers[i] +=  headerSequence[i + j * SEQITER];
+              for (itri = 0; itri < SEQITER; itri++) {
+                for (itrj = 0; itrj < 3; itrj++) {
+                  headers[itri] +=  headerSequence[itri + itrj * SEQITER];
                 }
               }
 
               int countCheck = 0;
-              for (uint8_t i = 0; i < SEQITER; i++) {
-                if (correctHeader[i] != (headers[i] / SEQITER) > 0.5 ) {
+              for (itri = 0; itri < SEQITER; itri++) {
+                if (correctHeader[itri] != (headers[itri] / SEQITER) > 0.5 ) {
                   countCheck++;
                 }
               }
@@ -288,8 +299,8 @@ void loop() {
               //RESET HEADER
               //if didn't found the header then reset the values of headerSequence
               if (isHead == false) {
-                for (uint8_t i = 0; i < numHeaderBits; i++) {
-                  headerSequence[i] = false;
+                for (itri = 0; itri < numHeaderBits; itri++) {
+                  headerSequence[itri] = false;
                 }
                 isRecordHeader = false;
                 bitIndex = 0;
@@ -314,8 +325,8 @@ void loop() {
 
               if (DEBUG) {
                 Serial.print("L: h=");
-                for (uint8_t i = 0; i < numHeaderBits; i++)
-                  Serial.print(headerSequence[i]);
+                for (itri = 0; itri < numHeaderBits; itri++)
+                  Serial.print(headerSequence[itri]);
                 Serial.println();
               }
 
@@ -394,18 +405,18 @@ void loop() {
             //
             // gets the average and defines what it heard to "playSequence"
             //
-            for (int i = 0; i < SEQBITS; i++) {
+            for (itri = 0; itri < SEQBITS; itri++) {
               float average = 0.0;
-              for (int j = 0; j < SEQITER; j++) {
-                average += recording[j][i];
+              for (itrj = 0; itrj < SEQITER; itrj ++) {
+                average += recording[itrj][itri];
                 if (DEBUG) {
                   Serial.print(" ");
                   Serial.print(average);
                   Serial.print(" ");
                 }
               }
-              playSequence[i] = average >= 0.5 * SEQITER;
-              if (DEBUG) Serial.println(playSequence[i]);
+              playSequence[itri] = average >= 0.5 * SEQITER;
+              if (DEBUG) Serial.println(playSequence[itri]);
             }
 
             sequenceIndex = 0;
@@ -420,8 +431,8 @@ void loop() {
             //
             //
             Serial.print("L: r=");
-            for (int i = 0; i < SEQBITS; i++) {
-              Serial.print(playSequence[i]);
+            for (itri = 0; itri < SEQBITS; itri++) {
+              Serial.print(playSequence[itri]);
             }
             Serial.println();
 
@@ -432,12 +443,12 @@ void loop() {
 
               Serial.println("L: Done Analyze");
 
-              for (int i = 0; i < SEQITER; i++) {
+              for (itri = 0; itri < SEQITER; itri++) {
                 Serial.print("L: ");
-                Serial.print(i);
+                Serial.print(itri);
                 Serial.print('=');
-                for (int j = 0; j < SEQBITS; j++) {
-                  Serial.print(recording[i][j]);
+                for (itrj = 0; itrj < SEQBITS; itrj++) {
+                  Serial.print(recording[itri][itrj]);
                 }
                 Serial.println();
               }
@@ -445,8 +456,8 @@ void loop() {
               // check sequence if its correct
 
               bool flag = true;
-              for (int i = 0; i < SEQBITS; i++) {
-                if (debugSequence[i] != playSequence[i]) {
+              for (itri = 0; itri < SEQBITS; itri++) {
+                if (debugSequence[itri] != playSequence[itri]) {
                   flag = !flag;
                   break;
                 }
@@ -567,9 +578,13 @@ void loop() {
 
   if (timeKeeper.checkHit()) {
     analogWrite(SOL_PIN, solenoid_pwm);
+    digitalWrite(LED_PIN, HIGH);
   } else {
-    //analogWrite(SOL_PIN, 0);
+    analogWrite(SOL_PIN, 0);
+    digitalWrite(LED_PIN, 0);
   }
+
+  //digitalWrite(LED_PIN, tick);
 
 
   //use LED for feedback clock
@@ -600,16 +615,16 @@ bool debugTimes()
 
 void resetSequence() {
   //reset sequences
-  for (uint8_t i = 0; i < SEQBITS; i++) {
-    playSequence[i] = false;
-    for (uint8_t j = 0; j < SEQITER; j++) {
-      recording[j][i] = false;
+  for (itri = 0; itri < SEQBITS; itri++) {
+    playSequence[itri] = false;
+    for (itrj = 0; itrj < SEQITER; itrj++) {
+      recording[itrj][itri] = false;
     }
   }
 
   //reset header
-  for (uint8_t i = 0; i < numHeaderBits; i++) {
-    headerSequence[i] = false;
+  for (itri = 0; itri < numHeaderBits; itri++) {
+    headerSequence[itri] = false;
   }
 
 }
