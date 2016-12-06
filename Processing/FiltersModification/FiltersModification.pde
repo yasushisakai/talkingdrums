@@ -25,8 +25,8 @@ import controlP5.*;
 
 ControlP5 cp5;
 
-float EMA_a_low = 0.1;     //initialization of EMA alpha (cutoff-frequency)
-float EMA_a_high = 0.4;
+float EMA_a_low = 0.17;     //initialization of EMA alpha (cutoff-frequency)
+float EMA_a_high = 0.86;
 
 float EMA_S_low = 0;          //initialization of EMA S
 float EMA_S_high = 0;
@@ -80,7 +80,7 @@ void setup() {
 
   for (int i =0; i < 20; i++) {
     sensorPoints.add(0.0);
-    pointsEMS.add(0.0);
+    pointsEMS.add(0);
   }
 
   // Clear global variables before the timer
@@ -111,8 +111,8 @@ void setup() {
   // sampling rate, and therefore in the range of
   // 0 to 0.5
 
-  f = 0.01; //0 -0.5
-  bw = 0.005;
+  f = 0.02; //0 -0.5
+  bw = 0.03;
 
   // Band-pass filter.
   r = 1 - ( 3 * bw );
@@ -169,7 +169,9 @@ void draw() {
   int cTime = millis();
 
   if ( buffer_full == true ) {
-    float output = doFilter();
+    int output = doFilter();
+    
+     println(output);
 
     pointsEMS.remove(0);
     pointsEMS.add(output);
@@ -202,8 +204,8 @@ void draw() {
   stroke(255, 0, 0);
   beginShape();
   for (int i = 0; i < pointsEMS.size(); i++) {
-    float yVal = (Float)pointsEMS.get(i);
-    println(yVal);
+    int yVal = (Integer)pointsEMS.get(i);
+   
     vertex(i*30 + 200, 500 - yVal);
   }
   endShape();
@@ -213,7 +215,7 @@ void draw() {
 // input stream and output stream to compound a pre-set
 // amplification.  The amplification is set by a0,a1,a2,
 // b1,b2. 
-float doFilter() {
+int doFilter() {
   float sum = 0;
 
   // Convolute the input buffer with the filter kernel
@@ -234,7 +236,7 @@ float doFilter() {
 
   sum /= float(BUFFER_SIZE - 2);
 
-  return sum;
+  return int(sum +0.5);
 }
 
 void serialEvent (Serial myPort) {

@@ -71,6 +71,7 @@ class BandPassFilter {
         highpass = sensorValue - EMA_S_low;     //find the high-pass as before (for comparison)
         bandpass = EMA_S_high - EMA_S_low;
 
+  
         buf[ buffer_index ] = bandpass;//(float)sensorValue;
         buffer_index++;
       }
@@ -113,10 +114,10 @@ class BandPassFilter {
         if ( out[itr] < 0 ) out[itr] *= -1;
         sum += out[itr];
       }
-
+     
       sum /= (BUFFER_SIZE - 2);
-
-      return int(sum);
+      //Serial.println(sum);
+      return int(sum + 0.55);
     }
 
 

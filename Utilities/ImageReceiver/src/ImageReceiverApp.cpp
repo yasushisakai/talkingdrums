@@ -25,7 +25,7 @@ using namespace std;
 //const values
 const ci::ivec2 windowSize(1280 + 640, 720);
 
-const ci::ivec2 stepDiv(80, 80);
+const ci::ivec2 stepDiv(100, 100);
 // the original image is pixelated by 20;
 
 const ci::ivec2 margin(5,5);

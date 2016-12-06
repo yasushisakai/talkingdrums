@@ -49,6 +49,8 @@ class TimeKeeper {
     bool checkHit();
     bool checkTick();
 
+    bool isTick();
+
     void resetHit();
     
     unsigned long getTimeHit();
