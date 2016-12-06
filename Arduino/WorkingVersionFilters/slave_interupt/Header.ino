@@ -38,6 +38,7 @@ void listenHeader() {
           errorCheck++;
         }
       }
+      Serial.print(" e ");
       Serial.print(errorCheck);
       //OK to have one error, its the header..
       isHead = (errorCheck <= 1) ? true : false;
@@ -69,7 +70,6 @@ void listenHeader() {
         Serial.print("L: h=");
         for (itri = 0; itri < numHeaderBits; itri++)
           Serial.print(headerSequence[itri]);
-        Serial.println();
       }
 
       //go to listen the sequence  and RESET values
@@ -81,7 +81,6 @@ void listenHeader() {
 
     }
   }
-
   //if we found a hit then we can start anaylzing the header
   if (isFirstHit && micHit) {
     headerSequence[bitIndex] = micHit;
@@ -92,7 +91,6 @@ void listenHeader() {
     timeKeeper.hit();//led feedback
     if (DEBUG) Serial.print("FH ");
   }
-
 
   if (DEBUG) Serial.println(clockCounter);
 }

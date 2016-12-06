@@ -13,10 +13,10 @@ void waitStart() {
       Serial.print(" ");
     }
 
-    if(useHeader){
+    if (useHeader) {
       setSequenceState(CALIBRATE_MIC);
-    }else{
-       setSequenceState(LISTEN_SEQUENCE);
+    } else {
+      setSequenceState(LISTEN_SEQUENCE);
     }
 
     TimeKeeper::signalLimit  = 2;
@@ -87,7 +87,12 @@ void analyzeSequence() {
     }
 
     sequenceIndex = 0;
-    setSequenceState(PULSE_PLAY);
+
+    if (useHeader) {
+      setSequenceState(HEADER_PLAY);
+    } else {
+      setSequenceState(PULSE_PLAY);
+    }
 
     //make sure that we are going to play the header
     isHead = true;
@@ -182,9 +187,9 @@ void resetLoop() {
 
   clockCounter = 0;
 
-  if(useHeader){
+  if (useHeader) {
     setSequenceState(LISTEN_HEADER);
-  }else{
+  } else {
     setSequenceState(LISTEN_HEADER);
   }
 
@@ -319,7 +324,7 @@ void acticateSequenceLoop() {
 
 
       case LISTEN_HEADER:
-          listenHeader();
+        listenHeader();
         break;
 
       case LISTEN_SEQUENCE:

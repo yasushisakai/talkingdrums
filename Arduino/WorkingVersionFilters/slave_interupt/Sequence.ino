@@ -1,4 +1,4 @@
-void setSequenceState(byte state){
+void setSequenceState(byte state) {
   sequenceState = state;
 }
 
@@ -13,8 +13,6 @@ void printSequenceIndex() {
 }
 
 void printRecordings() {
-  Serial.println("L: Done Analyze");
-
   for (itri = 0; itri < SEQITER; itri++) {
     Serial.print("L: ");
     Serial.print(itri);
