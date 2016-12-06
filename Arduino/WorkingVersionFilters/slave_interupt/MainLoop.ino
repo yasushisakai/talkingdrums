@@ -204,10 +204,11 @@ void pulsePlay() {
 
   if (DEBUG) Serial.print("PLAY  ");
 
-  if (isHead) {
+  if (isHead == true) {
     if (headerSequence[bitIndex]) timeKeeper.hit();
     bitIndex++;
 
+    if (DEBUG) Serial.print("s ");
     if (DEBUG) Serial.print(headerSequence[bitIndex]);
 
     if (bitIndex >= sizeof(correctHeader) / sizeof(bool)) {
@@ -246,6 +247,8 @@ void waitPlay() {
     //if its the slave go to read input instead of reset values
     if (SERVER_SLAVE == 1) {
       setSequenceState(READ_INPUT);
+      readInBytes = false;
+      requestByte = true;
     } else {
       setSequenceState(RESET);
     }
@@ -253,6 +256,8 @@ void waitPlay() {
   } else {
     // nope go back playing
     setSequenceState(PULSE_PLAY);
+    //play again the head
+    isHead = true;
     if (DEBUG) {
       Serial.print("L: playing= ");
       Serial.print(sequenceIndex);
@@ -298,36 +303,38 @@ void readInputArray() {
     int val = Serial.readBytes(byteMSG8, 1);
 
     // Reset values when an array of bits is received
-    if (val > 0) {
-      if (DEBUG) Serial.println("clean Serial");
+    // if (val > 0) {
+    if (DEBUG) Serial.println("clean Serial");
 
 
-      if (DEBUG) {
-        Serial.print("Number cycles");
-        Serial.println(clockCounter);
-      }
-      //clean
+    if (DEBUG) {
+      Serial.print("Number cycles");
+      Serial.println(clockCounter);
+    }
+    //clean
 
-      Serial.flush();
+    Serial.flush();
 
-      for (int i = 0; i < 10; i++) {
-        char f = Serial.read();
-      }
+    for (int i = 0; i < 10; i++) {
+      char f = Serial.read();
+    }
 
-      for (int i = 0; i < 8; i++) {
-        playSequence[i] = (bitRead(byteMSG8[0], 7 - i ) == 1 ? true : false);
-      }
+    for (int i = 0; i < 8; i++) {
+      playSequence[i] = (bitRead(byteMSG8[0], 7 - i ) == 1 ? true : false);
+    }
 
-      readInBytes = true;
-      requestByte = false;
-      resetLoop();
-      clockCounter   = 0;
-      setSequenceState(PULSE_PLAY);
+    readInBytes = true;
+    requestByte = false;
+    bitIndex = 0;
+    sequenceIndex = 0;
+    resetSequence();
+    clockCounter   = 0;
+    setSequenceState(PULSE_PLAY);
 
-      //make sure that we are going to play the header
-      isHead = true;
+    //make sure that we are going to play the header
+    isHead = true;
 
-    } //got msg
+    //} //got msg
   }
 
   //send byte request and read

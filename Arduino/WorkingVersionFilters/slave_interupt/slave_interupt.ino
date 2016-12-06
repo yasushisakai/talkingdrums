@@ -56,7 +56,7 @@ bool const careHeader = true; // cares about the header or not
 */
 
 ///Sequence
-byte sequenceState = WAIT_START;//TEST_MIC; //TEST_MIC;
+byte sequenceState = READ_INPUT;//TEST_MIC; //TEST_MIC;
 byte sequenceIndex = 0;
 byte bitIndex      = 0;
 
@@ -66,7 +66,7 @@ bool lock      = true;
 
 //HEADER
 bool isRecordHeader = false;
-bool isHead         = false;
+bool isHead         = true; //false
 bool isFirstHit     = true;
 uint8_t numHeaderBits   = 0;
 
@@ -119,7 +119,8 @@ bool enableHeader = true;
 
 //Slave values
 //Serial Port
-bool requestByte = false;
+//request a byte, write the s command
+bool requestByte = true;
 bool readInBytes = false;
 
 //incoming msg, keep it as an array in case we need to
