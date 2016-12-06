@@ -40,11 +40,10 @@ TimeKeeper timeKeeperNRF;
 //define what sequence or process to execute
 bool isTestMic = true;
 
-bool const DEBUG      = false;
+bool const DEBUG      = true;
 bool const DEBUG_TIME = false;
-bool const careHeader = true; // cares about the header or not
-
-//sequence
+bool const useHeader  = true;  // cares about the header or not
+//sequence 
 /*
    TEST_TIMERS   -> test RF and timers
    TEST_MIC      -> test microphone sensor
@@ -69,11 +68,15 @@ bool isRecordHeader = false;
 bool isHead         = true; //false
 bool isFirstHit     = true;
 uint8_t numHeaderBits   = 0;
+uint8_t headerBitCounter = 0;
+
+bool correctHeader[] = {1, 1, 0};
+bool headerSequence[SEQITER * (sizeof(correctHeader) / sizeof(bool))];
+
+//SEQUENCE
 
 bool recording[SEQITER][SEQBITS];
 bool playSequence[SEQBITS];
-bool correctHeader[] = {1, 1, 0};
-bool headerSequence[SEQITER * (sizeof(correctHeader) / sizeof(bool))];
 bool debugSequence[] = {0, 0, 0, 1, 0, 0, 1, 1};
 
 bool firstCalibration = true;

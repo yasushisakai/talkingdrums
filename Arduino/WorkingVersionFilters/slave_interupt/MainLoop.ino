@@ -55,11 +55,6 @@ void listenHeader() {
         micHit = false;
         if (DEBUG) Serial.print("RH ");
       }
-
-      // forces the head to pass if careHead is off.
-      if (!careHeader) {
-        isHead = true;
-      }
     }
 
 
@@ -199,37 +194,44 @@ void analyzeSequence() {
   if (DEBUG) Serial.println(clockCounter);
 }
 
+void headerPlay() {
+
+  if (DEBUG) Serial.print("s ");
+  if (DEBUG) Serial.print(headerSequence[bitIndex]);
+
+  if (headerSequence[bitIndex]) timeKeeper.hit();
+  bitIndex++;
+
+  if (bitIndex > 2 ) { //110
+    headerBitCounter++;
+    bitIndex = 0;
+
+    if (headerBitCounter == SEQITER) {
+      headerBitCounter = 0;
+      setSequenceState(PULSE_PLAY); // it won't go to WAIT_PLAY
+    }
+    
+  }
+
+  if (DEBUG) Serial.println(clockCounter);
+}
+
 //play a pulse dependeing on the microphone readings
 void pulsePlay() {
 
   if (DEBUG) Serial.print("PLAY  ");
+  if (DEBUG) Serial.print(playSequence[bitIndex]);
 
-  if (isHead == true) {
-    if (headerSequence[bitIndex]) timeKeeper.hit();
-    bitIndex++;
+  if (playSequence[bitIndex]) timeKeeper.hit();
+  bitIndex++;
 
-    if (DEBUG) Serial.print("s ");
-    if (DEBUG) Serial.print(headerSequence[bitIndex]);
-
-    if (bitIndex >= sizeof(correctHeader) / sizeof(bool)) {
-      isHead = false;
-      bitIndex = 0;
-      // even if it ends playing the header,
-      // it won't go to WAIT_PLAY
-    }
-  } else {
-    if (DEBUG) Serial.print(playSequence[bitIndex]);
-
-    if (playSequence[bitIndex]) timeKeeper.hit();
-
-    bitIndex++;
-    if (bitIndex == SEQBITS) {
-      bitIndex = 0;
-      setSequenceState(WAIT_PLAY);
-    }
+  if (bitIndex == SEQBITS) {
+    bitIndex = 0;
+    setSequenceState(WAIT_PLAY);
   }
 
   if (DEBUG) Serial.println(clockCounter);
+
 }
 
 //wait play function between seequence readings
@@ -256,8 +258,7 @@ void waitPlay() {
   } else {
     // nope go back playing
     setSequenceState(PULSE_PLAY);
-    //play again the head
-    isHead = true;
+
     if (DEBUG) {
       Serial.print("L: playing= ");
       Serial.print(sequenceIndex);
@@ -303,43 +304,48 @@ void readInputArray() {
     int val = Serial.readBytes(byteMSG8, 1);
 
     // Reset values when an array of bits is received
-    if (val > 0) {
-      if (DEBUG) Serial.println("clean Serial");
+    //if (val > 0) {
+    if (DEBUG) Serial.println("clean Serial");
 
 
-      if (DEBUG) {
-        Serial.print("Number cycles");
-        Serial.println(clockCounter);
-      }
-      //clean
+    if (DEBUG) {
+      Serial.print("Number cycles");
+      Serial.println(clockCounter);
+    }
+    //clean
 
-      Serial.flush();
+    Serial.flush();
 
-      for (itri = 0; itri < 10; itri++) {
-        char f = Serial.read();
-      }
+    for (itri = 0; itri < 10; itri++) {
+      char f = Serial.read();
+    }
 
-      for (itri = 0; itri < 8; itri++) {
-        playSequence[itri] = (bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
-      }
+    for (itri = 0; itri < 8; itri++) {
+      playSequence[itri] = (bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
+    }
 
-      readInBytes = true;
-      requestByte = false;
-      bitIndex = 0;
-      sequenceIndex = 0;
-      clockCounter   = 0;
+    readInBytes = true;
+    requestByte = false;
+    bitIndex = 0;
+    sequenceIndex = 0;
+    clockCounter   = 0;
+
+    if (useHeader) {
+      setSequenceState(HEADER_PLAY);
+    } else {
       setSequenceState(PULSE_PLAY);
-      //fill header
+    }
+    //fill header
 
-      for(itri = 0; itri < 3; itri++){
-        headerSequence[itri] = correctHeader[itri];
-      }
-      
+    for (itri = 0; itri < 3; itri++) {
+      headerSequence[itri] = correctHeader[itri];
+    }
 
-      //make sure that we are going to play the header
-      isHead = true;
 
-    } //got msg
+    //make sure that we are going to play the header
+    isHead = true;
+
+    // } //got msg
   }
 
   //send byte request and read
@@ -390,6 +396,8 @@ void acticateSequenceLoop() {
           LISTEN_SEQUENCE
           ANALYZE
 
+          HEADER * 3
+
           PULSE_PLAY
           WAIT_PLAY
 
@@ -425,6 +433,10 @@ void acticateSequenceLoop() {
 
       case ANALYZE:
         analyzeSequence(); // collects and analyses the readings,
+        break;
+
+      case HEADER_PLAY:
+        headerPlay();
         break;
 
       case PULSE_PLAY:
