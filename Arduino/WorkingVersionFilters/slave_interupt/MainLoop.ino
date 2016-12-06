@@ -304,35 +304,40 @@ void readInputArray() {
 
     // Reset values when an array of bits is received
     if (val > 0) {
-    if (DEBUG) Serial.println("clean Serial");
+      if (DEBUG) Serial.println("clean Serial");
 
 
-    if (DEBUG) {
-      Serial.print("Number cycles");
-      Serial.println(clockCounter);
-    }
-    //clean
+      if (DEBUG) {
+        Serial.print("Number cycles");
+        Serial.println(clockCounter);
+      }
+      //clean
 
-    Serial.flush();
+      Serial.flush();
 
-    for (int i = 0; i < 10; i++) {
-      char f = Serial.read();
-    }
+      for (itri = 0; itri < 10; itri++) {
+        char f = Serial.read();
+      }
 
-    for (int i = 0; i < 8; i++) {
-      playSequence[i] = (bitRead(byteMSG8[0], 7 - i ) == 1 ? true : false);
-    }
+      for (itri = 0; itri < 8; itri++) {
+        playSequence[itri] = (bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
+      }
 
-    readInBytes = true;
-    requestByte = false;
-    bitIndex = 0;
-    sequenceIndex = 0;
-    resetSequence();
-    clockCounter   = 0;
-    setSequenceState(PULSE_PLAY);
+      readInBytes = true;
+      requestByte = false;
+      bitIndex = 0;
+      sequenceIndex = 0;
+      clockCounter   = 0;
+      setSequenceState(PULSE_PLAY);
+      //fill header
 
-    //make sure that we are going to play the header
-    isHead = true;
+      for(itri = 0; itri < 3; itri++){
+        headerSequence[itri] = correctHeader[itri];
+      }
+      
+
+      //make sure that we are going to play the header
+      isHead = true;
 
     } //got msg
   }
