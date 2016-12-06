@@ -29,7 +29,7 @@
 */
 
 //define SERVER SLAVE
-#define SERVER_SLAVE 1
+#define SERVER_SLAVE 0
 
 
 // Objects
@@ -51,11 +51,11 @@ bool const useHeader  = true;  // cares about the header or not
 
    WAIT_START -> start hearing the header.
 
-   
+   READ_INPUT -> server
 */
 
 ///Sequence
-byte sequenceState = READ_INPUT;//TEST_MIC; //TEST_MIC;
+byte sequenceState = WAIT_START;//TEST_MIC; //TEST_MIC;
 byte sequenceIndex = 0;
 byte bitIndex      = 0;
 
@@ -67,11 +67,11 @@ bool lock      = true;
 bool isRecordHeader = false;
 bool isHead         = true; //false
 bool isFirstHit     = true;
-uint8_t numHeaderBits   = 0;
+uint8_t numHeaderBits    = 0;
 uint8_t headerBitCounter = 0;
 
 bool correctHeader[] = {1, 1, 0};
-bool headerSequence[SEQITER * (sizeof(correctHeader) / sizeof(bool))];
+bool headerSequence[(sizeof(correctHeader) / sizeof(bool)) * SEQITER];
 
 //SEQUENCE
 
@@ -117,8 +117,6 @@ unsigned long cTime = 0;
 
 uint8_t valueByte = B00000000;
 
-//enable header
-bool enableHeader = true;
 
 //Slave values
 //Serial Port

@@ -1,100 +1,38 @@
-void listenHeader() {
-  if (DEBUG) Serial.print("LISTEN HEADER ");
+//wait to start
+void waitStart() {
+  /*
+    initial wait for 3 cycles for a stable mic reading
+  */
+  if (!TimeKeeper::wait()) {
 
-  //get hit from the bandpass filter
-  micHit = bandPassFilter.isHit();
-
-  if (isRecordHeader) {
-
-    if (micHit) timeKeeper.hit(); //led feedback
-
-    headerSequence[bitIndex] = micHit;
-    bitIndex++;
-
-    isHead = true;
-
-    //Analyze to pass to the next stage
-    if (bitIndex == numHeaderBits) {
-      if (DEBUG) {
-        Serial.print("AH ");
-        Serial.println("");
-        for (itri = 0; itri < numHeaderBits; itri++) {
-          Serial.print(headerSequence[itri]);
-        }
-        Serial.println("");
-      }
-
-      double headers[SEQITER];
-      for (itri = 0; itri < SEQITER; itri++) headers[itri] = 0.0;
-
-      for (itri = 0; itri < SEQITER; itri++) {
-        for (itrj = 0; itrj < 3; itrj++) {
-          headers[itri] +=  headerSequence[itri + itrj * SEQITER];
-        }
-      }
-
-      int errorCheck = 0;
-      for (itri = 0; itri < SEQITER; itri++) {
-        if (correctHeader[itri] != (headers[itri] / SEQITER) > 0.5 ) {
-          errorCheck++;
-        }
-      }
-
-      //OK to have one error, its the header..
-      isHead = (errorCheck <= 0) ? true : false;
-
-      //RESET HEADER
-      //if didn't found the header then reset the values of headerSequence
-      if (isHead == false) {
-        for (itri = 0; itri < numHeaderBits; itri++) {
-          headerSequence[itri] = false;
-        }
-        isRecordHeader = false;
-        bitIndex = 0;
-        isFirstHit = true;
-        micHit = false;
-        if (DEBUG) Serial.print("RH ");
-      }
+    if (DEBUG) {
+      Serial.print("L: WAIT_START ");
+      Serial.print(TimeKeeper::signalLimit);
+      Serial.print(" ");
+      Serial.print(TimeKeeper::signalCount);
+      Serial.print(" ");
     }
 
-
-    if (DEBUG) Serial.print("B: ");
-    if (DEBUG) Serial.print(bitIndex);
-    if (DEBUG) Serial.print(" ");
-
-    if (isHead && bitIndex == numHeaderBits) {
-      Serial.println("L: found head"); // notify head detection to ImageReciever
-
-      if (DEBUG) {
-        Serial.print("L: h=");
-        for (itri = 0; itri < numHeaderBits; itri++)
-          Serial.print(headerSequence[itri]);
-        Serial.println();
-      }
-
-      //go to listen the sequence  and RESET values
-      bitIndex = 0; //reset!
-      clockCounter = 3;
-      micHit = false;
-      isFirstHit = true;
-      setSequenceState(LISTEN_SEQUENCE);
-
+    if(useHeader){
+      setSequenceState(CALIBRATE_MIC);
+    }else{
+       setSequenceState(LISTEN_SEQUENCE);
     }
-  }
 
-  //if we found a hit then we can start anaylzing the header
-  if (isFirstHit && micHit) {
-    headerSequence[bitIndex] = micHit;
-    bitIndex ++;
-    isRecordHeader = true;
-    isFirstHit     = false;
-    timeKeeper.hit();//led feedback
-    if (DEBUG) Serial.print("FH ");
+    TimeKeeper::signalLimit  = 2;
   }
-
+  TimeKeeper::signalCount++;
 
   if (DEBUG) Serial.println(clockCounter);
 }
+
+//calibrate Microphone
+void calibrateMic() {
+  if (DEBUG) Serial.println("CALIBRATING");
+  sequenceState = LISTEN_HEADER;
+}
+
+
 
 //listen to the incomming date from the microphone
 void listenSequence() {
@@ -115,28 +53,9 @@ void listenSequence() {
   if (DEBUG) Serial.println(clockCounter);
 }
 
-//wait to start
-void waitStart() {
-  /*
-    initial wait for 3 cycles for a stable mic reading
-  */
-  if (!TimeKeeper::wait()) {
 
-    if (DEBUG) {
-      Serial.print("L: WAIT_START ");
-      Serial.print(TimeKeeper::signalLimit);
-      Serial.print(" ");
-      Serial.print(TimeKeeper::signalCount);
-      Serial.print(" ");
-    }
-    setSequenceState(CALIBRATE_MIC);
 
-    TimeKeeper::signalLimit  = 2;
-  }
-  TimeKeeper::signalCount++;
 
-  if (DEBUG) Serial.println(clockCounter);
-}
 
 
 
@@ -194,27 +113,7 @@ void analyzeSequence() {
   if (DEBUG) Serial.println(clockCounter);
 }
 
-void headerPlay() {
 
-  if (DEBUG) Serial.print("s ");
-  if (DEBUG) Serial.print(headerSequence[bitIndex]);
-
-  if (headerSequence[bitIndex]) timeKeeper.hit();
-  bitIndex++;
-
-  if (bitIndex > 2 ) { //110
-    headerBitCounter++;
-    bitIndex = 0;
-
-    if (headerBitCounter == SEQITER) {
-      headerBitCounter = 0;
-      setSequenceState(PULSE_PLAY); // it won't go to WAIT_PLAY
-    }
-    
-  }
-
-  if (DEBUG) Serial.println(clockCounter);
-}
 
 //play a pulse dependeing on the microphone readings
 void pulsePlay() {
@@ -282,7 +181,12 @@ void resetLoop() {
   if (DEBUG) Serial.print("L: RESET ");
 
   clockCounter = 0;
-  sequenceState = LISTEN_HEADER;
+
+  if(useHeader){
+    setSequenceState(LISTEN_HEADER);
+  }else{
+    setSequenceState(LISTEN_HEADER);
+  }
 
   // reset values
   bitIndex = 0;
@@ -304,48 +208,48 @@ void readInputArray() {
     int val = Serial.readBytes(byteMSG8, 1);
 
     // Reset values when an array of bits is received
-    //if (val > 0) {
-    if (DEBUG) Serial.println("clean Serial");
+    if (val > 0) {
+      if (DEBUG) Serial.println("clean Serial");
 
 
-    if (DEBUG) {
-      Serial.print("Number cycles");
-      Serial.println(clockCounter);
-    }
-    //clean
+      if (DEBUG) {
+        Serial.print("Number cycles");
+        Serial.println(clockCounter);
+      }
+      //clean
 
-    Serial.flush();
+      Serial.flush();
 
-    for (itri = 0; itri < 10; itri++) {
-      char f = Serial.read();
-    }
+      for (itri = 0; itri < 10; itri++) {
+        char f = Serial.read();
+      }
 
-    for (itri = 0; itri < 8; itri++) {
-      playSequence[itri] = (bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
-    }
+      for (itri = 0; itri < 8; itri++) {
+        playSequence[itri] = (bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
+      }
 
-    readInBytes = true;
-    requestByte = false;
-    bitIndex = 0;
-    sequenceIndex = 0;
-    clockCounter   = 0;
+      readInBytes = true;
+      requestByte = false;
+      bitIndex = 0;
+      sequenceIndex = 0;
+      clockCounter   = 0;
 
-    if (useHeader) {
-      setSequenceState(HEADER_PLAY);
-    } else {
-      setSequenceState(PULSE_PLAY);
-    }
-    //fill header
+      if (useHeader) {
+        setSequenceState(HEADER_PLAY);
+      } else {
+        setSequenceState(LISTEN_SEQUENCE);
+      }
+      //fill header
 
-    for (itri = 0; itri < 3; itri++) {
-      headerSequence[itri] = correctHeader[itri];
-    }
+      for (itri = 0; itri < 3; itri++) {
+        headerSequence[itri] = correctHeader[itri];
+      }
 
 
-    //make sure that we are going to play the header
-    isHead = true;
+      //make sure that we are going to play the header
+      isHead = true;
 
-    // } //got msg
+    } //got msg
   }
 
   //send byte request and read
@@ -415,11 +319,7 @@ void acticateSequenceLoop() {
 
 
       case LISTEN_HEADER:
-        if (enableHeader) {
           listenHeader();
-        } else {
-
-        }
         break;
 
       case LISTEN_SEQUENCE:

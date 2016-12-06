@@ -24,14 +24,6 @@ void testSolenoid()
     itri = 0;
 }
 
-//calibrate Microphone
-void calibrateMic() {
-
-  if (DEBUG) Serial.println("CALIBRATING");
-  sequenceState = LISTEN_HEADER;
-}
-
-
 //debug times for the timeKeeper
 bool debugTimes()
 {
