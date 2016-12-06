@@ -148,7 +148,7 @@ void setup() {
 
   resetSequence(); //resets recording, play and head Sequence
 
-  initNRF(nrf24);
+  initNRF(nrf24, false);
 
   //set intervals
   timeKeeper.setInterval(HIT_INTERVAL);

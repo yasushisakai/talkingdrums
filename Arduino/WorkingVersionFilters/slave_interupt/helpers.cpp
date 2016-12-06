@@ -1,7 +1,7 @@
 #include "helpers.h"
 
 
-bool initNRF(RH_NRF24 &_nrf) {
+bool initNRF(RH_NRF24 &_nrf, bool printDebug = true) {
   if (!_nrf.init()) {
     Serial.println("E: (RF)failed to init");
     return false;
@@ -15,7 +15,8 @@ bool initNRF(RH_NRF24 &_nrf) {
   if (!_nrf.setRF(RH_NRF24::DataRate2Mbps, RH_NRF24::TransmitPower0dBm)) {
     Serial.println("E: (RF)failed to set RF");
   }
-  Serial.println("L: nrf connected");
+  
+  if(printDebug) Serial.println("L: nrf connected");
   delay(10);
   return true;
 }
