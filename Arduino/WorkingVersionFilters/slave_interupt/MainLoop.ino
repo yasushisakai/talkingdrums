@@ -119,7 +119,6 @@ void analyzeSequence() {
 }
 
 
-
 //play a pulse dependeing on the microphone readings
 void pulsePlay() {
 

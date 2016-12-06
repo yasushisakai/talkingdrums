@@ -56,7 +56,8 @@ void listenHeader() {
         micHit = false;
         if (DEBUG) Serial.print("RH ");
       }
-    }
+    }//finish analyzing the data,
+    //if the header is correct and the number of bitIndex == 9 then pass the play the sequence
 
 
     if (DEBUG) Serial.print("B: ");
@@ -103,7 +104,7 @@ void headerPlay() {
   if (headerSequence[bitIndex]) timeKeeper.hit();
   bitIndex++;
 
-  if (bitIndex > 2 ) { //110
+  if (bitIndex == 3 ) { //110
     headerBitCounter++;
     bitIndex = 0;
 

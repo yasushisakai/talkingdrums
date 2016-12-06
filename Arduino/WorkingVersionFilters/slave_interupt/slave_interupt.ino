@@ -206,6 +206,7 @@ void loop() {
   timeKeeper.updateTimes();
   timeKeeperNRF.updateTimes();
 
+  //feedback
   if (sequenceState == RESET ||  sequenceState == ANALYZE || sequenceState == WAIT_START) {
     digitalWrite(LED_PIN, timeKeeper.checkTick());
   }
