@@ -58,6 +58,8 @@ class BandPassFilter {
       sum = 0;
       highpass = 0;
       bandpass = 0;
+
+      output = 0;
     }
 
     void fillWindow(unsigned long cTime, float sensorValue) {
@@ -76,22 +78,26 @@ class BandPassFilter {
       }
     }
 
-    void filterSignal() {
+    void filterSignal(bool printOut = false) {
       if ( buffer_full == true ) {
-        int output = doFilter(); //convert to int
+        output = doFilter(); //convert to int
 
         if (output > signalMax) signalMax = output;
         if (output < signalMin) signalMin = output;
-  
-      // Serial.println(output);
+
+        if (printOut)
+          Serial.println(output);
+        // Serial.println(output);
         //Serial.println(cTime - pBTime); //avg 10 windows in 100
         //pBTime = millis();
-       
+
         // Reset our buffer and interupt routine
         buffer_index = 0;
         buffer_full = false;
       }
     }
+
+
 
     int doFilter() {
       // Convolute the input buffer with the filter kernel
@@ -106,7 +112,7 @@ class BandPassFilter {
         out[itr] += b1 * out[itr - 1];
         out[itr] += b2 * out[itr - 2];
 
-        if ( out[itr] < 0 ) out[itr] *= -1;
+       if ( out[itr] < 0 ) out[itr] *= -1;
         sum += out[itr];
       }
 
@@ -153,6 +159,8 @@ class BandPassFilter {
 
     int signalMax;
     int signalMin;
+
+    int output;
 
     //temporal values
     uint8_t itr;

@@ -7,7 +7,6 @@ ISR(TIMER0_COMPA_vect) {
   if (sequenceState <= 8) {
     micValue = analogRead(MIC_PIN);
     bandPassFilter.fillWindow(cTime, micValue);
-    tempConter++;
   }
   
 }

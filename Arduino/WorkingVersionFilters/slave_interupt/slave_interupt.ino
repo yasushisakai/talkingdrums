@@ -28,6 +28,10 @@
    you might want to look at TimeKeeper.h for other const variables as well
 */
 
+//define SERVER SLAVE
+#define SERVER_SLAVE 1
+
+
 // Objects
 RH_NRF24 nrf24;
 TimeKeeper timeKeeper;
@@ -36,13 +40,23 @@ TimeKeeper timeKeeperNRF;
 //define what sequence or process to execute
 bool isTestMic = true;
 
-bool const DEBUG = true;
+bool const DEBUG      = false;
 bool const DEBUG_TIME = false;
 bool const careHeader = true; // cares about the header or not
 
+//sequence
+/*
+   TEST_TIMERS   -> test RF and timers
+   TEST_MIC      -> test microphone sensor
+   TEST_SOLENOID -> test solenoid sensor
+
+   WAIT_START -> start hearing the header.
+
+   
+*/
 
 ///Sequence
-byte sequenceState = 0;
+byte sequenceState = WAIT_START;//TEST_MIC; //TEST_MIC;
 byte sequenceIndex = 0;
 byte bitIndex      = 0;
 
@@ -100,6 +114,20 @@ unsigned long cTime = 0;
 
 uint8_t valueByte = B00000000;
 
+//enable header
+bool enableHeader = true;
+
+//Slave values
+//Serial Port
+bool requestByte = false;
+bool readInBytes = false;
+
+//incoming msg, keep it as an array in case we need to
+//read values bigger than a byte
+byte byteMSG8[] = {
+  B00010011
+};
+
 void setup() {
   Serial.begin(115200);
 
@@ -112,8 +140,7 @@ void setup() {
   digitalWrite(LED_PIN, LOW);
   digitalWrite(SOL_PIN, LOW);
 
-  //sequence
-  sequenceState = TEST_MIC;//WAIT_DEBUG;//WAIT_START; // new wait!!!
+
   bitIndex = sequenceIndex = 0;
 
   numHeaderBits =  ((sizeof(correctHeader) / sizeof(bool)) * SEQITER);
@@ -137,11 +164,17 @@ void loop() {
   timeKeeperNRF.cycle(cTime);
 
   //collect signal readings with the interrupt function
-  bandPassFilter.filterSignal();
-  
+
+  if (sequenceState == TEST_MIC) {
+    bandPassFilter.filterSignal(true);
+  } else {
+    bandPassFilter.filterSignal();
+  }
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
   //only check server the last 10 ms of the global time.
+  
+  
   if (timeKeeperNRF.isTick() ) {
     valueByte = checkServer(nrf24); //10ms  -30count
 
@@ -151,18 +184,15 @@ void loop() {
       timeKeeper.tick();
       timeKeeperNRF.tick();
 
-      if (DEBUG_TIME) {
-        Serial.print("MSG ");
+      /*Serial.print("MSG ");
         Serial.print(valueByte);
         Serial.print(" ");
         Serial.println(timeKeeper.getTimeTick());
-      }
+      */
       lock = false;
       clockCounter++;
       valueByte = TOCK;
 
-      
-      
       //Serial.println(tempConter);
       //tempConter=0;
     }
@@ -174,15 +204,26 @@ void loop() {
   timeKeeper.updateTimes();
   timeKeeperNRF.updateTimes();
 
+  if (sequenceState == RESET ||  sequenceState == ANALYZE || sequenceState == WAIT_START) {
+    digitalWrite(LED_PIN, timeKeeper.checkTick());
+  }
+
   //start after 10 ms
-  if (timeKeeper.getTimeHit() > 10L ) {
-    if (timeKeeper.checkHit()) {
-      analogWrite(SOL_PIN, solenoid_pwm);
-      digitalWrite(LED_PIN, HIGH);
-    } else {
-      analogWrite(SOL_PIN, 0);
-      digitalWrite(LED_PIN, 0);
+  if (sequenceState == TEST_MIC || sequenceState == LISTEN_HEADER || sequenceState == LISTEN_SEQUENCE) {
+    digitalWrite(LED_PIN, timeKeeper.checkHit());
+  }
+
+
+  if (sequenceState == PULSE_PLAY) {
+    if (timeKeeper.getTimeHit() > 10L ) {
+      if (timeKeeper.checkHit()) {
+        analogWrite(SOL_PIN, solenoid_pwm);
+        digitalWrite(LED_PIN, HIGH);
+      } else {
+        analogWrite(SOL_PIN, 0);
+        digitalWrite(LED_PIN, 0);
+      }
     }
   }
-  
+
 }

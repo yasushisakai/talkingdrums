@@ -1,9 +1,12 @@
 void listenHeader() {
   if (DEBUG) Serial.print("LISTEN HEADER ");
 
-  //micHit = isHit();
+  //get hit from the bandpass filter
+  micHit = bandPassFilter.isHit();
 
   if (isRecordHeader) {
+
+    if (micHit) timeKeeper.hit(); //led feedback
 
     headerSequence[bitIndex] = micHit;
     bitIndex++;
@@ -30,15 +33,15 @@ void listenHeader() {
         }
       }
 
-      int countCheck = 0;
+      int errorCheck = 0;
       for (itri = 0; itri < SEQITER; itri++) {
         if (correctHeader[itri] != (headers[itri] / SEQITER) > 0.5 ) {
-          countCheck++;
+          errorCheck++;
         }
       }
 
       //OK to have one error, its the header..
-      isHead = (countCheck <= 1) ? true : false;
+      isHead = (errorCheck <= 0) ? true : false;
 
       //RESET HEADER
       //if didn't found the header then reset the values of headerSequence
@@ -79,7 +82,7 @@ void listenHeader() {
       clockCounter = 3;
       micHit = false;
       isFirstHit = true;
-      sequenceState = LISTEN_SEQUENCE;
+      setSequenceState(LISTEN_SEQUENCE);
 
     }
   }
@@ -90,6 +93,7 @@ void listenHeader() {
     bitIndex ++;
     isRecordHeader = true;
     isFirstHit     = false;
+    timeKeeper.hit();//led feedback
     if (DEBUG) Serial.print("FH ");
   }
 
@@ -102,23 +106,16 @@ void listenSequence() {
 
   if (DEBUG) Serial.print("LISTEN SEQUENCE");
 
-  //micHit = isHit();
+  //get if from the bandpass filter
+  micHit = bandPassFilter.isHit();
 
-  if (DEBUG) {
-    Serial.print("L: ");
-    Serial.print(sequenceIndex);
-    Serial.print(", ");
-    Serial.print(bitIndex);
-    Serial.print(", ");
-    Serial.print(micHit);
-    Serial.print(" ");
-  }
+  if (DEBUG) printSequenceIndex();
+
   recording[sequenceIndex][bitIndex] = micHit;
   bitIndex++;
   if (bitIndex >= SEQBITS) {
-    sequenceState = ANALYZE;
+    setSequenceState(ANALYZE);
   }
-
 
   if (DEBUG) Serial.println(clockCounter);
 }
@@ -137,7 +134,7 @@ void waitStart() {
       Serial.print(TimeKeeper::signalCount);
       Serial.print(" ");
     }
-    sequenceState = CALIBRATE_MIC;
+    setSequenceState(CALIBRATE_MIC);
 
     TimeKeeper::signalLimit  = 2;
   }
@@ -176,7 +173,7 @@ void analyzeSequence() {
     }
 
     sequenceIndex = 0;
-    sequenceState = PULSE_PLAY;
+    setSequenceState(PULSE_PLAY);
 
     //make sure that we are going to play the header
     isHead = true;
@@ -195,39 +192,7 @@ void analyzeSequence() {
     //
     // prints the recordings
     //
-    if (DEBUG) {
-
-      Serial.println("L: Done Analyze");
-
-      for (itri = 0; itri < SEQITER; itri++) {
-        Serial.print("L: ");
-        Serial.print(itri);
-        Serial.print('=');
-        for (itrj = 0; itrj < SEQBITS; itrj++) {
-          Serial.print(recording[itri][itrj]);
-        }
-        Serial.println();
-      }
-
-      // check sequence if its correct
-
-      bool flag = true;
-      for (itri = 0; itri < SEQBITS; itri++) {
-        if (debugSequence[itri] != playSequence[itri]) {
-          flag = !flag;
-          break;
-        }
-      }
-      if (flag) {
-        Serial.println("L:sequence correct");
-      } else {
-        Serial.println("L:sequence incorrect");
-      }
-
-      Serial.print("L: playing=");
-      Serial.print(sequenceIndex);
-      Serial.print(", ");
-    }
+    if (DEBUG)printRecordings();
 
   }
 
@@ -259,7 +224,7 @@ void pulsePlay() {
     bitIndex++;
     if (bitIndex == SEQBITS) {
       bitIndex = 0;
-      sequenceState = WAIT_PLAY;
+      setSequenceState(WAIT_PLAY);
     }
   }
 
@@ -277,10 +242,17 @@ void waitPlay() {
   // did it play it for enough times??
   if (sequenceIndex == SEQITER) {
     // yes, proceed to reset
-    sequenceState = RESET;
+
+    //if its the slave go to read input instead of reset values
+    if (SERVER_SLAVE == 1) {
+      setSequenceState(READ_INPUT);
+    } else {
+      setSequenceState(RESET);
+    }
+
   } else {
     // nope go back playing
-    sequenceState = PULSE_PLAY;
+    setSequenceState(PULSE_PLAY);
     if (DEBUG) {
       Serial.print("L: playing= ");
       Serial.print(sequenceIndex);
@@ -319,11 +291,62 @@ void resetLoop() {
   if (DEBUG) Serial.println(clockCounter);
 }
 
-//--Main loop
+void readInputArray() {
+  if (readInBytes) {
+    if (DEBUG) Serial.println("incoming bytes");
+
+    int val = Serial.readBytes(byteMSG8, 1);
+
+    // Reset values when an array of bits is received
+    if (val > 0) {
+      if (DEBUG) Serial.println("clean Serial");
+
+
+      if (DEBUG) {
+        Serial.print("Number cycles");
+        Serial.println(clockCounter);
+      }
+      //clean
+
+      Serial.flush();
+
+      for (int i = 0; i < 10; i++) {
+        char f = Serial.read();
+      }
+
+      for (int i = 0; i < 8; i++) {
+        playSequence[i] = (bitRead(byteMSG8[0], 7 - i ) == 1 ? true : false);
+      }
+
+      readInBytes = true;
+      requestByte = false;
+      resetLoop();
+      clockCounter   = 0;
+      setSequenceState(PULSE_PLAY);
+
+      //make sure that we are going to play the header
+      isHead = true;
+
+    } //got msg
+  }
+
+  //send byte request and read
+  if (requestByte) {
+    if (DEBUG) Serial.println("request bytes");
+
+    Serial.write('s');
+    requestByte = false;
+    readInBytes = true;
+  }
+
+}
+
+//---------------Main loop
+//----------------------------------------------------
 void acticateSequenceLoop() {
   if (!lock) {
     switch (sequenceState) {
-      case WAIT_DEBUG:
+      case TEST_TIMERS:
         debugTimes();     //debug timers
         break;
 
@@ -334,11 +357,9 @@ void acticateSequenceLoop() {
       case TEST_SOLENOID: //test for the solenoid
         testSolenoid();
         break;
+      //finish with the test
 
-      case WAIT_START:  //init values sequence
-        waitStart();
-        break;
-
+      //calibration for initial values for the MIC
       case CALIBRATE_MIC: //Calibrate value from Mic
         calibrateMic();
         break;
@@ -349,11 +370,38 @@ void acticateSequenceLoop() {
           to save energy and process time.
         */
         break;
-        
-      case LISTEN_HEADER:
-        listenHeader();
+
+      //start the sequence
+      /*
+          WAIT_START
+          LISTEN_HEADER
+          LISTEN_SEQUENCE
+          ANALYZE
+
+          PULSE_PLAY
+          WAIT_PLAY
+
+          PULSE_PLAY
+          WAIT_PLAY
+
+          PULSE_PLAY
+          WAIT_PLAY
+
+          RESET -> go to  LISTEN_HEADER
+      */
+      case WAIT_START:  //init values sequence
+        waitStart();
         break;
-        
+
+
+      case LISTEN_HEADER:
+        if (enableHeader) {
+          listenHeader();
+        } else {
+
+        }
+        break;
+
       case LISTEN_SEQUENCE:
         /*
           listens
@@ -362,19 +410,19 @@ void acticateSequenceLoop() {
         */
         listenSequence();
         break;
-        
+
       case ANALYZE:
-        analyzeSequence(); // collects and analyses the readings, 
+        analyzeSequence(); // collects and analyses the readings,
         break;
-        
+
       case PULSE_PLAY:
         pulsePlay(); // plays single pulse
         break;
-        
+
       case WAIT_PLAY:
         waitPlay();
         break;
-        
+
       case RESET:
         /*
           returns to PULSE_PLAY if there is iterations left to play
@@ -382,7 +430,10 @@ void acticateSequenceLoop() {
         */
         resetLoop();
         break;
-        
+      case READ_INPUT:
+        readInputArray();
+        break;
+
     } // switch
     lock = !lock;
   }
