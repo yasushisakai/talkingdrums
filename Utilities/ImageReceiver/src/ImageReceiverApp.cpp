@@ -28,10 +28,18 @@ using namespace std;
 //const values
 const ci::ivec2 windowSize(1280 + 640, 720);
 
-const ci::ivec2 stepDiv(80, 80);
+//const ci::ivec2 stepDiv(80, 80); //wave 80
+//const string IMAGE_NAME = "wave.png";
+
+const ci::ivec2 stepDiv(160, 160); //wave 80
+const string IMAGE_NAME = "grid.png"; //wave.png
+
 // the original image is pixelated by 20;
 
 const ci::ivec2 margin(5,5);
+
+
+
 
 class ImageReceiverApp : public App {
 public:
@@ -51,7 +59,7 @@ private:
     Surface             processPixeletedImage(const Surface input, ci::ivec2 stepAmount, ci::ivec2 & numPixels);
     
     uint8_t             floatColorToInt(float inVal);
-    int             stringToInt(const std::string &s);
+    int                 stringToInt(const std::string &s);
     
     
     void                renderOutputImage();
@@ -98,7 +106,6 @@ private:
     
     //debug
     bool                mDebug;
-    Surface             mDebugSurface;
     gl::Texture2dRef    mDebugTex;
     ci::ivec2           mNumPixels;
 
@@ -157,9 +164,14 @@ void ImageReceiverApp::setup()
     setWindowSize(windowSize);
     
     //debug
-    mDebugImage = loadImage(loadAsset("wave.png"));
-    mDebugSurface = processPixeletedImage(mDebugImage, stepDiv, mNumPixels);
-    mDebugTex = gl::Texture2d::create(mDebugSurface);
+    mDebugImage = loadImage(loadAsset(IMAGE_NAME));
+    //mDebugSurface = processPixeletedImage(mDebugImage, stepDiv, mNumPixels);
+    
+    ci::ivec2 centerDiv( stepDiv.x / 2.0, stepDiv.y /2.0);
+    ci::ivec2 imageSize(mDebugImage.getWidth(), mDebugImage.getHeight());
+    mNumPixels = imageSize/stepDiv;
+    
+    mDebugTex = gl::Texture2d::create(mDebugImage);
     
     //initialize port
     initPort();
@@ -177,7 +189,8 @@ void ImageReceiverApp::setup()
     mLastUpdate = 0;
     mLastRead = 0;
     
-    mIteraPixel   = ci::ivec2(0, 0);
+    //start  - 1
+    mIteraPixel   = ci::ivec2(-1, 0);
     mReceiveColor = ci::ColorA8u(0, 0, 0);
     
     mIsRecord  = false;
@@ -305,7 +318,9 @@ void ImageReceiverApp::draw()
             simple.setColor( Color( 0.8, 0.8, 0.8f ) );
             
             //draw the pixels
-            ci::ColorA realCol = mDebugSurface.getPixel(mIteraPixel * stepDiv);
+            ci::ivec2 mCentralPixel = ci::vec2(mIteraPixel) * ci::vec2(stepDiv.x, stepDiv.y) + ci::vec2(stepDiv.x/2.0, stepDiv.y/2.0);
+            CI_LOG_V(mCentralPixel);
+            ci::ColorA realCol =  mDebugImage.getPixel(mCentralPixel);
             
             std::string  realColorStr = "r: ("+ to_string(floatColorToInt(realCol.r))+", "+to_string(floatColorToInt(realCol.g))+", "+ to_string(floatColorToInt(realCol.b))+")";
             
@@ -498,8 +513,8 @@ Surface ImageReceiverApp::processPixeletedImage(const Surface input, ci::ivec2 s
                 xyIter.y += stepAmount.y;
                 col = input.getPixel(xyIter);
                 
-                // CI_LOG_V(i<<" "<< j <<" "<<counterPix);
-                // CI_LOG_V("center "<<xyIter);
+                CI_LOG_V(i<<" "<< j <<" "<<counterPix);
+                CI_LOG_V("center "<<xyIter);
             }
             
             
@@ -533,7 +548,8 @@ uint8_t ImageReceiverApp::floatColorToInt(float inVal)
 int ImageReceiverApp::stringToInt(const std::string &s)
 {
     uint b = 0;
-    for (int i = 7; i >=0; --i)
+    //for (int i = 7; i >=0; --i)
+    for (int i = 0; i < 8; i++)
     {
         b <<= 1;
         if (s.at(i) == '1')

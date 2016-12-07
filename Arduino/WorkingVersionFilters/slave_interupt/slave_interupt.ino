@@ -29,7 +29,7 @@
 */
 
 //define SERVER SLAVE
-#define SERVER_SLAVE 1
+#define SERVER_SLAVE 0
 
 
 // Objects
@@ -40,7 +40,7 @@ TimeKeeper timeKeeperNRF;
 //define what sequence or process to execute
 bool isTestMic = true;
 
-bool const DEBUG      = true;
+bool const DEBUG      = false;
 bool const DEBUG_TIME = false;
 bool const useHeader  = true;  // cares about the header or not
 //sequence
