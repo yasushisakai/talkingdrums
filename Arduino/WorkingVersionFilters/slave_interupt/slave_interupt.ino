@@ -29,7 +29,7 @@
 */
 
 //define SERVER SLAVE
-#define SERVER_SLAVE 0
+#define SERVER_SLAVE 1
 
 
 // Objects
@@ -40,7 +40,7 @@ TimeKeeper timeKeeperNRF;
 //define what sequence or process to execute
 bool isTestMic = true;
 
-bool const DEBUG      = false;
+bool const DEBUG      = true;
 bool const DEBUG_TIME = false;
 bool const useHeader  = true;  // cares about the header or not
 //sequence
@@ -131,7 +131,7 @@ byte byteMSG8[] = {
   B00010011
 };
 
-int LIMIT_READ_COUNTER = 72;
+int LIMIT_READ_COUNTER = 80;
 
 void setup() {
   Serial.begin(115200);
@@ -228,7 +228,7 @@ void loop() {
   }
 
 
-  if (sequenceState == PULSE_PLAY) {
+  if (sequenceState == PULSE_PLAY || sequenceState == HEADER_PLAY) {
     if (timeKeeper.getTimeHit() > 10L ) {
       if (timeKeeper.checkHit()) {
         analogWrite(SOL_PIN, solenoid_pwm);

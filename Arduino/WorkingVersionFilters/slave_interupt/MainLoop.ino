@@ -215,7 +215,7 @@ void readInputArray() {
       int val = Serial.readBytes(byteMSG8, 1);
 
       // Reset values when an array of bits is received
-      if (val > 0) {
+      if (val > 0 || DEBUG == true) {
         if (DEBUG) Serial.println("clean Serial");
 
 
@@ -232,7 +232,9 @@ void readInputArray() {
         }
 
         for (itri = 0; itri < 8; itri++) {
-          playSequence[itri] = (bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
+          playSequence[itri] = 0;//(bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
+
+          
         }
 
         readInBytes = true;
