@@ -8,13 +8,15 @@
 #include "cinder/params/Params.h"
 #include "cinder/Rand.h"
 
-
+#include <bitset>
 #include <vector>
+#include <iostream>
 
 //Defines
 #define BUF_SIZE 80
 #define BAUD_RATE 115200
 #define NUM_BYTES 1
+#define READ_INTERVAL 0.25
 
 #define NAME_PORT "cu.usbserial-A700fbuz"
 
@@ -47,7 +49,10 @@ private:
     ivec2               indexToCoord(const int id);
     void                cleanReceivedImage();
     Surface             processPixeletedImage(const Surface input, ci::ivec2 stepAmount, ci::ivec2 & numPixels);
+    
     uint8_t             floatColorToInt(float inVal);
+    int             stringToInt(const std::string &s);
+    
     
     void                renderOutputImage();
     
@@ -61,6 +66,8 @@ private:
     Area                mTexBounds;
     gl::Texture::Format mFormatTex;
     
+    string              mStrReceived;
+    
 
     // Serial
     SerialRef           mSerial;
@@ -68,8 +75,9 @@ private:
     bool                mInitPort;
     void                initPort();
     void                processInValue(double now);
-    uint8_t             mGrayReceived;
+    int                 mGrayReceived;
     bool                mGetPixels;
+    bool                mSendSerialMessage;
     
     void                renderInputImage();
     
@@ -169,15 +177,18 @@ void ImageReceiverApp::setup()
     mLastUpdate = 0;
     mLastRead = 0;
     
-    mIteraPixel   = ci::ivec2(-1, 0);
+    mIteraPixel   = ci::ivec2(0, 0);
     mReceiveColor = ci::ColorA8u(0, 0, 0);
     
     mIsRecord  = false;
     mIsPlay    = true;
     mDone      = false;
     mDebug     = true;
-    mGetPixels = true;
+    mGetPixels = false;
     
+    mLastString = "";
+    
+    mStrReceived = "00000000";
 
     // This holds what got from them...
     mReceivedImage = Surface8u(mNumPixels.x, mNumPixels.y, false);
@@ -248,7 +259,7 @@ void ImageReceiverApp::renderOutputImage()
         
         gl::translate(0, 0);
         gl::translate(ci::vec2(xAspect, yAspect));
-        gl::color(ci::Color(mGrayReceived, mGrayReceived, mGrayReceived));
+        gl::color(ci::ColorA8u(mGrayReceived, mGrayReceived, mGrayReceived));
         gl::drawSolidRect(Rectf(0, 0, stepDiv.x * aspectInv.x, stepDiv.y * aspectInv.y));
         //iterate
         iterateBox();
@@ -276,6 +287,7 @@ void ImageReceiverApp::draw()
     
     
     if(mDebug){
+        
         if(mDebugTex){
             {
                 gl::ScopedColor col;
@@ -285,7 +297,7 @@ void ImageReceiverApp::draw()
                 gl::draw(mDebugTex, mTexBounds);
             }
             
-      
+    
             
             //draw text
             TextLayout simple;
@@ -295,9 +307,9 @@ void ImageReceiverApp::draw()
             //draw the pixels
             ci::ColorA realCol = mDebugSurface.getPixel(mIteraPixel * stepDiv);
             
-            std::string  realColorStr = "("+ to_string(floatColorToInt(realCol.r))+", "+to_string(floatColorToInt(realCol.g))+", "+ to_string(floatColorToInt(realCol.b))+")";
+            std::string  realColorStr = "r: ("+ to_string(floatColorToInt(realCol.r))+", "+to_string(floatColorToInt(realCol.g))+", "+ to_string(floatColorToInt(realCol.b))+")";
             
-            std::string indexStr = "["+to_string(mIteraPixel.x)+", "+to_string(mIteraPixel.y)+"]";
+            std::string indexStr = "current ["+to_string(mIteraPixel.x)+", "+to_string(mIteraPixel.y)+"]";
             
             //float lumaReceive = 0.2126 * mReceiveColor.r + 0.7152 * mReceiveColor.g + 0.0722 * mReceiveColor.b;
             //float lumaReal = 0.2126 * realCol.r + 0.7152 * realCol.g + 0.0722 * realCol.b;
@@ -323,7 +335,7 @@ void ImageReceiverApp::draw()
                 byteReal += to_string(resultReal[i]);
             }
             
-            string bytesComp = "in "+byteRec +" - r: "+ byteReal;
+            string bytesComp = "in "+mStrReceived +" - r: "+ byteReal;
         
         
             simple.addCenteredLine(realColorStr) ;
@@ -353,50 +365,60 @@ void ImageReceiverApp::draw()
     }
     
     
-    
+
     mParams->draw();
     
 }
 
 void ImageReceiverApp::processInValue(double now)
 {
-    if(mInitPort){
-        
-        try{
-            // read until newline, to a maximum of BUFSIZE bytes
-            mLastString = mSerial->readStringUntil( '\n', BUF_SIZE );
-        }
-        catch( SerialTimeoutExc &exc ) {
-            CI_LOG_EXCEPTION( "timeout", exc );
-        }
-        
-        //string
-        CI_LOG_D(mLastString);
-        
-        if(!mLastString.empty()){
-            if(mLastString.find("L: r=")!= string::npos && mLastString.size() > 5){
-                
-                //get "L: r="
-                string string_bits = mLastString.substr(5);
-                uint8_t value = 0;
-                for (int i = 0;i < 8; i++){
-                    value |= (string_bits[i]=='1') << (i); //7-i
+    
+    double deltaTime = now - mLastUpdate;
+    mLastUpdate = now;
+    mLastRead += deltaTime;
+    
+    if( mLastRead > READ_INTERVAL )	{
+        mSendSerialMessage = true;
+        mLastRead = 0.0;
+    }
+
+    if( mSendSerialMessage ) {
+        if(mInitPort){
+            
+            try{
+                // read until newline, to a maximum of BUFSIZE bytes
+                mLastString = mSerial->readStringUntil( '\n', BUF_SIZE );
+            }
+            catch( SerialTimeoutExc &exc ) {
+               CI_LOG_EXCEPTION( "timeout", exc );
+            }
+            
+            //string
+            CI_LOG_D(mLastString);
+            
+            if(!mLastString.empty()){
+                if(mLastString.find("L: r=")!= string::npos && mLastString.size() >= 5){
+                    
+                    //get "L: r="
+                    string string_bits = mLastString.substr(5);
+                    int value = stringToInt(string_bits);
+                    mGrayReceived = value;
+                    mStrReceived = string_bits;
+                    
+                    CI_LOG_D("got value: "<<" "<<string_bits<<" "<<mStrReceived<<" "<<mGrayReceived);
+                    
+                    //mGrayReceived = value;
+                    
+                    
+                    mGetPixels = true;
+                    
+                }else if(mLastString.find("L: found head")!=string::npos){
+                    CI_LOG_D("found head");
+                    mIsRecord = true;
+                }else if(mLastString.find("end")!= string::npos){
+                    CI_LOG_D("got pixel");
+                    mIsPlay = false;
                 }
-                
-                CI_LOG_D("got value: "<< std::to_string(value));
-                
-                //save the value
-                mGrayReceived = value;
-                
-                
-                mGetPixels = true;
-                
-            }else if(mLastString.find("found head")!=string::npos){
-                CI_LOG_D("found head");
-                mIsRecord = true;
-            }else if(mLastString.find("end")!= string::npos){
-                CI_LOG_D("got pixel");
-                mIsPlay = false;
             }
         }
     }
@@ -424,8 +446,6 @@ void ImageReceiverApp::iterateBox(){
 
 void ImageReceiverApp::cleanReceivedImage()
 {
-    
-    mIteraPixel = ci::ivec2(-1, 0);
     
     for(int i = 0; i < mReceivedImage.getSize().x; i++){
         for(int j = 0; j < mReceivedImage.getSize().y; j++){
@@ -510,6 +530,21 @@ uint8_t ImageReceiverApp::floatColorToInt(float inVal)
     return (uint8_t)u.i;
 }
 
+int ImageReceiverApp::stringToInt(const std::string &s)
+{
+    uint b = 0;
+    for (int i = 7; i >=0; --i)
+    {
+        b <<= 1;
+        if (s.at(i) == '1')
+            b |= 1;
+    }
+    console()<<b<<std::endl;
+    int num;
+    return (num = (int)b);
+    
+    
+}
 
 CINDER_APP( ImageReceiverApp, RendererGl( RendererGl::Options().msaa( 16 ) ), [] (App::Settings * settings){
     

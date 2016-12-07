@@ -67,7 +67,7 @@ void listenHeader() {
     if (DEBUG) Serial.print(" ");
 
     if (isHead && bitIndex == numHeaderBits) {
-      Serial.print("L: found head"); // notify head detection to ImageReciever
+      //Serial.print("L: found head"); // notify head detection to ImageReciever
 
       if (DEBUG) {
         Serial.print("L: h=");

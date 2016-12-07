@@ -43,13 +43,13 @@ bool isTestMic = true;
 bool const DEBUG      = false;
 bool const DEBUG_TIME = false;
 bool const useHeader  = true;  // cares about the header or not
-//sequence 
+//sequence
 /*
    TEST_TIMERS   -> test RF and timers
    TEST_MIC      -> test microphone sensor
    TEST_SOLENOID -> test solenoid sensor
 
-  
+
    WAIT_START -> sleve start hearing the header.
 
    READ_INPUT -> server
@@ -160,12 +160,13 @@ void setup() {
 
   setupInterrupt();
 
-  if(SERVER_SLAVE == 1){
+  if (SERVER_SLAVE == 1) {
     sequenceState = READ_INPUT;
-  }else{
+  } else {
     sequenceState = WAIT_START;
   }
-  
+
+  Serial.println("");
 }
 
 void loop() {
@@ -185,8 +186,8 @@ void loop() {
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
   //only check server the last 10 ms of the global time.
-  
-  
+
+
   if (timeKeeperNRF.isTick() ) {
     valueByte = checkServer(nrf24); //10ms  -30count
 
