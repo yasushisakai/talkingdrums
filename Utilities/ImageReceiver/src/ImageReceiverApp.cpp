@@ -254,6 +254,9 @@ void ImageReceiverApp::keyDown(KeyEvent event)
 void ImageReceiverApp::renderOutputImage()
 {
     if(mGetPixels){
+        
+              iterateBox();
+        
         gl::ScopedFramebuffer fbScp( mFbo );
         
         gl::ScopedViewport scpVp( ivec2( 0 ), mTexBounds.getSize() );
@@ -275,7 +278,7 @@ void ImageReceiverApp::renderOutputImage()
         gl::color(ci::ColorA8u(mGrayReceived, mGrayReceived, mGrayReceived));
         gl::drawSolidRect(Rectf(0, 0, stepDiv.x * aspectInv.x, stepDiv.y * aspectInv.y));
         //iterate
-        iterateBox();
+  
         mGetPixels = false;
 
     }
@@ -318,55 +321,57 @@ void ImageReceiverApp::draw()
             simple.setColor( Color( 0.8, 0.8, 0.8f ) );
             
             //draw the pixels
-            ci::ivec2 mCentralPixel = ci::vec2(mIteraPixel) * ci::vec2(stepDiv.x, stepDiv.y) + ci::vec2(stepDiv.x/2.0, stepDiv.y/2.0);
-            CI_LOG_V(mCentralPixel);
-            ci::ColorA realCol =  mDebugImage.getPixel(mCentralPixel);
-            
-            std::string  realColorStr = "r: ("+ to_string(floatColorToInt(realCol.r))+", "+to_string(floatColorToInt(realCol.g))+", "+ to_string(floatColorToInt(realCol.b))+")";
-            
-            std::string indexStr = "current ["+to_string(mIteraPixel.x)+", "+to_string(mIteraPixel.y)+"]";
-            
-            //float lumaReceive = 0.2126 * mReceiveColor.r + 0.7152 * mReceiveColor.g + 0.0722 * mReceiveColor.b;
-            //float lumaReal = 0.2126 * realCol.r + 0.7152 * realCol.g + 0.0722 * realCol.b;
-            //uint8_t grayReceiver = floatColorToInt(lumaReceive);
-            //uint8_t grayReal     = floatColorToInt(lumaReal);
+            if(mIteraPixel.x >= 0 && mIteraPixel.y >= 0){
+                ci::ivec2 mCentralPixel = ci::vec2(mIteraPixel) * ci::vec2(stepDiv.x, stepDiv.y) + ci::vec2(stepDiv.x/2.0, stepDiv.y/2.0);
+                //CI_LOG_V(mCentralPixel);
+                ci::ColorA realCol =  mDebugImage.getPixel(mCentralPixel);
+                
+                std::string  realColorStr = "r: ("+ to_string(floatColorToInt(realCol.r))+", "+to_string(floatColorToInt(realCol.g))+", "+ to_string(floatColorToInt(realCol.b))+")";
+                
+                std::string indexStr = "current ["+to_string(mIteraPixel.x)+", "+to_string(mIteraPixel.y)+"]";
             
             
-            uint8_t resultReceived[8];
-            uint8_t resultReal[8];
+                //float lumaReceive = 0.2126 * mReceiveColor.r + 0.7152 * mReceiveColor.g + 0.0722 * mReceiveColor.b;
+                //float lumaReal = 0.2126 * realCol.r + 0.7152 * realCol.g + 0.0722 * realCol.b;
+                //uint8_t grayReceiver = floatColorToInt(lumaReceive);
+                //uint8_t grayReal     = floatColorToInt(lumaReal);
+                
+                
+                uint8_t resultReceived[8];
+                uint8_t resultReal[8];
+                
+                std::string byteRec;
+                std::string byteReal;
+                
+                uint8_t realGray     = floatColorToInt(realCol.r);
+                
+                for(int i = 0; i < 8; ++i) {
+                    resultReceived[i] = 0 != (mGrayReceived & (1 << i));
+                    byteRec += to_string(resultReceived[i]);
+                }
+                
+                for(int i = 0; i < 8; ++i) {
+                    resultReal[i] = 0 != (realGray & (1 << i));
+                    byteReal += to_string(resultReal[i]);
+                }
+                
+                string bytesComp = "in "+mStrReceived +" - r: "+ byteReal;
             
-            std::string byteRec;
-            std::string byteReal;
             
-            uint8_t realGray     = floatColorToInt(realCol.r);
-            
-            for(int i = 0; i < 8; ++i) {
-                resultReceived[i] = 0 != (mGrayReceived & (1 << i));
-                byteRec += to_string(resultReceived[i]);
+                simple.addCenteredLine(realColorStr) ;
+                simple.addCenteredLine(indexStr);
+                
+                simple.addCenteredLine(bytesComp);
+                mTextTexture = gl::Texture2d::create( simple.render( true, false ) );
+                
+                if(mTextTexture){
+                    gl::ScopedMatrices  mat;
+                    gl::ScopedColor col;
+                    gl::translate(ci::vec2(mTexBounds.getWidth()/2.5 + 1.0*(getWindowWidth()/3.0), mTexBounds.getHeight() +  getWindowHeight()/5.0 ));
+                    gl::color(0.6, 0.6, 0.6);
+                    gl::draw(mTextTexture, vec2(0, 0));
+                }
             }
-            
-            for(int i = 0; i < 8; ++i) {
-                resultReal[i] = 0 != (realGray & (1 << i));
-                byteReal += to_string(resultReal[i]);
-            }
-            
-            string bytesComp = "in "+mStrReceived +" - r: "+ byteReal;
-        
-        
-            simple.addCenteredLine(realColorStr) ;
-            simple.addCenteredLine(indexStr);
-            
-            simple.addCenteredLine(bytesComp);
-            mTextTexture = gl::Texture2d::create( simple.render( true, false ) );
-            
-            if(mTextTexture){
-                gl::ScopedMatrices  mat;
-                gl::ScopedColor col;
-                gl::translate(ci::vec2(mTexBounds.getWidth()/2.5 + 1.0*(getWindowWidth()/3.0), mTexBounds.getHeight() +  getWindowHeight()/5.0 ));
-                gl::color(0.6, 0.6, 0.6);
-                gl::draw(mTextTexture, vec2(0, 0));
-            }
-
         }
     }
     
@@ -436,6 +441,7 @@ void ImageReceiverApp::processInValue(double now)
                 }
             }
         }
+        mSendSerialMessage = false;
     }
 }
 
@@ -548,8 +554,8 @@ uint8_t ImageReceiverApp::floatColorToInt(float inVal)
 int ImageReceiverApp::stringToInt(const std::string &s)
 {
     uint b = 0;
-    //for (int i = 7; i >=0; --i)
-    for (int i = 0; i < 8; i++)
+    for (int i = 7; i >=0; --i)
+    //for (int i = 0; i < 8; i++)
     {
         b <<= 1;
         if (s.at(i) == '1')

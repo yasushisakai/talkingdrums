@@ -232,8 +232,11 @@ void readInputArray() {
         }
 
         for (itri = 0; itri < 8; itri++) {
-          playSequence[itri] = (bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
+           playSequence[itri] = (bitRead(byteMSG8[0], itri ) == 1 ? true : false);
+         // playSequence[itri] = (bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
         }
+
+        // 7 - itri
 
         readInBytes = true;
         requestByte = false;

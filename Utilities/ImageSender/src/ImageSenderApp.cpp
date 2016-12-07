@@ -288,7 +288,7 @@ void ImageSenderApp:: keyDown( KeyEvent event)
             mReadInMsg = true;
             break;
         case '1':
-            mNexIteration = true;
+            mReadInMsg = true;
             break;
         case '2':
             //mCurrentColor = ci::Color(0, 1, 1);
@@ -520,6 +520,7 @@ void ImageSenderApp::processPixels(double currentTime)
                 //write msg
                 if(mSerialStarted){
                     mSendData[0] = grayValue;
+                    CI_LOG_V( grayValue << " "<<mCurrentByteStr);
                     mSerial->writeBytes( (uint8_t *)mSendData, NUM_BYTES);
                 }
                     
@@ -548,12 +549,9 @@ void ImageSenderApp::processPixels(double currentTime)
             
             //currentTime
             
-
-            
            
         }
         
-
 
     }
     

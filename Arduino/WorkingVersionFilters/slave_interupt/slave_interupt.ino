@@ -29,7 +29,7 @@
 */
 
 //define SERVER SLAVE
-#define SERVER_SLAVE 0
+#define SERVER_SLAVE 1
 
 
 // Objects
@@ -88,7 +88,7 @@ uint8_t maxBuffer = sizeof(buffSignal) / sizeof(float);
 bool ledTick = false;
 
 /// PWM-ing the Solenoid will need additional test 0-255
-byte const solenoid_pwm = 200;
+byte const solenoid_pwm = 255;
 
 //clock cyles keepers
 uint8_t clockCounter = 0;
