@@ -40,7 +40,7 @@ TimeKeeper timeKeeperNRF;
 //define what sequence or process to execute
 bool isTestMic = true;
 
-bool const DEBUG      = true;
+bool const DEBUG      = false;
 bool const DEBUG_TIME = false;
 bool const useHeader  = true;  // cares about the header or not
 //sequence 
@@ -49,13 +49,14 @@ bool const useHeader  = true;  // cares about the header or not
    TEST_MIC      -> test microphone sensor
    TEST_SOLENOID -> test solenoid sensor
 
-   WAIT_START -> start hearing the header.
+  
+   WAIT_START -> sleve start hearing the header.
 
    READ_INPUT -> server
 */
 
 ///Sequence
-byte sequenceState = WAIT_START;//TEST_MIC; //TEST_MIC;
+byte sequenceState = 0;// READ_INPUT;//TEST_MIC; //TEST_MIC;
 byte sequenceIndex = 0;
 byte bitIndex      = 0;
 
@@ -87,7 +88,7 @@ uint8_t maxBuffer = sizeof(buffSignal) / sizeof(float);
 bool ledTick = false;
 
 /// PWM-ing the Solenoid will need additional test 0-255
-byte const solenoid_pwm = 155;
+byte const solenoid_pwm = 200;
 
 //clock cyles keepers
 uint8_t clockCounter = 0;
@@ -130,6 +131,8 @@ byte byteMSG8[] = {
   B00010011
 };
 
+int LIMIT_READ_COUNTER = 72;
+
 void setup() {
   Serial.begin(115200);
 
@@ -156,6 +159,13 @@ void setup() {
   timeKeeperNRF.setInterval(nrfTime);
 
   setupInterrupt();
+
+  if(SERVER_SLAVE == 1){
+    sequenceState = READ_INPUT;
+  }else{
+    sequenceState = WAIT_START;
+  }
+  
 }
 
 void loop() {

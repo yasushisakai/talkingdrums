@@ -38,8 +38,10 @@ void listenHeader() {
           errorCheck++;
         }
       }
-      Serial.print(" e ");
-      Serial.print(errorCheck);
+      if (DEBUG) {
+        Serial.print(" e ");
+        Serial.print(errorCheck);
+      }
       //OK to have one error, its the header..
       isHead = (errorCheck <= 1) ? true : false;
 

@@ -206,65 +206,68 @@ void resetLoop() {
 }
 
 void readInputArray() {
-  if (readInBytes) {
-    if (DEBUG) Serial.println("incoming bytes");
-
-    int val = Serial.readBytes(byteMSG8, 1);
-
-    // Reset values when an array of bits is received
-    if (val > 0) {
-      if (DEBUG) Serial.println("clean Serial");
+  if (clockCounter > LIMIT_READ_COUNTER) {
 
 
-      if (DEBUG) {
-        Serial.print("Number cycles");
-        Serial.println(clockCounter);
-      }
-      //clean
+    if (readInBytes) {
+      if (DEBUG) Serial.println("incoming bytes");
 
-      Serial.flush();
+      int val = Serial.readBytes(byteMSG8, 1);
 
-      for (itri = 0; itri < 10; itri++) {
-        char f = Serial.read();
-      }
+      // Reset values when an array of bits is received
+      if (val > 0) {
+        if (DEBUG) Serial.println("clean Serial");
 
-      for (itri = 0; itri < 8; itri++) {
-        playSequence[itri] = (bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
-      }
 
-      readInBytes = true;
+        if (DEBUG) {
+          Serial.print("Number cycles");
+          Serial.println(clockCounter);
+        }
+        //clean
+
+        Serial.flush();
+
+        for (itri = 0; itri < 10; itri++) {
+          char f = Serial.read();
+        }
+
+        for (itri = 0; itri < 8; itri++) {
+          playSequence[itri] = (bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
+        }
+
+        readInBytes = true;
+        requestByte = false;
+        bitIndex = 0;
+        sequenceIndex = 0;
+        clockCounter   = 0;
+
+        if (useHeader) {
+          setSequenceState(HEADER_PLAY);
+        } else {
+          setSequenceState(LISTEN_SEQUENCE);
+        }
+        //fill header
+
+        for (itri = 0; itri < 3; itri++) {
+          headerSequence[itri] = correctHeader[itri];
+        }
+
+
+        //make sure that we are going to play the header
+        isHead = true;
+
+      } //got msg
+    }
+
+    //send byte request and read
+    if (requestByte) {
+      if (DEBUG) Serial.println("request bytes");
+
+      Serial.write('s');
       requestByte = false;
-      bitIndex = 0;
-      sequenceIndex = 0;
-      clockCounter   = 0;
-
-      if (useHeader) {
-        setSequenceState(HEADER_PLAY);
-      } else {
-        setSequenceState(LISTEN_SEQUENCE);
-      }
-      //fill header
-
-      for (itri = 0; itri < 3; itri++) {
-        headerSequence[itri] = correctHeader[itri];
-      }
-
-
-      //make sure that we are going to play the header
-      isHead = true;
-
-    } //got msg
+      readInBytes = true;
+    }
   }
-
-  //send byte request and read
-  if (requestByte) {
-    if (DEBUG) Serial.println("request bytes");
-
-    Serial.write('s');
-    requestByte = false;
-    readInBytes = true;
-  }
-
 }
 
 //---------------Main loop

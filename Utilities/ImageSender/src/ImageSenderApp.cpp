@@ -14,12 +14,13 @@ using namespace ci;
 using namespace ci::app;
 using namespace std;
 
+#define NAME_PORT "cu.usbserial-AL01OV0F"
 
 const ci::ivec2 windowSize(1280 + 640, 720);
 
-const ci::ivec2 stepDiv(100, 100);
+const ci::ivec2 stepDiv(80, 80);
 
-const int BAU_RATE = 115200;
+const int BAUD_RATE = 115200;
 
 const int BUFFER_SIZE = 5;
 
@@ -47,6 +48,8 @@ public:
     uint8_t floatColorToInt(float inVal);
     
 private:
+    
+    void                updateIteration();
     
     ci::Surface         mSendImage;
     ci::Surface         mPixelImage;
@@ -85,6 +88,8 @@ private:
     bool                mNexIteration;
     bool                mReadInMsg;
     
+    bool                mUpdateRender; //updating moving vox
+    
     
     //Time Events
     double               mCurrentT;
@@ -115,19 +120,24 @@ void ImageSenderApp::initFBO()
 void ImageSenderApp::initPort()
 {
     // print the devices
-    string findUsb = "cu.usbserial";
-    for( const auto &dev : Serial::getDevices() ){
-        CI_LOG_V("Device: " << dev.getName() );
-    }try {
-        Serial::Device dev = Serial::findDeviceByNameContains( "cu.usbserial" );
-        mSerialName = dev.getName();
-        mSerial = Serial::create( dev, BAU_RATE );
-        CI_LOG_I( "Conected to: "<< mSerialName);
+    
+    auto devices = Serial::getDevices();
+    for(auto & ports : devices){
+        console()<< ports.getName() <<std::endl;
+    }
+    
+    try {
+        
+         auto dev = Serial::findDeviceByName(NAME_PORT);
+        mSerial = Serial::create(dev, BAUD_RATE );
+        CI_LOG_D("connected to " << dev.getName());
+        mSerialName =   dev.getName();
     }
     catch( SerialExc &exc ) {
-        CI_LOG_EXCEPTION( "coult not initialize the serial device", exc );
-        exit( -1 );
+        CI_LOG_EXCEPTION( "could not initialize the serial device", exc );
+        //exit( -1 );
     }
+    
     
     mSendData = new uint8_t[NUM_BYTES];
 }
@@ -174,6 +184,9 @@ void ImageSenderApp::setup()
     
     mReadInMsg     = true;
     
+    mUpdateRender = false;
+    
+    //start in -1
     mIteraPixel    = ivec2(0, 0);
     
     //create params
@@ -255,6 +268,9 @@ void ImageSenderApp:: keyDown( KeyEvent event)
             mNexIteration = false;
             mReadInMsg = true;
             break;
+        case '1':
+            mNexIteration = true;
+            break;
     }
 }
 
@@ -270,7 +286,7 @@ void ImageSenderApp::update()
 
 void ImageSenderApp::renderOutputImage()
 {
-    if(mSendPixels){
+    if(mUpdateRender){
         gl::ScopedFramebuffer fbScp( mFbo );
         
         gl::ScopedViewport scpVp( ivec2( 0 ), mTexBounds.getSize() );
@@ -291,6 +307,11 @@ void ImageSenderApp::renderOutputImage()
         gl::translate(ci::vec2(xAspect, yAspect));
         gl::color(mCurrentColor);
         gl::drawSolidRect(Rectf(0, 0, stepDiv.x * aspectInv.x, stepDiv.y * aspectInv.y));
+        
+        //update iteration
+        updateIteration();
+
+        mUpdateRender = false;
     }
 }
 
@@ -415,14 +436,15 @@ void ImageSenderApp::processPixels(double currentTime)
                 simple.setFont( mFont );
                 simple.setColor( Color( 0.8, 0.8, 0.8f ) );
                 
-                std::string rgbStr = "("+ to_string(mCurrentColor.r)+", "+to_string(mCurrentColor.g)+", "+ to_string(mCurrentColor.b)+")";
+                std::string rgbStr = "("+ to_string(floatColorToInt(mCurrentColor.r))+", "+to_string(floatColorToInt(mCurrentColor.g))+", "+ to_string(floatColorToInt(mCurrentColor.b))+")";
                 std::string indexStr = "["+to_string(mIteraPixel.x)+", "+to_string(mIteraPixel.y)+"]";
                 
                 //https://en.wikipedia.org/wiki/Luma_(video)
                 
-                float luma = 0.2126 * mCurrentColor.r + 0.7152 * mCurrentColor.g + 0.0722 * mCurrentColor.b;
+                //float luma = 0.2126 * mCurrentColor.r + 0.7152 * mCurrentColor.g + 0.0722 * mCurrentColor.b;
+                //uint8_t grayValue = floatColorToInt(luma);
                 
-                uint8_t grayValue = floatColorToInt(luma);
+                uint8_t grayValue = floatColorToInt(mCurrentColor.r );
                 
                 uint8_t result[8];
                 std::string byteStr;
@@ -434,14 +456,16 @@ void ImageSenderApp::processPixels(double currentTime)
                 
                 //write msg
                 mSerial->writeBytes( (uint8_t *)mSendData, NUM_BYTES);
+             
                 
                 simple.addLine(rgbStr);
                 simple.addCenteredLine(indexStr);
                 simple.addCenteredLine(byteStr);
                 mTextTexture = gl::Texture2d::create( simple.render( true, false ) );
                 
+                mUpdateRender = true;
                 mNexIteration = false;
-                mReadInMsg = true;
+                mReadInMsg    = true;
             }
             
             
@@ -502,27 +526,32 @@ void ImageSenderApp::processPixels(double currentTime)
         }
         
         
-        //update iteration
-        if(mPixelReady){
-            
-            mIteraPixel.x++;
-            if(mIteraPixel.x >= mNumPixels.x){
-                mIteraPixel.y++;
-                mIteraPixel.x = 0;
-            }
-            
-            if(mIteraPixel.y >= mNumPixels.y){
-                mFinishSending = true;
-                mSendPixels  = 0;
-                mIteraPixel = ci::vec2(0, 0);
-                CI_LOG_I("DONE SENDING");
-            }
-            
-            mPixelReady = false;
-            console()<<mIteraPixel<<std::endl;
-        }
+
     }
     
+}
+
+void ImageSenderApp::updateIteration(){
+    
+    //update iteration
+    if(mPixelReady){
+        
+        mIteraPixel.x++;
+        if(mIteraPixel.x >= mNumPixels.x){
+            mIteraPixel.y++;
+            mIteraPixel.x = 0;
+        }
+        
+        if(mIteraPixel.y >= mNumPixels.y){
+            mFinishSending = true;
+            mSendPixels  = 0;
+            mIteraPixel = ci::vec2(0, 0);
+            CI_LOG_I("DONE SENDING");
+        }
+        
+        mPixelReady = false;
+        console()<<mIteraPixel<<std::endl;
+    }
 }
 
 uint8_t ImageSenderApp::floatColorToInt(float inVal)

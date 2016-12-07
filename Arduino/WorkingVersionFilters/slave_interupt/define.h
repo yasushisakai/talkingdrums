@@ -37,10 +37,10 @@ const int THRESHOLD_PEAK = 28; //38
 //BUFFER_SIZE = 25 -> 5ms 45 ->10ms
 const int BUFFER_SIZE = 25;
 
-const float f_s   = 0.03; //0.023
-const float bw_s  = 0.03; //0.25
+const float f_s   = 0.023; //0.023
+const float bw_s  = 0.025; //0.25
 const float EMA_a_low_s   = 0.18;  //0.18    //initialization of EMA alpha (cutoff-frequency)
-const float EMA_a_high_s  = 0.88;  //0.87
+const float EMA_a_high_s  = 0.87;  //0.87
 
 ///  modes
 // we can do enum if we want
