@@ -38,8 +38,10 @@ void listenHeader() {
           errorCheck++;
         }
       }
-      Serial.print(" e ");
-      Serial.print(errorCheck);
+      if (DEBUG) {
+        Serial.print(" e ");
+        Serial.print(errorCheck);
+      }
       //OK to have one error, its the header..
       isHead = (errorCheck <= 1) ? true : false;
 
@@ -56,7 +58,8 @@ void listenHeader() {
         micHit = false;
         if (DEBUG) Serial.print("RH ");
       }
-    }
+    }//finish analyzing the data,
+    //if the header is correct and the number of bitIndex == 9 then pass the play the sequence
 
 
     if (DEBUG) Serial.print("B: ");
@@ -64,7 +67,7 @@ void listenHeader() {
     if (DEBUG) Serial.print(" ");
 
     if (isHead && bitIndex == numHeaderBits) {
-      Serial.print("L: found head"); // notify head detection to ImageReciever
+      //Serial.print("L: found head"); // notify head detection to ImageReciever
 
       if (DEBUG) {
         Serial.print("L: h=");
@@ -103,7 +106,7 @@ void headerPlay() {
   if (headerSequence[bitIndex]) timeKeeper.hit();
   bitIndex++;
 
-  if (bitIndex > 2 ) { //110
+  if (bitIndex == 3 ) { //110
     headerBitCounter++;
     bitIndex = 0;
 

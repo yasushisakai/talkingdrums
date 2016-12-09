@@ -29,7 +29,7 @@
 */
 
 //define SERVER SLAVE
-#define SERVER_SLAVE 0
+#define SERVER_SLAVE 1
 
 
 // Objects
@@ -40,22 +40,23 @@ TimeKeeper timeKeeperNRF;
 //define what sequence or process to execute
 bool isTestMic = true;
 
-bool const DEBUG      = true;
+bool const DEBUG      = false;
 bool const DEBUG_TIME = false;
 bool const useHeader  = true;  // cares about the header or not
-//sequence 
+//sequence
 /*
    TEST_TIMERS   -> test RF and timers
    TEST_MIC      -> test microphone sensor
    TEST_SOLENOID -> test solenoid sensor
 
-   WAIT_START -> start hearing the header.
+
+   WAIT_START -> sleve start hearing the header.
 
    READ_INPUT -> server
 */
 
 ///Sequence
-byte sequenceState = WAIT_START;//TEST_MIC; //TEST_MIC;
+byte sequenceState = 0;// READ_INPUT;//TEST_MIC; //TEST_MIC;
 byte sequenceIndex = 0;
 byte bitIndex      = 0;
 
@@ -87,7 +88,7 @@ uint8_t maxBuffer = sizeof(buffSignal) / sizeof(float);
 bool ledTick = false;
 
 /// PWM-ing the Solenoid will need additional test 0-255
-byte const solenoid_pwm = 155;
+byte const solenoid_pwm = 255;
 
 //clock cyles keepers
 uint8_t clockCounter = 0;
@@ -130,6 +131,8 @@ byte byteMSG8[] = {
   B00010011
 };
 
+int LIMIT_READ_COUNTER = 80;
+
 void setup() {
   Serial.begin(115200);
 
@@ -156,6 +159,14 @@ void setup() {
   timeKeeperNRF.setInterval(nrfTime);
 
   setupInterrupt();
+
+  if (SERVER_SLAVE == 1) {
+    sequenceState = READ_INPUT;
+  } else {
+    sequenceState = WAIT_START;
+  }
+
+  Serial.println("");
 }
 
 void loop() {
@@ -175,8 +186,8 @@ void loop() {
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
   //only check server the last 10 ms of the global time.
-  
-  
+
+
   if (timeKeeperNRF.isTick() ) {
     valueByte = checkServer(nrf24); //10ms  -30count
 
@@ -206,6 +217,7 @@ void loop() {
   timeKeeper.updateTimes();
   timeKeeperNRF.updateTimes();
 
+  //feedback
   if (sequenceState == RESET ||  sequenceState == ANALYZE || sequenceState == WAIT_START) {
     digitalWrite(LED_PIN, timeKeeper.checkTick());
   }
@@ -216,7 +228,7 @@ void loop() {
   }
 
 
-  if (sequenceState == PULSE_PLAY) {
+  if (sequenceState == PULSE_PLAY || sequenceState == HEADER_PLAY) {
     if (timeKeeper.getTimeHit() > 10L ) {
       if (timeKeeper.checkHit()) {
         analogWrite(SOL_PIN, solenoid_pwm);

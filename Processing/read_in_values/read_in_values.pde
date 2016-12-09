@@ -8,7 +8,7 @@ Serial myPort;  // The serial port
 ArrayList points = new ArrayList();
 
 void setup() {
-  size(1000, 1000);
+  size(1200, 800);
   background(0);
   // List all the available serial ports
   println(Serial.list());
@@ -22,7 +22,7 @@ void setup() {
   myString = myPort.readStringUntil(lf);
   myString = null;
 
-  for (int i =0; i < 20; i++) {
+  for (int i =0; i < 100; i++) {
     points.add(0);
   }
   
@@ -51,7 +51,7 @@ void draw() {
 
     //if (yVal > 150) {
       println(yVal);
-      vertex(i*30 + 200, 500 - yVal);
+      vertex(i*10 + 50, 500 - yVal);
     //}
   }
   endShape();
