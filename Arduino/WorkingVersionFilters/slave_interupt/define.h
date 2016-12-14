@@ -31,7 +31,7 @@ const unsigned long  HIT_INTERVAL          = 30L;
 
 
 //threshold peak for the signal processing
-const int THRESHOLD_PEAK = 23; //38
+const int THRESHOLD_PEAK = 40; //38
 
 //buffer size of signal processing window
 //BUFFER_SIZE = 25 -> 5ms 45 ->10ms
