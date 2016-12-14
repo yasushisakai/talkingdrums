@@ -22,8 +22,8 @@ const ci::ivec2 windowSize(1280 + 640, 720);
 //const ci::ivec2 stepDiv(80, 80); //wave 80
 //const string IMAGE_NAME = "wave.png";
 
-const ci::ivec2 stepDiv(160, 160); //wave 80
-const string IMAGE_NAME = "grid.png"; //wave.png
+const ci::ivec2 stepDiv(40, 40); //wave 80
+const string IMAGE_NAME = "music.png"; //wave.png
 
 
 const int BAUD_RATE = 115200;
