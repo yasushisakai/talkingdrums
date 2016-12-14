@@ -29,7 +29,7 @@
 */
 
 //define SERVER SLAVE
-#define SERVER_SLAVE 0
+#define SERVER_SLAVE 1
 
 
 // Objects
@@ -140,7 +140,7 @@ void setup() {
   if (SERVER_SLAVE == 1) {
     sequenceState = READ_INPUT;
   } else {
-    sequenceState = TEST_MIC;//WAIT_START;
+    sequenceState = WAIT_START;
   }
 
 
