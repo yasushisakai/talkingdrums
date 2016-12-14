@@ -31,7 +31,12 @@ const unsigned long  HIT_INTERVAL          = 30L;
 
 //digital 38
 //threshold peak for the signal processing
+<<<<<<< HEAD
 const int THRESHOLD_PEAK = 35; //388 //60 electric
+=======
+const int THRESHOLD_PEAK = 40; //38
+
+>>>>>>> b410b77b3bb2deec31e12c557309fa632da54056
 //buffer size of signal processing window
 //BUFFER_SIZE = 25 -> 5ms 45 ->10ms
 const int BUFFER_SIZE = 25;

@@ -88,7 +88,7 @@ uint8_t maxBuffer = sizeof(buffSignal) / sizeof(float);
 bool ledTick = false;
 
 /// PWM-ing the Solenoid will need additional test 0-255
-byte const solenoid_pwm = 255;
+byte const solenoid_pwm = 100;
 
 //clock cyles keepers
 uint8_t clockCounter = 0;
@@ -134,16 +134,27 @@ byte byteMSG8[] = {
 int LIMIT_READ_COUNTER = 80;
 
 void setup() {
+
   Serial.begin(115200);
+
+  if (SERVER_SLAVE == 1) {
+    sequenceState = READ_INPUT;
+  } else {
+    sequenceState = TEST_MIC;//WAIT_START;
+  }
+
 
   pinMode(LED_PIN, OUTPUT);
   pinMode(SOL_PIN, OUTPUT);
 
+  if (sequenceState == TEST_MIC) {
+    analogWrite(SOL_PIN, 255);
+  }
   digitalWrite(LED_PIN, HIGH);
   delay(100);
 
   digitalWrite(LED_PIN, LOW);
-  digitalWrite(SOL_PIN, LOW);
+  analogWrite(SOL_PIN, 0);
 
 
   bitIndex = sequenceIndex = 0;
@@ -160,11 +171,15 @@ void setup() {
 
   setupInterrupt();
 
+<<<<<<< HEAD
   if (SERVER_SLAVE == 1) {
     sequenceState = READ_INPUT;
   } else {
     sequenceState = TEST_SOLENOID;
   }
+=======
+
+>>>>>>> b410b77b3bb2deec31e12c557309fa632da54056
 
   Serial.println("");
 }

@@ -14,7 +14,7 @@ using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-#define NAME_PORT "cu.usbserial-AL01OV0F"
+#define NAME_PORT "cu.usbserial-A700fbuz"
 
 const ci::ivec2 windowSize(1280 + 640, 720);
 
