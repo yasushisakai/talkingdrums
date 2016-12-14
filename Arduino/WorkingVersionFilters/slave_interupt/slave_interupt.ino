@@ -29,7 +29,7 @@
 */
 
 //define SERVER SLAVE
-#define SERVER_SLAVE 1
+#define SERVER_SLAVE 0
 
 
 // Objects
@@ -40,7 +40,7 @@ TimeKeeper timeKeeperNRF;
 //define what sequence or process to execute
 bool isTestMic = true;
 
-bool const DEBUG      = false;
+bool const DEBUG      = true;
 bool const DEBUG_TIME = false;
 bool const useHeader  = true;  // cares about the header or not
 //sequence
@@ -152,7 +152,7 @@ void setup() {
 
   resetSequence(); //resets recording, play and head Sequence
 
-  initNRF(nrf24, false);
+  initNRF(nrf24, true);
 
   //set intervals
   timeKeeper.setInterval(HIT_INTERVAL);
@@ -163,7 +163,7 @@ void setup() {
   if (SERVER_SLAVE == 1) {
     sequenceState = READ_INPUT;
   } else {
-    sequenceState = WAIT_START;
+    sequenceState = TEST_SOLENOID;
   }
 
   Serial.println("");

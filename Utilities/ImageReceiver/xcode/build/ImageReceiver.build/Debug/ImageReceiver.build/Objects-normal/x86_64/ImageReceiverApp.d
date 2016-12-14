@@ -1,5 +1,5 @@
 dependencies: \
-  /Users/tom/Documents/Programming/talkingdrums/Utilities/ImageReceiver/src/ImageReceiverApp.cpp \
+  /Users/thomas/Documents/Programming/talkingdrums/Utilities/ImageReceiver/src/ImageReceiverApp.cpp \
   ../../../../Cinder/Cinder/include/cinder/app/RendererGl.h \
   ../../../../Cinder/Cinder/include/cinder/Serial.h \
   ../../../../Cinder/Cinder/include/cinder/Log.h \
