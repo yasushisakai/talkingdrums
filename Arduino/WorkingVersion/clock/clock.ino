@@ -28,7 +28,7 @@ bool sendActivation;
 bool LED_STATE; // is always same with isSend?
 
 // 1
-uint8_t data [] = {B00000001};
+uint8_t data [] = {B00000001, B00000001};
 
 void setup() {
 <<<<<<< HEAD

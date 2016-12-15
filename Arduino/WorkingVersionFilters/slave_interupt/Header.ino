@@ -1,3 +1,11 @@
+void setInitSequence() {
+  if (SERVER_SLAVE == 1) {
+    sequenceState = READ_INPUT;
+  } else {
+    sequenceState = WAIT_START;
+  }
+}
+
 void listenHeader() {
   if (DEBUG) Serial.print("LISTEN HEADER ");
 

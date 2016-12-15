@@ -278,8 +278,8 @@ void readInputArray() {
 void acticateSequenceLoop() {
   if (!lock) {
     switch (sequenceState) {
-      case TEST_TIMERS:
-        debugTimes();     //debug timers
+      case STOP:
+        //debugTimes();     //debug timers
         break;
 
       case TEST_MIC:  //debug mic

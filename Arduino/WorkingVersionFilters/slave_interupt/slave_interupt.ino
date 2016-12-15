@@ -29,7 +29,7 @@
 */
 
 //define SERVER SLAVE
-#define SERVER_SLAVE 1
+#define SERVER_SLAVE 0
 
 
 // Objects
@@ -40,7 +40,7 @@ TimeKeeper timeKeeperNRF;
 //define what sequence or process to execute
 bool isTestMic = true;
 
-bool const DEBUG      = true;
+bool const DEBUG      = false;
 bool const DEBUG_TIME = false;
 bool const useHeader  = true;  // cares about the header or not
 //sequence
@@ -137,12 +137,7 @@ void setup() {
 
   Serial.begin(115200);
 
-  if (SERVER_SLAVE == 1) {
-    sequenceState = READ_INPUT;
-  } else {
-    sequenceState = WAIT_START;
-  }
-
+  setInitSequence();
 
   pinMode(LED_PIN, OUTPUT);
   pinMode(SOL_PIN, OUTPUT);
@@ -163,7 +158,7 @@ void setup() {
 
   resetSequence(); //resets recording, play and head Sequence
 
-  initNRF(nrf24, true);
+  initNRF(nrf24, false);
 
   //set intervals
   timeKeeper.setInterval(HIT_INTERVAL);
@@ -171,15 +166,7 @@ void setup() {
 
   setupInterrupt();
 
-<<<<<<< HEAD
-  if (SERVER_SLAVE == 1) {
-    sequenceState = READ_INPUT;
-  } else {
-    sequenceState = TEST_SOLENOID;
-  }
-=======
 
->>>>>>> b410b77b3bb2deec31e12c557309fa632da54056
 
   Serial.println("");
 }
@@ -208,22 +195,7 @@ void loop() {
 
     //Serial.println(valueByte);
 
-    if (valueByte == TICK && timeKeeper.getTimeTick() >= TIME_MIN_INTERVAL) {
-      timeKeeper.tick();
-      timeKeeperNRF.tick();
-
-      /*Serial.print("MSG ");
-        Serial.print(valueByte);
-        Serial.print(" ");
-        Serial.println(timeKeeper.getTimeTick());
-      */
-      lock = false;
-      clockCounter++;
-      valueByte = TOCK;
-
-      //Serial.println(tempConter);
-      //tempConter=0;
-    }
+    clockMode(valueByte);
   }
 
   acticateSequenceLoop();

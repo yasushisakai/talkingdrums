@@ -1,5 +1,3 @@
-const int sampleWindow = 50; // Sample window width in mS (250 mS = 4Hz)
-unsigned int knock;
 int ledPin = 3; //
 int solenoidPin = 5;
 
@@ -7,7 +5,7 @@ unsigned long pTime = 0L;
 unsigned long duration = 100L;
 
 unsigned long  pTimeHit = 0L;
-unsigned long  durationHit = 20L;
+unsigned long  durationHit = 30L;
 
 boolean solenoidHit = false;
 

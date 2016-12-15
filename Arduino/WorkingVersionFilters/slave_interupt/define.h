@@ -8,9 +8,17 @@
 //changed for the use of PWM (Analog Write)
 #define MIC_PIN A0
 
-/// server values
-#define TICK B00000001
-#define TOCK B00000000
+/// Clock values
+#define CLOCK   B10000001
+#define TICK    B10000010
+#define MIC     B10000011
+#define STOP    B00000100
+#define PWM255  B10000101
+#define PWM200  B10000110
+#define PWM150  B10000111
+#define PWM100  B10001000
+#define PWM50   B10001001
+#define PWM0    B10001010
 
 // this is the time interval for each frame
 // this is one factor to determine the duration of
@@ -29,32 +37,23 @@
 const unsigned long  HIT_INTERVAL          = 30L;
 // this interval is for the outputs, LED and solenoid
 
-//digital 38
 //threshold peak for the signal processing
-<<<<<<< HEAD
 const int THRESHOLD_PEAK = 55; //38
-=======
-<<<<<<< HEAD
-const int THRESHOLD_PEAK = 35; //388 //60 electric
-=======
-const int THRESHOLD_PEAK = 40; //38
->>>>>>> b64177502723a8aec866e3a7b7e5663eef4518d4
 
->>>>>>> b410b77b3bb2deec31e12c557309fa632da54056
 //buffer size of signal processing window
 //BUFFER_SIZE = 25 -> 5ms 45 ->10ms
 const int BUFFER_SIZE = 25;
 
-const float f_s   = 0.023; //0.023
+const float f_s   = 0.02; //0.023
 const float bw_s  = 0.028; //0.25
-const float EMA_a_low_s   = 0.12;  //0.18    //initialization of EMA alpha (cutoff-frequency)
+const float EMA_a_low_s   = 0.15;  //0.18    //initialization of EMA alpha (cutoff-frequency)
 const float EMA_a_high_s  = 0.9;  //0.87
 
 ///  modes
 // we can do enum if we want
 
 //TEST
-#define TEST_TIMERS 0
+#define STOP 0
 #define TEST_MIC 1
 #define TEST_SOLENOID 3
 
