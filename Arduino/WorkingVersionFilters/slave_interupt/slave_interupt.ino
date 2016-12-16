@@ -40,7 +40,7 @@ TimeKeeper timeKeeperNRF;
 //define what sequence or process to execute
 bool isTestMic = true;
 
-bool const DEBUG      = false;
+bool const DEBUG      = true;
 bool const DEBUG_TIME = false;
 bool const useHeader  = true;  // cares about the header or not
 //sequence
@@ -104,7 +104,7 @@ int indexMic = 0;
 //calibrate numers of NF calls
 //in theory we are only going to chance the time once,
 //if we change the time, we can recalibrate using the incomming values.
-unsigned long nrfTime     = 90L;
+unsigned long nrfTime     = 130L;
 unsigned long nrfCallTime = 20L;
 
 //iterators
@@ -117,6 +117,8 @@ unsigned long tempConter = 0;
 unsigned long cTime = 0;
 
 uint8_t valueByte = B00000000;
+
+uint8_t inClock = B10000001;
 
 
 //Slave values
@@ -191,7 +193,7 @@ void loop() {
 
 
   if (timeKeeperNRF.isTick() ) {
-    valueByte = checkServer(nrf24); //10ms  -30count
+    valueByte = checkServer(nrf24, inClock); //10ms  -30count
 
     //Serial.println(valueByte);
 
