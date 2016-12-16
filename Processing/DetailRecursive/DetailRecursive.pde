@@ -11,47 +11,57 @@ void draw() {
 
   //image(musicImg, 0, 0);
 
-  fill(255, 50);
-  for (int i = 4; i < 5; i++) {
-    float nW =  width  / i;
-    float nH =  height / i;
-
-    ellipse(nW, nH, 10, 10);
-
-    ellipse(3*nW, nH, 10, 10);
-
-    ellipse(nW, 3*nH, 10, 10);
-
-    ellipse(3*nW, 3*nH, 10, 10);
-  }
-
   rectMode(CENTER);
-  recursive(4, width, height);
+
+  /*
+  fill(255, 20);
+   recursiveRect(width/8, 10, 10, width - 20, height - 20 );
+   */
+
+  fill(255, 20);
+  recursiveRect(width/16, 10, 10, width - 20, height - 20 );
+
+  fill(255, 80);
+  recursiveRect(width/4, 10, 10, width - 20, height - 20 );
 }
 
-void recursive(int level, float w, float h) {
+void recursiveRect(int level, float x, float y, float w, float h) {
 
-  if (level == 1) {
-    fill(255, 50);
-    rect(w/2, h/2, w*2, h*2);
-    return;
+  float subW = w/2.0;
+  float subH = h/2.0;
+
+  rect(x + subW, y + subW, w, h);
+
+  if ( subW >= level || subH >= level ) {
+
+    recursiveRect(level, x, y, subW, subH);
+    recursiveRect(level, x + subW, y, subW, subH);
+    recursiveRect(level, x, y + subH, subW, subH);
+    recursiveRect(level, x + subW, y + subH, subW, subH);
+
+    // recursiveRect(x,   y, subW, subH);
   }
+}
 
-  float nWidth  = w/(float)(level);
-  float nHeight = h/(float)(level);
+void recursiveRect(int level, int pos, float x, float y, float w, float h) {
 
-  println(nWidth+" "+nHeight+" "+level);
+  float subW = w/2.0;
+  float subH = h/2.0;
 
+  rect(x + subW, y + subW, w, h);
 
-  fill(255, 50);
-  rect(nWidth, nHeight, nWidth*2, nHeight*2);
+  if ( subW >= level || subH >= level ) {
 
-  fill(255);
-  ellipse(nWidth, nHeight, 5, 5);
+    if (pos == 1) {
+      recursiveRect(level, x, y, subW, subH);
+    } else if (pos == 2) {
+      recursiveRect(level, x + subW, y, subW, subH);
+    } else if (pos == 3) {
+      recursiveRect(level, x, y + subH, subW, subH);
+    } else if (pos == 4) {
+      recursiveRect(level, x + subW, y + subH, subW, subH);
+    }
 
-
-  recursive(level - 1, nWidth, nHeight);
-  //recursive(level - 1, 2*(level- 1)*nWidth, 2*(level- 1)*nHeight);
-  //recursive(level - 1, nWidth, (level- 1)*nHeight);
-  //recursive(level - 1, (level- 1)*nWidth, (level- 1)*nHeight);
+    // recursiveRect(x,   y, subW, subH);
+  }
 }
