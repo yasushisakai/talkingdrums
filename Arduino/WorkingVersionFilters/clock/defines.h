@@ -1,6 +1,5 @@
 #define LED_PIN 3
-
-#define SOLENOID_PIN A0
+#define SOLENOID_PIN 5
 
 #define LED_PIN_00 6
 #define LED_PIN_01 5
@@ -12,5 +11,5 @@
 #define LED_PIN_07 A5
 
 // clock interval in ms
-#define DURATION 100
+#define DURATION 150
 #define COUNTER_LIMIT 3
