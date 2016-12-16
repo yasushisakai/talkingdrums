@@ -9,21 +9,26 @@
 #define MIC_PIN A0
 
 /// Clock values
-#define CLOCK   B10000001
-#define TICK    B10000010
-#define MIC     B10000011
-#define STOP    B00000100
-#define PWM255  B10000101
-#define PWM200  B10000110
-#define PWM150  B10000111
-#define PWM100  B10001000
-#define PWM50   B10001001
-#define PWM0    B10001010
+
+#define TICK    B00000010
+#define TOCK    B10000001
+
+#define START   B00000010
+#define MIC     B00000011
+#define STOP    B10000100
+
+
+#define PWM255  B00000101
+#define PWM200  B00000110
+#define PWM150  B00000111
+#define PWM100  B00001000
+#define PWM50   B00001001
+#define PWM0    B00001010
 
 // this is the time interval for each frame
 // this is one factor to determine the duration of
 // data collection from the mic
-#define TIME_MIN_INTERVAL 94
+#define TIME_MIN_INTERVAL 144
 
 /// sequences
 #define SEQITER 3
