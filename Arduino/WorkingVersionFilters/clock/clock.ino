@@ -28,31 +28,35 @@ bool sendActivation;
 bool LED_STATE; // is always same with isSend?
 
 // 1
-uint8_t currentMode = 1;
+int currentMode = 1;
 String  readStr = "";
 
+
+uint8_t dataOut [] = {B00000001};
+
 //MODES
-uint8_t data [] = {B10000001,  // 1  Clock
-                   B10000010, // 2  Default sequence
-                   B10000011, // 3  Test MIC
-                   B00000100, // 4  Stop
-                   B10000101, // 5  PWM Value  255
-                   B10000110, // 6  PWM Value  200
-                   B10000111, // 7  PWM Value  150
-                   B10001000, // 8  PWM Value  100
-                   B10001001, // 9  PWM Value  50
-                   B10001010  // 10  PWM Value  0
-                  };
+uint8_t dataMode [] = {B00000001, // 1  Default sequence
+
+                       B00000010, // 2  Default sequence
+                       B00000011, // 3  Test MIC
+                       B00000100, // 4  Stop
+                       B00000101, // 5  PWM Value  255
+                       B00000110, // 6  PWM Value  200
+                       B00000111, // 7  PWM Value  150
+                       B00001000, // 8  PWM Value  100
+                       B00001001, // 9  PWM Value  50
+                       B00001010  // 10  PWM Value  0
+                      };
 
 void setup() {
 
-  if (DEBUG) {
-    Serial.begin(9600);
-  }
+  Serial.begin(9600);
 
-  for (int i = 0; i < 9; i++) {
-    Serial.println(data[i]);
-  }
+  /*
+    for (int i = 0; i < 9; i++) {
+      Serial.println(data[i]);
+    }
+  */
 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
@@ -77,28 +81,19 @@ void loop() {
 
   if (Serial.available() > 0) {
     byte inByte = Serial.read();
-    readStr += inByte;
+    currentMode = inByte;
+    dataOut[0] = dataMode[currentMode];
+    Serial.print(currentMode);
+    Serial.print(" ");
+    Serial.println(dataOut[0], BIN);
+
   }
 
-  if (readStr.length() == 2) {
-    currentMode = readStr.toInt();
-    readStr = "";
-  }
 
   if (isSend) {
 
-    if (currentMode != 0) {
-      nrf24.send((uint8_t*)data[currentMode], sizeof(data));
-      nrf24.waitPacketSent();
-    }
-
-    if (currentMode == 1) {
-      nrf24.send((uint8_t*)data[currentMode], sizeof(data));
-      nrf24.waitPacketSent();
-      currentMode = 0;
-    }
-
-
+    nrf24.send((uint8_t*)dataOut, sizeof(dataOut));
+    nrf24.waitPacketSent();
 
     if (counter >= COUNTER_LIMIT) {
       counter = 0;
@@ -106,6 +101,9 @@ void loop() {
       LED_STATE = LOW;
     }
     counter ++;
+
+    //sent it only once
+    dataOut[0] = B00000001;
   }
 
 

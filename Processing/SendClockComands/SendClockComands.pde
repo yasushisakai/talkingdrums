@@ -1,6 +1,9 @@
 import processing.serial.*;
 Serial myPort;  // The serial port
 
+String myString = "";
+int lf = 10;
+
 void setup() {
   size(500, 500);
   background(0);
@@ -11,6 +14,8 @@ void setup() {
   // Open whatever port is the one you're using.
   myPort = new Serial(this, Serial.list()[1], 9600);
   myPort.clear();
+  myString = myPort.readStringUntil(lf);
+  myString = null;
 }
 
 // 1  Default tick
@@ -24,6 +29,13 @@ void setup() {
 
 void draw() {
   background(0);
+
+  while (myPort.available() > 0) {
+    myString = myPort.readStringUntil(lf);
+    if (myString != null) {
+      myString = trim(myString);
+    }
+  }
 }
 
 void keyPressed() {
@@ -75,5 +87,4 @@ void keyPressed() {
     myPort.write(8);
     println("sent Mode 8");
   }
-  
 }
