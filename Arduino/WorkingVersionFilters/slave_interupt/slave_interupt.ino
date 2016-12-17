@@ -40,7 +40,7 @@ TimeKeeper timeKeeperNRF;
 //define what sequence or process to execute
 bool isTestMic = true;
 
-bool const DEBUG      = true;
+bool  DEBUG      = false;
 bool const DEBUG_TIME = false;
 bool const useHeader  = true;  // cares about the header or not
 //sequence
@@ -88,7 +88,7 @@ uint8_t maxBuffer = sizeof(buffSignal) / sizeof(float);
 bool ledTick = false;
 
 /// PWM-ing the Solenoid will need additional test 0-255
-byte const solenoid_pwm = 100;
+byte solenoid_pwm = 255;
 
 //clock cyles keepers
 uint8_t clockCounter = 0;

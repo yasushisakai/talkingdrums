@@ -5,10 +5,10 @@ void clockMode(uint8_t inByte) {
       timeKeeper.tick();
       timeKeeperNRF.tick();
 
-      Serial.print("MSG ");
-      Serial.print(valueByte);
-      Serial.print(" ");
-      Serial.println(timeKeeper.getTimeTick());
+      //Serial.print("MSG ");
+      //Serial.print(valueByte);
+      //Serial.print(" ");
+      //Serial.println(timeKeeper.getTimeTick());
 
       lock = false;
       clockCounter++;
@@ -35,18 +35,27 @@ void clockMode(uint8_t inByte) {
       break;
     case PWM255:
       if (DEBUG)Serial.println("PWM 255");
+      solenoid_pwm = 255;
       break;
     case PWM200:
       if (DEBUG)Serial.println("PWM 200");
+      solenoid_pwm = 200;
       break;
     case PWM150:
       if (DEBUG)Serial.println("PWM 150");
+      solenoid_pwm = 150;
       break;
     case PWM50:
       if (DEBUG)Serial.println("PWM 50");
+      solenoid_pwm = 50;
       break;
     case PWM0:
       if (DEBUG)Serial.println("PWM 0");
+      solenoid_pwm = 0;
+      break;
+    case DUBUG_C:
+      DEBUG = !DEBUG;
+      Serial.println("DEBUG");
       break;
   }
 

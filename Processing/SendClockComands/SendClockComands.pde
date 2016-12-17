@@ -87,4 +87,14 @@ void keyPressed() {
     myPort.write(8);
     println("sent Mode 8");
   }
+  
+   if (key == 'a') {
+    myPort.write(9);
+    println("sent Mode 9");
+  }
+  
+   if (key == 's') {
+    myPort.write(10);
+    println("sent Mode 10");
+  }
 }

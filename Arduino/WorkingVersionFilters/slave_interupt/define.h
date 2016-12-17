@@ -24,6 +24,7 @@
 #define PWM100  B00001000
 #define PWM50   B00001001
 #define PWM0    B00001010
+#define DUBUG_C B00001011
 
 // this is the time interval for each frame
 // this is one factor to determine the duration of
@@ -43,7 +44,7 @@ const unsigned long  HIT_INTERVAL          = 30L;
 // this interval is for the outputs, LED and solenoid
 
 //threshold peak for the signal processing
-const int THRESHOLD_PEAK = 55; //38
+const int THRESHOLD_PEAK = 65; //38
 
 //buffer size of signal processing window
 //BUFFER_SIZE = 25 -> 5ms 45 ->10ms

@@ -45,7 +45,8 @@ uint8_t dataMode [] = {B00000001, // 1  Default sequence
                        B00000111, // 7  PWM Value  150
                        B00001000, // 8  PWM Value  100
                        B00001001, // 9  PWM Value  50
-                       B00001010  // 10  PWM Value  0
+                       B00001010,  // 10  PWM Value  0
+                       B00001011   //11
                       };
 
 void setup() {
@@ -73,7 +74,7 @@ void setup() {
 void loop() {
   unsigned long currentTime = millis();
 
-  if (timer(currentTime, previousTime, DURATION)) {
+  if (timer(currentTime, previousTime, DURATION)) {s
     previousTime = currentTime;
     LED_STATE = HIGH;
     isSend = true;

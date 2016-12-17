@@ -30,7 +30,7 @@ uint8_t  checkServer(RH_NRF24 &_nrf, uint8_t & clockIn) {
   if (_nrf.recv(buf, &len)) {
     value = buf[0];
     clockIn = B00000010;//TICK;
-    Serial.println(value, BIN);
+    //Serial.println(value, BIN);
   }
 
   return value;
