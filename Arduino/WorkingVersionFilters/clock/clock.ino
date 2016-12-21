@@ -19,7 +19,7 @@
 
 RH_NRF24 nrf24;
 
-bool DEBUG = false;
+bool DEBUG = true;
 bool isSend = true;
 unsigned long previousTime;
 int counter;
@@ -74,7 +74,7 @@ void setup() {
 void loop() {
   unsigned long currentTime = millis();
 
-  if (timer(currentTime, previousTime, DURATION)) {s
+  if (timer(currentTime, previousTime, DURATION)) {
     previousTime = currentTime;
     LED_STATE = HIGH;
     isSend = true;

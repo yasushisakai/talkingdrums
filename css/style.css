@@ -1,0 +1,45 @@
+body{
+  font-family: sans-serif;
+  margin:0;
+  padding:0;
+}
+
+h1{
+  margin:0;
+  padding:0;
+}
+
+.info{
+  color:#FFFFFF;
+  position: absolute;
+  left:0;
+  top:0;
+  z-index:1;
+}
+
+.info a{
+  color: #FFFFFF;
+  text-decoration: underline;
+}
+
+.images{
+  position: absolute;
+  left:0;
+  top:0;
+  z-index: 0;
+}
+
+.container{
+  width: 960px;
+}
+
+.spacer{
+  margin-bottom: 500px;
+}
+
+img{
+  width:100%;
+}
+
+*:focus {outline: 0;}
+
