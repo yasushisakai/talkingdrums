@@ -29,7 +29,7 @@
 */
 
 //define SERVER SLAVE
-#define SERVER_SLAVE 0
+#define SERVER_SLAVE 1
 
 
 // Objects

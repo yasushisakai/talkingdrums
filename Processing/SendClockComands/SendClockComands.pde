@@ -34,6 +34,7 @@ void draw() {
     myString = myPort.readStringUntil(lf);
     if (myString != null) {
       myString = trim(myString);
+      println(myString);
     }
   }
 }

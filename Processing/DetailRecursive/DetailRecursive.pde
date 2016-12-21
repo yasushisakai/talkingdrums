@@ -16,7 +16,7 @@ void setup() {
 
   musicImg = loadImage("music.png");
 
-  recursiveRect(width/64, 10, 10, width - 20, height - 20 );
+  recursiveRect(width/(32), 10, 10, width - 20, height - 20 );
 
   for (int i = 0; i <generateSquaresPos.size(); i++) {
     generateSquareActive.add(0);
@@ -30,7 +30,7 @@ void draw() {
 
   rectMode(CENTER);
 
-/*
+
   for (int  i = 0; i < incrementPos; i++) {
     PVector pos = (PVector)generateSquaresPos.get(i);
     PVector tam = (PVector)generateSquaresSizes.get(i);
@@ -39,30 +39,28 @@ void draw() {
 
     color centerColor = musicImg.get( (int)pos.x, (int) pos.y);
 
-
-    if (activation == 1) {
-      fill(centerColor);
-      rect(pos.x, pos.y, tam.x, tam.y);
-    } 
+    fill(centerColor);
+    rect(pos.x, pos.y, tam.x, tam.y);
   }
- */
-  
-  
-  for (int  i = 0; i < generateSquaresPos.size(); i++) {
-    PVector pos = (PVector)generateSquaresPos.get(i);
-    PVector tam = (PVector)generateSquaresSizes.get(i);
 
-    int activation = (Integer)generateSquareActive.get(i);
-
-    color centerColor = musicImg.get( (int)pos.x, (int) pos.y);
-
-    if (activation == 1) {
-      fill(centerColor);
-      rect(pos.x, pos.y, tam.x, tam.y);
-    }
-    
-  }
-  
+  /* 
+   
+   for (int  i = 0; i < generateSquaresPos.size(); i++) {
+   PVector pos = (PVector)generateSquaresPos.get(i);
+   PVector tam = (PVector)generateSquaresSizes.get(i);
+   
+   int activation = (Integer)generateSquareActive.get(i);
+   
+   color centerColor = musicImg.get( (int)pos.x, (int) pos.y);
+   
+   if (activation == 1) {
+   fill(centerColor);
+   rect(pos.x, pos.y, tam.x, tam.y);
+   }
+   
+   }
+   
+   */
 
   /*
   fill(255, 20);
