@@ -14,7 +14,7 @@ using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-#define NAME_PORT "cu.usbserial-AL01OV0F"
+#define NAME_PORT "cu.usbserial-AL01OV0F"////AL01OV0F"
 
 const ci::ivec2 windowSize(1280 + 640, 720);
 
@@ -40,6 +40,7 @@ public:
     void keyDown( KeyEvent event) override;
     void update() override;
     void draw() override;
+    void resize() override;
     
     Surface processPixeletedImage(const Surface input, ci::ivec2 stepAmount, ci::ivec2 & numPixels);
     
@@ -97,6 +98,8 @@ private:
     
     bool                mUpdateRender; //updating moving vox
     string              mCurrentByteStr;
+    
+    uint8_t             mCurrentGray;
     
     //Time Events
     double               mCurrentT;
@@ -211,6 +214,8 @@ void ImageSenderApp::setup()
     mParams->addParam("FPS", &mAvgFps, false);
     mParams->addParam("Draw", &mDrawOriginal);
     
+    setFullScreen(true);
+    
 }
 
 Surface ImageSenderApp::processPixeletedImage(const Surface input, ci::ivec2 stepAmount, ci::ivec2 & numPixels)
@@ -294,9 +299,25 @@ void ImageSenderApp:: keyDown( KeyEvent event)
             //mCurrentColor = ci::Color(0, 1, 1);
             mUpdateRender = true;
             break;
+        case 'w':
+            //FBO
+            setFullScreen(true);
+            
+            
+            break;
     }
 }
 
+void ImageSenderApp::resize()
+{
+    initFBO();
+    
+    float width = getWindowWidth()/3.0;
+    float height =  (width * mSendTex->getHeight() ) /(mSendTex->getWidth());
+    
+    //intial values
+    mTexBounds = ci::Area(0, 0, width, height);
+}
 
 ////----
 void ImageSenderApp::update()
@@ -360,7 +381,7 @@ void ImageSenderApp::draw()
             
             gl::ScopedColor col;
             gl::ScopedMatrices  mat;
-            gl::translate(ci::ivec2( 0.0*(getWindowWidth()/3.0), getWindowHeight()/5.0));
+            gl::translate(ci::ivec2( 200 +.0*(getWindowWidth()/3.0), getWindowHeight()/5.0));
             
             //Alpha effect to texture
             if(mSendPixels){
@@ -378,7 +399,7 @@ void ImageSenderApp::draw()
     if(mDrawOriginal){
         if(mSendTex){
             gl::ScopedMatrices  mat;
-            gl::translate(ci::ivec2(0,  10));
+            gl::translate(ci::ivec2(350,  10));
             gl::draw(mSendTex, mTexBounds);
         }
         
@@ -387,7 +408,7 @@ void ImageSenderApp::draw()
             
             gl::ScopedColor col;
             gl::ScopedMatrices  mat;
-            gl::translate(ci::ivec2( 0.0*(getWindowWidth()/3.0),  getWindowHeight()*0.52));
+            gl::translate(ci::ivec2(200 + 0.0*(getWindowWidth()/3.0),  getWindowHeight()*0.52));
             
             //Alpha effect to texture
             if(mSendPixels){
@@ -401,30 +422,32 @@ void ImageSenderApp::draw()
         
     }
     
+    /*
     if(mFbo->getColorTexture()){
         gl::ScopedMatrices  mat;
         gl::ScopedColor col;
          gl::color(1.0, 1.0, 1.0, 1.0);
-        gl::translate(ci::ivec2( 2.0*(getWindowWidth()/3.0), -getWindowHeight()/3.333));
+        gl::translate(ci::ivec2( 250 + 2.0*(getWindowWidth()/3.0), -getWindowHeight()/3.333));
         gl::draw(mFbo->getColorTexture());
     }
+     */
     
     //middle block
     {
         gl::ScopedMatrices mat;
         gl::ScopedColor col;
-        gl::translate(ci::ivec2( (getWindowWidth()/3.0), getWindowHeight()/5.0));
-        gl::color(mCurrentColor);
+        gl::translate(ci::ivec2( 250 +  (getWindowWidth()/3.0), getWindowHeight()/5.0));
+        gl::color(ci::Color8u(mCurrentGray, mCurrentGray, mCurrentGray));//mCurrentColor);
         gl::drawSolidRect(mTexBounds);
         
         if(mTextTexture){
-            gl::translate(ci::vec2(mTexBounds.getWidth()/4.5, mTexBounds.getHeight() ));
+            gl::translate(ci::vec2( 100 + mTexBounds.getWidth()/4.5, mTexBounds.getHeight() ));
             gl::color(0.6, 0.6, 0.6);
             gl::draw(mTextTexture, vec2(0, 0));
         }
         
     }
-    
+    /*
     //moving block
     {
         gl::ScopedColor col;
@@ -441,7 +464,7 @@ void ImageSenderApp::draw()
         gl::color(0.0, 0.7, 0.8, 0.5);//mCurrentColor);
         gl::drawSolidRect(Rectf(0, 0, stepDiv.x * aspectInv.x, stepDiv.y * aspectInv.y));
     }
-    
+    */
     
     mParams->draw();
     
@@ -504,10 +527,25 @@ void ImageSenderApp::processPixels(double currentTime)
                 
                 //https://en.wikipedia.org/wiki/Luma_(video)
                 
-                //float luma = 0.2126 * mCurrentColor.r + 0.7152 * mCurrentColor.g + 0.0722 * mCurrentColor.b;
-                //uint8_t grayValue = floatColorToInt(luma);
                 
-                uint8_t grayValue = floatColorToInt(mCurrentColor.r );
+                //console()<<mCurrentColor<<std::endl;
+                //ci::ColorA colorHue( CM_HSV,  mCurrentColor.r, mCurrentColor.g, mCurrentColor.b) ;
+                
+                //float valueHue = mCurrentColor.get(CM_HSV).z;
+                //console()<<valueHue<<" "<<mCurrentColor.b<<std::endl;
+               
+                
+                // float luma = 0.2126 * mCurrentColor.r + 0.7152 * mCurrentColor.g + 0.0722 * mCurrentColor.b;
+               // uint8_t grayValue = floatColorToInt(mCurrentColor.r );
+                
+                
+                float gray = (mCurrentColor.r  + mCurrentColor.g + mCurrentColor.b)/3.0;
+                
+              
+                
+                //uint8_t grayValue = floatColorToInt(valueHue);
+                uint8_t grayValue = floatColorToInt(gray);
+                mCurrentGray = grayValue;
                 uint8_t result[8];
              
                 mCurrentByteStr="";

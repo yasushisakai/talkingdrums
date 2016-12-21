@@ -26,12 +26,14 @@ using namespace ci::app;
 using namespace std;
 
 //const values
-const ci::ivec2 windowSize(1280 + 640, 720);
+//const ci::ivec2 windowSize(1280 + 200, 720);
 
+const ci::ivec2 windowSize(1920, 1080);
+                           
 //const ci::ivec2 stepDiv(80, 80); //wave 80
 //const string IMAGE_NAME = "wave.png";
 
-const ci::ivec2 stepDiv(40, 40); //wave 80
+const ci::ivec2 stepDiv(15, 15); //wave 80
 const string IMAGE_NAME = "music.png"; //wave.png
 
 // the original image is pixelated by 20;
@@ -113,6 +115,15 @@ private:
     bool                mIsPlay;
     bool                mDone;
     
+    bool                mStartReadSerial;
+    
+    int                 mWindowPosX;
+    bool                mShowGUI;
+    
+    ci::vec2            screen4Display;
+    ci::vec2            screen4PixelDisplay;
+    ci::vec2            screen4PixelPos;
+    
     //params gui
     params::InterfaceGlRef	mParams;
 };
@@ -120,7 +131,7 @@ private:
 void ImageReceiverApp::initFBO()
 {
     //FBO
-    mFbo = gl::Fbo::create(mDebugImage.getWidth(), mDebugImage.getHeight());
+    mFbo = gl::Fbo::create(getWindowWidth(), getWindowHeight());
     {
         gl::ScopedFramebuffer fbScp( mFbo );
         
@@ -198,6 +209,8 @@ void ImageReceiverApp::setup()
     mDebug     = true;
     mGetPixels = false;
     
+    mStartReadSerial = false;
+    
     mLastString = "";
     
     mStrReceived = "00000000";
@@ -211,16 +224,44 @@ void ImageReceiverApp::setup()
 
     //calculate height depending on the aspect ratio of the image
     //scaling ??
-    float width  = getWindowWidth()/3.0;
-    float height =  (width * mDebugTex->getHeight() ) /(mDebugTex->getWidth());
-    mTexBounds   = ci::Area(0, 0, width, height);
+    float width  = getWindowWidth(); //3.0;
+    float height =  getWindowHeight();///(width * mDebugTex->getHeight() ) /(mDebugTex->getWidth());
+    mTexBounds   =  ci::Area(0, 0, width, height);
     
     CI_LOG_I(width<<" "<<height);
 
     
     //create params
     mParams = params::InterfaceGl::create( getWindow(), "App parameters", toPixels( ivec2( 200, 200 ) ) );
+    
+    
     mParams->addParam("Debug",  &mDebug);
+    
+    
+    screen4Display = ci::vec2(0.97, 0.80);
+
+    screen4PixelDisplay = ci::vec2(stepDiv.x*2,stepDiv.y*2); //0.97, 0.80);
+    screen4PixelPos = ci::vec2(stepDiv.x*2, stepDiv.y*2);
+    
+    mParams->addParam("screen4Display X",  &screen4Display.x).min(0.5).step(0.01);
+    mParams->addParam("screen4Display Y",  &screen4Display.y).min(0.5).step(0.01);
+    
+    
+    mParams->addParam("screen4PixelDisplay X",  &screen4PixelDisplay.x).min(0.5).step(0.01);
+    mParams->addParam("screen4PixelDisplay Y",  &screen4PixelDisplay.y).min(0.5).step(0.01);
+    
+    
+    mParams->addParam("screen4PixelPos X",  &screen4PixelPos.x).min(0.5).step(0.01);
+    mParams->addParam("screen4PixelPos Y",  &screen4PixelPos.y).min(0.5).step(0.01);
+    
+    
+    
+    
+    
+    mWindowPosX = 1680;
+    mShowGUI = false;
+    setWindowPos(mWindowPosX, 0);
+
 }
 
 void ImageReceiverApp::mouseDown( MouseEvent event )
@@ -241,9 +282,55 @@ void ImageReceiverApp::keyDown(KeyEvent event)
             mGetPixels = true;
             break;
         case '1':
-            mGrayReceived = 100;
+            mGrayReceived = ci::randInt(50, 200);
+            console()<<mGrayReceived<<std::endl;
             mGetPixels = true;
             break;
+            
+        case '2':
+            mGrayReceived = 255;
+            console()<<mGrayReceived<<std::endl;
+            mGetPixels = true;
+            break;
+            
+        case '0':
+            mGrayReceived = ci::randInt(0);
+            console()<<mGrayReceived<<std::endl;
+            mGetPixels = true;
+            break;
+            
+            
+        case 'w':
+            setFullScreen(true);
+            initFBO();
+        {
+            float width  = getWindowWidth(); //3.0;
+            float height = getWindowHeight();
+            mTexBounds   =  ci::Area(0, 0, width, height);
+        }
+            
+            break;
+            
+        case 'p':
+            mStartReadSerial = true;
+            break;
+            
+        case '8':
+            mWindowPosX += 10;
+            console()<<mWindowPosX<<std::endl;
+            setWindowPos(mWindowPosX, 0);
+            break;
+            
+        
+        case '9':
+            mShowGUI = !mShowGUI;
+            break;
+       // case '8':
+       //     console()<<screen4Display<<std::endl;
+       //     break;
+        
+        
+        
             
         default:
             break;
@@ -254,15 +341,15 @@ void ImageReceiverApp::renderOutputImage()
 {
     if(mGetPixels){
         
-              iterateBox();
+        iterateBox();
         
-        gl::ScopedFramebuffer fbScp( mFbo );
+       gl::ScopedFramebuffer fbScp( mFbo );
         
-        gl::ScopedViewport scpVp( ivec2( 0 ), mTexBounds.getSize() );
+        gl::ScopedViewport scpVp( ivec2( 0 ), getWindowSize() );
         gl::ScopedMatrices matrices;
-        gl::setMatricesWindow( mTexBounds.getSize(), true);
+        gl::setMatricesWindow( getWindowSize(), true);
         gl::setModelMatrix(ci::mat4());
-        
+       
         gl::ScopedColor col;
         gl::ScopedMatrices mat;
         
@@ -272,10 +359,26 @@ void ImageReceiverApp::renderOutputImage()
         //inverted aspect ratio
         ci::vec2 aspectInv( (float)mTexBounds.getWidth()/ (float) mDebugTex->getWidth(), (float)mTexBounds.getHeight()/ (float) mDebugTex->getHeight() );
         
-        gl::translate(0, 0);
-        gl::translate(ci::vec2(xAspect, yAspect));
+        gl::translate(ci::vec2(mIteraPixel.x*screen4PixelPos.x, mIteraPixel.y*screen4PixelPos.y));//xAspect, yAspect));
+        
+        
+        ci::ivec2 mCentralPixel = ci::vec2(mIteraPixel) * ci::vec2(stepDiv.x, stepDiv.y) + ci::vec2(stepDiv.x/2.0, stepDiv.y/2.0);
+        ci::ColorA realCol =  mDebugImage.getPixel(mCentralPixel);
+        
+        
+        //ci::ColorA colorHue( CM_HSV,  realCol.r, realCol.g, realCol.b, 1.0) ;
+        //realCol.set(CM_HSV, ci::vec4( realCol.r, realCol.b, mGrayReceived/255.0, 1.0 ));
+        
+       // gl::color(ci::ColorA8u(mGrayReceived, mGrayReceived, mGrayReceived));
+        //gl::color(ci::ColorA(CM_HSV, realCol.r, realCol.g, realCol.b));
+        
+        
+        //realCol.set(CM_HSV, ci::vec4( realCol.r, realCol.g, mGrayReceived/255.0, 1.0 ));
+        //gl::color(ci::ColorA(CM_HSV, realCol.r, realCol.g, realCol.b));
+        
+        
         gl::color(ci::ColorA8u(mGrayReceived, mGrayReceived, mGrayReceived));
-        gl::drawSolidRect(Rectf(0, 0, stepDiv.x * aspectInv.x, stepDiv.y * aspectInv.y));
+        gl::drawSolidRect(Rectf(0, 0, screen4PixelDisplay.x, screen4PixelDisplay.y));//stepDiv.x * aspectInv.x, stepDiv.y * aspectInv.y));
         //iterate
   
         mGetPixels = false;
@@ -288,7 +391,9 @@ void ImageReceiverApp::update()
     
     double now = getElapsedSeconds();
     
-    processInValue(now);
+    if(mStartReadSerial){
+        processInValue(now);
+    }
     
     renderOutputImage();
     
@@ -298,18 +403,20 @@ void ImageReceiverApp::update()
 void ImageReceiverApp::draw()
 {
     
-    gl::clear(Color::black());
+    gl::clear(ci::Color(0.0, 0.0, 0.0));
+   // gl::clear(ci::Color(0.1, 0.1, 0.1));
     
     
     if(mDebug){
         
         if(mDebugTex){
             {
-                gl::ScopedColor col;
+              /*  gl::ScopedColor col;
                 gl::ScopedMatrices  mat;
                 gl::color(1, 1, 1);
                 gl::translate(ci::ivec2( 0.0*(getWindowWidth()/3.0), getWindowHeight()/5.0));
                 gl::draw(mDebugTex, mTexBounds);
+               */
             }
             
     
@@ -330,7 +437,8 @@ void ImageReceiverApp::draw()
                 std::string indexStr = "current ["+to_string(mIteraPixel.x)+", "+to_string(mIteraPixel.y)+"]";
             
             
-                //float lumaReceive = 0.2126 * mReceiveColor.r + 0.7152 * mReceiveColor.g + 0.0722 * mReceiveColor.b;
+                float lumaReceive = 0.2126 * mReceiveColor.r + 0.7152 * mReceiveColor.g + 0.0722 * mReceiveColor.b;
+                
                 //float lumaReal = 0.2126 * realCol.r + 0.7152 * realCol.g + 0.0722 * realCol.b;
                 //uint8_t grayReceiver = floatColorToInt(lumaReceive);
                 //uint8_t grayReal     = floatColorToInt(lumaReal);
@@ -367,7 +475,7 @@ void ImageReceiverApp::draw()
                     gl::ScopedMatrices  mat;
                     gl::ScopedColor col;
                     gl::translate(ci::vec2(mTexBounds.getWidth()/2.5 + 1.0*(getWindowWidth()/3.0), mTexBounds.getHeight() +  getWindowHeight()/5.0 ));
-                    gl::color(0.6, 0.6, 0.6);
+                    gl::color(0.8, 0.8, 0.8);
                     gl::draw(mTextTexture, vec2(0, 0));
                 }
             }
@@ -379,13 +487,15 @@ void ImageReceiverApp::draw()
     
     if(mFbo->getColorTexture()){
         gl::ScopedMatrices  mat;
-        gl::translate(ci::ivec2( 1.0*(getWindowWidth()/3.0), -getWindowHeight()/3.333));
+       // gl::translate(ci::vec2(0, 0));//ci::ivec2( 0.75*(getWindowWidth()/3.0), getWindowHeight()/4.1));//-getWindowHeight()/3.333));
+       /// gl::scale(screen4Display);
         gl::draw(mFbo->getColorTexture());
     }
-    
-    
 
-    mParams->draw();
+
+    if(mShowGUI){
+        mParams->draw();
+    }
     
 }
 
@@ -569,5 +679,7 @@ int ImageReceiverApp::stringToInt(const std::string &s)
 
 CINDER_APP( ImageReceiverApp, RendererGl( RendererGl::Options().msaa( 16 ) ), [] (App::Settings * settings){
     
+  
+
     //settings->setHighDensityDisplayEnabled();
 })
