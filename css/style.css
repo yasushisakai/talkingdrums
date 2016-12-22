@@ -17,6 +17,10 @@ h1{
   z-index:1;
 }
 
+a{
+  color: #000000;
+}
+
 .info a{
   color: #FFFFFF;
   text-decoration: underline;
@@ -35,6 +39,10 @@ h1{
 
 .spacer{
   margin-bottom: 500px;
+}
+
+.paragraph{
+  width: 50%;
 }
 
 img{
