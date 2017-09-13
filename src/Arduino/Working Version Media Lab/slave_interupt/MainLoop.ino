@@ -210,23 +210,23 @@ void readInputArray() {
 
 
     if (readInBytes) {
+      if (DEBUG) Serial.println(" ");
       if (DEBUG) Serial.println("incoming bytes");
 
       int val = Serial.readBytes(byteMSG8, 1);
 
       // Reset values when an array of bits is received
-     // if (val > 0 || DEBUG == true) {
+      if (val > 0 ){ //|| DEBUG == true) {
         if (DEBUG) Serial.println("clean Serial");
 
 
         if (DEBUG) {
-          Serial.print("Number cycles");
+          Serial.print("Number cycles ");
           Serial.println(clockCounter);
         }
         //clean
 
         Serial.flush();
-
         for (itri = 0; itri < 10; itri++) {
           char f = Serial.read();
         }
@@ -259,14 +259,18 @@ void readInputArray() {
         //make sure that we are going to play the header
         isHead = true;
 
-      //} //got msg
+      } //got msg
     }
 
     //send byte request and read
     if (requestByte) {
       if (DEBUG) Serial.println("request bytes");
 
-      Serial.write('s');
+      //change to println() to enable easier read with readString() in processing
+      //Serial.write('s');
+
+      Serial.println("s");
+      
       requestByte = false;
       readInBytes = true;
     }

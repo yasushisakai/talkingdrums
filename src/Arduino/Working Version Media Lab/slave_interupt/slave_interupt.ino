@@ -29,7 +29,10 @@
 */
 
 //define SERVER SLAVE
-#define SERVER_SLAVE 1
+#define SERVER_SLAVE 0
+
+//1 -> server
+//0 all the little ones.
 
 
 // Objects
@@ -41,6 +44,7 @@ TimeKeeper timeKeeperNRF;
 bool isTestMic = true;
 
 bool  DEBUG      = false;
+
 bool const DEBUG_TIME = false;
 bool const useHeader  = true;  // cares about the header or not
 //sequence
@@ -170,7 +174,7 @@ void setup() {
 
 
 
-  Serial.println("");
+  //Serial.println("");
 }
 
 void loop() {
