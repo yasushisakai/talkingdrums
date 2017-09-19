@@ -21,15 +21,22 @@ bool initNRF(RH_NRF24 &_nrf, bool printDebug = true) {
   return true;
 }
 
-uint8_t  checkServer(RH_NRF24 &_nrf, uint8_t & clockIn) {
+//returns TICK
+uint8_t  checkServer(RH_NRF24 &_nrf, uint8_t & clockIn, uint8_t & moduleId, int8_t & changeValues) {
   uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
   uint8_t len = sizeof buf;
 
-  uint8_t value = B10000000;
+  uint8_t id_val     = B00000000;
+  uint8_t change_val = B00000000;
+  uint8_t value      = TOCK;
 
   if (_nrf.recv(buf, &len)) {
-    value = buf[0];
-    clockIn = B00000010;//TICK;
+    clockIn = TICK;
+    value   = TICK;
+    
+    moduleId     = buf[0];
+    changeValues = buf[1];
+    
     //Serial.println(value, BIN);
   }
 

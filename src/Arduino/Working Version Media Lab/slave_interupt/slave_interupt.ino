@@ -122,7 +122,13 @@ unsigned long cTime = 0;
 
 uint8_t valueByte = B00000000;
 
+
+//CLK input Value
 uint8_t inClock = B10000001;
+
+uint8_t moduleId = 
+
+int8_t & changeValues
 
 
 //Slave values

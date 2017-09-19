@@ -2,6 +2,12 @@
 #ifndef Define_h
 #define Define_h
 
+//ID
+//Talking Drum ID module
+#define TD_ID       0
+
+
+
 /// pins
 #define LED_PIN 3
 #define SOL_PIN 5
@@ -9,22 +15,25 @@
 #define MIC_PIN A0
 
 /// Clock values
+#define TICK    B00000001
 
-#define TICK    B00000010
-#define TOCK    B10000001
-
-#define START   B00000010
-#define MIC     B00000011
-#define STOP    B10000100
+//not Usen int NRF
+#define TOCK    B10000000
 
 
-#define PWM255  B00000101
-#define PWM200  B00000110
-#define PWM150  B00000111
-#define PWM100  B00001000
-#define PWM50   B00001001
-#define PWM0    B00001010
-#define DUBUG_C B00001011
+//different modes.
+#define CHANGE_MODULE     B00000001
+#define START_MODULE      B00000000
+#define STOP_MODULE       B00000010
+#define PWM_MODULE        B00000100
+#define MIC_MODULE        B00000110
+
+#define DEBUG_MODULE      B00001110
+
+
+//Helper 0
+#define ZERO_BYTE         B00000000
+
 
 // this is the time interval for each frame
 // this is one factor to determine the duration of
