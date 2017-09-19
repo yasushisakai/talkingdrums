@@ -6,10 +6,24 @@ void setupPort() {
   print("setting up Port");
 
   printArray(Serial.list());
+  
+  if(serialId == -1){
+    serialId = Serial.list().length -1;
+  }
 
-  String portName = Serial.list()[3];
-  myPort = new Serial(this, portName, BAUD_RATE);
-  readPort = "";
+  String portName  = "";
+  try {
+    portName = Serial.list()[serialId];
+    myPort = new Serial(this, portName, BAUD_RATE);
+    readPort = "";
+    initSerialPort = true;
+    println("connected to: "+portName);
+  }
+  catch(Exception e) {
+    initSerialPort = false;
+    println("cannot connect to: "+portName);
+  }
+  
 
   int lf = 10;
   myPort.bufferUntil(lf);

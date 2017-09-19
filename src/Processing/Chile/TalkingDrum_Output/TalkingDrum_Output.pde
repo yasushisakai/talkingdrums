@@ -2,6 +2,13 @@ import processing.serial.*;
 Serial myPort;  // Create object from Serial class
 
 
+boolean initSerialPort = false;
+
+//change this value to initialize the serial Id.
+//default -1 which is Serial.list().length - 1
+
+int serialId = -1;
+
 int BAUD_RATE = 115200;
 
 void setup() {

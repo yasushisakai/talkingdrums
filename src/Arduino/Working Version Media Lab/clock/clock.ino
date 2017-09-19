@@ -32,7 +32,9 @@ int currentMode = 1;
 byte buf [2];
 int intBuf = 0;
 
-uint8_t dataOut [] = {B00000001};
+// #1 byte MODE,
+// #2 byte Index
+uint8_t dataOut [] = {B00000001, B00000001};
 
 //MODES
 uint8_t dataMode [] = {B00000001, // 1  Default sequence
