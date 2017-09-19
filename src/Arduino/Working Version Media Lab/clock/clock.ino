@@ -31,8 +31,9 @@ bool LED_STATE; // is always same with isSend?
 int currentMode = 1;
 byte buf [2];
 int intBuf = 0;
+String strBuf = "";
 
-uint8_t dataOut [] = {B00000001};
+uint8_t dataOut [] = {B00000001,B00000101,B00000001};
 
 //MODES
 uint8_t dataMode [] = {B00000001, // 1  Default sequence
@@ -46,7 +47,7 @@ uint8_t dataMode [] = {B00000001, // 1  Default sequence
                        B00001000, // 8  PWM Value  100
                        B00001001, // 9  PWM Value  50
                        B00001010,  // 10  PWM Value  0
-                       B00001011   //11
+                       B00001011   //11 individual threshold modifier
                       };
 
 String dataModeString [] = {
@@ -59,7 +60,8 @@ String dataModeString [] = {
   "PWM Value 150",
   "PWM Value 100",
   "PWM Value 50",
-  "PWM Value 0"
+  "PWM Value 0",
+  "individual threshold modifier",
 };
 
 void setup() {
@@ -95,7 +97,10 @@ void loop() {
 
 // this part changes the MODE
   if (Serial.available() > 0) {
-    intBuf = Serial.readString().toInt();
+    strBuf = Serial.readString();
+    Serial.print("string: ");
+    Serial.println(strBuf);
+    intBuf = strBuf.toInt();
     Serial.print("recieved: ");
     Serial.println(intBuf);
     if (intBuf < sizeof(dataMode)/sizeof(dataMode[0]) ){
