@@ -7,7 +7,7 @@ void setupPort() {
 
   printArray(Serial.list());
 
-  String portName = Serial.list()[3];
+  String portName = Serial.list()[1];
   myPort = new Serial(this, portName, BAUD_RATE);
   readPort = "";
 

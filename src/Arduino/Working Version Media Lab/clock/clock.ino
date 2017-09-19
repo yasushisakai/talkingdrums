@@ -29,8 +29,8 @@ bool LED_STATE; // is always same with isSend?
 
 // 1
 int currentMode = 1;
-String  readStr = "";
-
+byte buf [2];
+int intBuf = 0;
 
 uint8_t dataOut [] = {B00000001};
 
@@ -48,6 +48,19 @@ uint8_t dataMode [] = {B00000001, // 1  Default sequence
                        B00001010,  // 10  PWM Value  0
                        B00001011   //11
                       };
+
+String dataModeString [] = {
+  "Default seq",
+  "Default seq",
+  "Test MIC",
+  "Stop",
+  "PWM Value 255",
+  "PWM Value 200",
+  "PWM Value 150",
+  "PWM Value 100",
+  "PWM Value 50",
+  "PWM Value 0"
+};
 
 void setup() {
 
@@ -80,14 +93,22 @@ void loop() {
     isSend = true;
   }
 
+// this part changes the MODE
   if (Serial.available() > 0) {
-    byte inByte = Serial.read();
-    currentMode = inByte;
-    dataOut[0] = dataMode[currentMode];
-    Serial.print(currentMode);
-    Serial.print(" ");
-    Serial.println(dataOut[0], BIN);
-
+    intBuf = Serial.readString().toInt();
+    Serial.print("recieved: ");
+    Serial.println(intBuf);
+    if (intBuf < sizeof(dataMode)/sizeof(dataMode[0]) ){
+      dataOut[0] = dataMode[intBuf];
+      Serial.print("changed MODE to: ");
+      Serial.print(dataModeString[intBuf]);
+      Serial.print(" byte:(");
+      Serial.print(dataOut[0],BIN);
+      Serial.println(")");
+    } else {
+      Serial.println("index out of MODE configs, ignoring");
+      Serial.println();
+    }
   }
 
 
@@ -104,7 +125,11 @@ void loop() {
     counter ++;
 
     //sent it only once
-    dataOut[0] = B00000001;
+    if(dataOut[0] != B00000001){
+      Serial.println("back to default seq.");
+      Serial.println("");
+      dataOut[0] = B00000001;
+    }
   }
 
 
