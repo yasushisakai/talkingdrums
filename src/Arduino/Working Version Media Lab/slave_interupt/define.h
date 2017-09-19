@@ -4,15 +4,16 @@
 
 //ID
 //Talking Drum ID module
-#define TD_ID       0
+#define TD_ID       10
 
-
-
-/// pins
+/// DONT Change this values
 #define LED_PIN 3
 #define SOL_PIN 5
 //changed for the use of PWM (Analog Write)
 #define MIC_PIN A0
+
+
+
 
 /// Clock values
 #define TICK    B00000001
@@ -54,6 +55,8 @@ const unsigned long  HIT_INTERVAL          = 30L;
 
 //threshold peak for the signal processing
 const int THRESHOLD_PEAK = 90;//68; //38
+ 
+const int DEFAULT_PWM  = 255;
 
 //buffer size of signal processing window
 //BUFFER_SIZE = 25 -> 5ms 45 ->10ms

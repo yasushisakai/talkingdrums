@@ -1,4 +1,5 @@
 #include <RH_NRF24.h>
+#include "define.h"
 
 /*
   Helper Functions

@@ -1,6 +1,6 @@
-void clockMode(uint8_t inByte) {
+void clockMode(uint8_t & inCLK, uint8_t inMode) {
 
-  if (inClock == TICK) {
+  if (inCLK == TICK) {
     if (timeKeeper.getTimeTick() >= TIME_MIN_INTERVAL) {
       timeKeeper.tick();
       timeKeeperNRF.tick();
@@ -12,14 +12,14 @@ void clockMode(uint8_t inByte) {
 
       lock = false;
       clockCounter++;
-      inClock = TOCK;
+      inCLK = TOCK;
 
       //Serial.println(tempConter);
       //tempConter=0;
     }
   }
 
-  switch (inByte) {
+  switch (inMode) {
 
     //default sequence
     case (CHANGE_MODULE ^ START_MODULE):

@@ -91,9 +91,6 @@ uint8_t maxBuffer = sizeof(buffSignal) / sizeof(float);
 
 bool ledTick = false;
 
-/// PWM-ing the Solenoid will need additional test 0-255
-byte solenoid_pwm = 255;
-
 //clock cyles keepers
 uint8_t clockCounter = 0;
 
@@ -123,12 +120,25 @@ unsigned long cTime = 0;
 uint8_t valueByte = B00000000;
 
 
+
+
+/// PWM-ing the Solenoid will need additional test 0-255
+byte solenoid_pwm = DEFAULT_PWM;
+
 //CLK input Value
-uint8_t inClock = B10000001;
+uint8_t clkTICK = B10000001;
 
-uint8_t moduleId = 
+//id of the module, this is used to check the incomming clock information
+uint8_t clkModuleId = byte(TD_ID);
 
-int8_t & changeValues
+//value for changing the modules, mic calibration, pwm
+int8_t clkPWM  = solenoid_pwm;
+
+//value for changing the mic calibration
+int8_t clkMIC  = THRESHOLD_PEAK;
+
+int8_t clkTEMP  = 0;
+
 
 
 //Slave values
@@ -179,8 +189,9 @@ void setup() {
   setupInterrupt();
 
 
-
-  //Serial.println("");
+  //
+  Serial.println("MIC: " + THRESHOLD_PEAK);
+  Serial.println("Solenoid PWM:" + solenoid_pwm);
 }
 
 void loop() {
@@ -203,11 +214,11 @@ void loop() {
 
 
   if (timeKeeperNRF.isTick() ) {
-    valueByte = checkServer(nrf24, inClock); //10ms  -30count
+    valueByte = checkServer(nrf24, clkTICK, clkModuleId, clkTEMP); //10ms  -30count
 
     //Serial.println(valueByte);
 
-    clockMode(valueByte);
+    clockMode(clkTICK, clkTEMP);
   }
 
   acticateSequenceLoop();
