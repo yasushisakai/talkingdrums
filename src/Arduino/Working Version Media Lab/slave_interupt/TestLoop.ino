@@ -8,11 +8,54 @@ void testMic()
     //enable solenoid a single hit 30ms
     timeKeeper.hit();
   }
+  
 }
 
 //Test solenoid
-void testSolenoid()
+void testDebugSequence()
 {
+
+  //repeat three times the header
+  //then repeat three times the input sequence.
+  micHit = debugSequenceTap[itrj + itri];
+
+  if (micHit == true) {
+    timeKeeper.hit();
+  }
+
+
+  //three times the main sequence
+  if (itrCounter >= 3) {
+    itri++;
+    itrj = 3;
+    if (itri >= 8) {
+      itri = 0;
+      itrCounter++;
+    }
+  }
+
+  //three time the header
+  if (itrCounter <= 2) {
+    itrj++;
+    if (itrj >= 3) {
+      itrj = 0;
+      itrCounter++;
+    }
+  }
+
+  //reset the counter
+  if (itrCounter >= 6) {
+    itri = 0;
+    itrj = 0;
+    itrCounter = 0;
+  }
+
+
+}
+
+
+//test solenoid sequence.
+void testSolenoid() {
 
   micHit = debugSequenceTap[itri];
 

@@ -25,12 +25,13 @@ void clockMode(uint8_t & inCLK, uint8_t  inMode, uint8_t  inValue ) {
     switch (inMode) {
 
       case (PWM_MODE):
-        solenoid_pwm = inValue; //int(map(inValue, 0, 200, 0, 255));
+        solenoid_pwm = inValue;
         if (DEBUG)Serial.println("new PWM: ");
         if (DEBUG)Serial.println(solenoid_pwm);
         break;
+        
       case (MIC_MODE):
-        micThreshold = inValue;// int(map(inValue, 0, 200, 0, 255));
+        micThreshold = inValue;
         if (DEBUG)Serial.println("New MIC: ");
         if (DEBUG)Serial.println(micThreshold);
         break;
@@ -39,23 +40,27 @@ void clockMode(uint8_t & inCLK, uint8_t  inMode, uint8_t  inValue ) {
         bitIndex = sequenceIndex = 0;
         sequenceState = WAIT_START;
         resetSequence();
-
         if (DEBUG)Serial.println("Return");
         break;
+        
       case (SONLENOID_MODE):
         setSequenceState(TEST_SOLENOID);
 
         for (itri = 0; itri < 8; itri++) {
-          debugSequenceTap[itri] =  bitRead(inValue, itri );
+          debugSequenceTap[3 + itri] =  bitRead(inValue, itri );
         }
-
-
         if (DEBUG)Serial.println("New SONLENOID Test: ");
         break;
 
       case (CALIBRATE_MODE):
         setSequenceState(CALIBRATE_MIC);
         if (DEBUG)Serial.println("Calibrate Mic");
+        break;
+        
+      case (DEBUG_MODE):
+        DEBUG = !DEBUG;
+        Serial.print("DEBUG Toggle ");
+        Serial.println(DEBUG);
         break;
 
     }

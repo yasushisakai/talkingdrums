@@ -23,7 +23,7 @@ bool initNRF(RH_NRF24 &_nrf, bool printDebug = true) {
 
 //returns TICK
 uint8_t  checkServer(RH_NRF24 &_nrf, uint8_t & clockIn, uint8_t & moduleId, uint8_t & modeId, uint8_t & changeValue, uint8_t & activateNRFChange) {
-  
+
   uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
   uint8_t len = sizeof buf;
 
@@ -59,26 +59,35 @@ uint8_t  checkServer(RH_NRF24 &_nrf, uint8_t & clockIn, uint8_t & moduleId, uint
         enableChange = 1;
         moduleId     = buf[0] >> 1;
 
-       // Serial.print(changeValue);
-       // Serial.print(" ");
-       // Serial.print(buf[1]);
-        //Serial.print(" ");
-        //Serial.println(modeId);
+        /*
+        if (DEBUG) {
+          Serial.print(changeValue);
+          Serial.print(" ");
+          Serial.print(buf[1]);
+          Serial.print(" ");
+          Serial.println(modeId);
+        }
+        */
       }
 
       //check moduel ID
       if ( moduleId == TD_ID && allMode == 0 && enableMode == 1 ) {
 
-       // Serial.print("Change one same ID: ");
-       // Serial.print(moduleId);
-       // Serial.print(" ");
-       // Serial.println(TD_ID);
+         /*
+        if (DEBUG) {
+          Serial.print("Change one same ID: ");
+          Serial.print(moduleId);
+          Serial.print(" ");
+          Serial.println(TD_ID);
+        }
+        */
+
 
         activateNRFChange = 1;
       }
 
       if (allMode == 1 && enableMode == 1) {
-       // Serial.println("All");
+        //if (DEBUG) Serial.println("All");
         activateNRFChange = 1;
       }
 

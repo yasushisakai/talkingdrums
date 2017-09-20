@@ -44,7 +44,7 @@ TimeKeeper timeKeeperNRF;
 bool isTestMic = true;
 
 //print debug information
-bool  DEBUG      = true;
+bool  DEBUG      = false;
 bool const DEBUG_TIME = false;
 
 
@@ -84,9 +84,9 @@ bool headerSequence[(sizeof(correctHeader) / sizeof(bool)) * SEQITER];
 
 bool recording[SEQITER][SEQBITS];
 bool playSequence[SEQBITS];
-bool debugSequence[] = {0, 0, 0, 1, 0, 0, 1, 1};
 
-bool debugSequenceTap[] = {0, 0, 0, 1, 0, 0, 1, 1};
+bool debugSequence[]    = {0, 0, 0, 1, 0, 0, 1, 1};
+bool debugSequenceTap[] = {1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1};
 
 
 bool firstCalibration = true;
@@ -191,10 +191,10 @@ void setup() {
 
   resetSequence(); //resets recording, play and head Sequence
 
-  Serial.println("start nrf");
+  if (DEBUG)Serial.println("start nrf");
   initNRF(nrf24, false);
 
-  setSequenceState(CALIBRATE_TIME);
+  //setSequenceState(CALIBRATE_TIME);
 
   //set intervals
   timeKeeper.setInterval(HIT_INTERVAL);
@@ -203,10 +203,10 @@ void setup() {
   setupInterrupt();
 
 
-  Serial.print("MIC: ");
-  Serial.print(THRESHOLD_PEAK);
-  Serial.print("  Solenoid PWM: ");
-  Serial.println(solenoid_pwm);
+  if (DEBUG) Serial.print("MIC: ");
+  if (DEBUG) Serial.print(THRESHOLD_PEAK);
+  if (DEBUG) Serial.print("  Solenoid PWM: ");
+  if (DEBUG)Serial.println(solenoid_pwm);
 }
 
 void loop() {
@@ -233,7 +233,7 @@ void loop() {
 
     //Serial.println(valueByte);
 
-     clockMode(clkTICK, clkMode, clkValue);
+    clockMode(clkTICK, clkMode, clkValue);
   }
 
   acticateSequenceLoop();

@@ -291,7 +291,12 @@ void acticateSequenceLoop() {
         break;
 
       case TEST_SOLENOID: //test for the solenoid
-        testSolenoid();
+
+        //test a individual sequence
+        //testSolenoid();
+
+        //test the sequence including header repetetitions
+        testDebugSequence();
         break;
       //finish with the test
 

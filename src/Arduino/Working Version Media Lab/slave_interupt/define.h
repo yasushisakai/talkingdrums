@@ -30,6 +30,7 @@
 #define RETURN_MODE        2
 #define SONLENOID_MODE     3
 #define CALIBRATE_MODE     4
+#define DEBUG_MODE         5
 
 
 #define DEBUG_MODULE      B00001110
