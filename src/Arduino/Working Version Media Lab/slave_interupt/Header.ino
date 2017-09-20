@@ -10,7 +10,7 @@ void listenHeader() {
   if (DEBUG) Serial.print("LISTEN HEADER ");
 
   //get hit from the bandpass filter
-  micHit = bandPassFilter.isHit();
+  micHit = bandPassFilter.isHit(micThreshold);
 
   if (isRecordHeader) {
 

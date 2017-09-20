@@ -4,7 +4,7 @@
 
 //ID
 //Talking Drum ID module
-#define TD_ID       10
+#define TD_ID       12
 
 /// DONT Change this values
 #define LED_PIN 3
@@ -24,10 +24,12 @@
 
 //different modes.
 #define CHANGE_MODULE     B00000001
-#define START_MODULE      B00000000
-#define STOP_MODULE       B00000010
-#define PWM_MODULE        B00000100
-#define MIC_MODULE        B00000110
+
+#define PWM_MODULE        0
+#define MIC_MODULE        1
+#define START_MODULE      2
+#define STOP_MODULE       3
+
 
 #define DEBUG_MODULE      B00001110
 

@@ -29,7 +29,7 @@
 */
 
 //define SERVER SLAVE
-#define SERVER_SLAVE 1
+#define SERVER_SLAVE 0
 
 //1 -> server
 //0 all the little ones.
@@ -43,9 +43,11 @@ TimeKeeper timeKeeperNRF;
 //define what sequence or process to execute
 bool isTestMic = true;
 
-bool  DEBUG      = false;
-
+//print debug information
+bool  DEBUG      = true;
 bool const DEBUG_TIME = false;
+
+
 bool const useHeader  = true;  // cares about the header or not
 //sequence
 /*
@@ -132,14 +134,19 @@ uint8_t clkTICK = B10000001;
 uint8_t clkModuleId = byte(TD_ID);
 
 //value for changing the modules, mic calibration, pwm
-int8_t clkPWM  = solenoid_pwm;
+uint8_t clkPWM  = solenoid_pwm;
 
 //value for changing the mic calibration
-int8_t clkMIC  = THRESHOLD_PEAK;
+uint8_t clkMIC  = THRESHOLD_PEAK;
+int     micThreshold  =  THRESHOLD_PEAK;
 
-int8_t clkTEMP  = 0;
+uint8_t clkTEMP  = 0;
 
+uint8_t clkValue = 0;
 
+uint8_t clkMode = 0;
+
+uint8_t activateNRFMode = 1;
 
 //Slave values
 //Serial Port
@@ -180,6 +187,7 @@ void setup() {
 
   resetSequence(); //resets recording, play and head Sequence
 
+  Serial.println("start nrf");
   initNRF(nrf24, false);
 
   //set intervals
@@ -188,10 +196,12 @@ void setup() {
 
   setupInterrupt();
 
-
+  setSequenceState(CALIBRATE_TIME);
   //
-  Serial.println("MIC: " + THRESHOLD_PEAK);
-  Serial.println("Solenoid PWM:" + solenoid_pwm);
+  Serial.print("MIC: ");
+  Serial.print(THRESHOLD_PEAK);
+  Serial.print("  Solenoid PWM: ");
+  Serial.println(solenoid_pwm);
 }
 
 void loop() {
@@ -214,11 +224,11 @@ void loop() {
 
 
   if (timeKeeperNRF.isTick() ) {
-    valueByte = checkServer(nrf24, clkTICK, clkModuleId, clkTEMP); //10ms  -30count
+    valueByte = checkServer(nrf24, clkTICK, clkModuleId, clkMode, clkValue, activateNRFMode); //10ms  -30count
 
     //Serial.println(valueByte);
 
-    clockMode(clkTICK, clkTEMP);
+     clockMode(clkTICK, clkMode, clkValue);
   }
 
   acticateSequenceLoop();
@@ -228,7 +238,7 @@ void loop() {
   timeKeeperNRF.updateTimes();
 
   //feedback
-  if (sequenceState == RESET ||  sequenceState == ANALYZE || sequenceState == WAIT_START) {
+  if (sequenceState == RESET ||  sequenceState == ANALYZE || sequenceState == WAIT_START || sequenceState == CALIBRATE_TIME) {
     digitalWrite(LED_PIN, timeKeeper.checkTick());
   }
 

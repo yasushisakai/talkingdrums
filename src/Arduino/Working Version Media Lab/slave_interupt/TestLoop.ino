@@ -2,7 +2,7 @@
 //test mic
 void testMic()
 {
-  micHit = bandPassFilter.isHit();
+  micHit = bandPassFilter.isHit(micThreshold);
 
   if (micHit == true) {
     //enable solenoid a single hit 30ms
