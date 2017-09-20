@@ -25,10 +25,11 @@
 //different modes.
 #define CHANGE_MODULE     B00000001
 
-#define PWM_MODULE        0
-#define MIC_MODULE        1
-#define START_MODULE      2
-#define STOP_MODULE       3
+#define PWM_MODE           0
+#define MIC_MODE           1
+#define RETURN_MODE        2
+#define SONLENOID_MODE     3
+#define CALIBRATE_MODE     4
 
 
 #define DEBUG_MODULE      B00001110
@@ -52,7 +53,7 @@
 //we might want to constain the number of bits to 8
 //this way we can use byte
 
-const unsigned long  HIT_INTERVAL          = 30L;
+const unsigned long  HIT_INTERVAL          = 40L;
 // this interval is for the outputs, LED and solenoid
 
 //threshold peak for the signal processing
@@ -62,11 +63,11 @@ const int DEFAULT_PWM  = 255;
 
 //buffer size of signal processing window
 //BUFFER_SIZE = 25 -> 5ms 45 ->10ms
-const int BUFFER_SIZE = 20;//25
+const int BUFFER_SIZE = 25;//25
 
-const float f_s   = 0.02; //0.023
-const float bw_s  = 0.028; //0.25
-const float EMA_a_low_s   = 0.15;  //0.18    //initialization of EMA alpha (cutoff-frequency)
+const float f_s   = 0.023; //0.023
+const float bw_s  = 0.025; //0.25
+const float EMA_a_low_s   = 0.18;  //0.18    //initialization of EMA alpha (cutoff-frequency)
 const float EMA_a_high_s  = 0.87;  //0.87
 
 ///  modes

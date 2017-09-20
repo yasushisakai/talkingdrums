@@ -86,6 +86,9 @@ bool recording[SEQITER][SEQBITS];
 bool playSequence[SEQBITS];
 bool debugSequence[] = {0, 0, 0, 1, 0, 0, 1, 1};
 
+bool debugSequenceTap[] = {0, 0, 0, 1, 0, 0, 1, 1};
+
+
 bool firstCalibration = true;
 
 float buffSignal[30];
@@ -113,6 +116,7 @@ unsigned long nrfCallTime = 20L;
 //iterators
 uint8_t itri = 0;
 uint8_t itrj = 0;
+uint8_t itrCounter = 0;
 
 //tmp conter
 unsigned long tempConter = 0;
@@ -146,7 +150,7 @@ uint8_t clkValue = 0;
 
 uint8_t clkMode = 0;
 
-uint8_t activateNRFMode = 1;
+uint8_t activateNRFMode = 0;
 
 //Slave values
 //Serial Port
@@ -190,14 +194,15 @@ void setup() {
   Serial.println("start nrf");
   initNRF(nrf24, false);
 
+  setSequenceState(CALIBRATE_TIME);
+
   //set intervals
   timeKeeper.setInterval(HIT_INTERVAL);
   timeKeeperNRF.setInterval(nrfTime);
 
   setupInterrupt();
 
-  setSequenceState(CALIBRATE_TIME);
-  //
+
   Serial.print("MIC: ");
   Serial.print(THRESHOLD_PEAK);
   Serial.print("  Solenoid PWM: ");
@@ -248,7 +253,7 @@ void loop() {
   }
 
 
-  if (sequenceState == PULSE_PLAY || sequenceState == HEADER_PLAY) {
+  if (sequenceState == PULSE_PLAY || sequenceState == HEADER_PLAY || sequenceState == TEST_SOLENOID) {
     if (timeKeeper.getTimeHit() > 10L ) {
       if (timeKeeper.checkHit()) {
         analogWrite(SOL_PIN, solenoid_pwm);

@@ -13,15 +13,18 @@ void testMic()
 //Test solenoid
 void testSolenoid()
 {
-  micHit = debugSequence[itri];
+
+  micHit = debugSequenceTap[itri];
+
   if (micHit == true) {
     timeKeeper.hit();
   }
 
-  //reset counter
   itri++;
-  if (itri >= 8)
+  if (itri >= 11) {
     itri = 0;
+  }
+
 }
 
 //debug times for the timeKeeper
