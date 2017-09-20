@@ -41,7 +41,7 @@ void setupImage() {
 }
 
 void drawImage() {
-  image(inImage, 0, 0);
+  image(inImage, 0, 0, width/2.0, height/2.0);
 }
 
 PImage pixeleted(int stepX, int stepY) {

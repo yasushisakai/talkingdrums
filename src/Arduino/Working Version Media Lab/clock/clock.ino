@@ -30,7 +30,7 @@ bool LED_STATE;
 // incoming messeage from Serial
 String strBuf = "";
 
-// the dataOut is the data  broadcasted to the slave devices
+// the dataOut is the data broadcasted to the slave devices
 uint8_t dataOut [2];
 
 void setup() {
@@ -56,8 +56,6 @@ void setup() {
   isSend = LED_STATE = false;
 
 }
-
-
 
 void loop() {
   unsigned long currentTime = millis();
@@ -102,6 +100,12 @@ void loop() {
 
 }
 
+// an example of a string
+// 018P45
+// means
+// change no. 18's PWM to 25 out of 32
+// and the command will be
+// { B00100101, B11001001 }
 void  msgToByteCommand (String msg) {
   // Serial.print("no: ");
 
@@ -126,13 +130,7 @@ void  msgToByteCommand (String msg) {
     break;
   }
 
-  // an example of a string
-  // 018P45
-  // means
-  // change no. 18's PWM to 25 out of 32
-  // and the command will be
-  // { B00100101, B11001001 }
-
+  
   dataOut[0] = no;
   dataOut[1] = val;
 

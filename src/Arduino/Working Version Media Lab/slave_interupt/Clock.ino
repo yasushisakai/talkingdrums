@@ -1,6 +1,6 @@
-void clockMode(uint8_t inByte) {
+void clockMode(uint8_t & inCLK, uint8_t inMode) {
 
-  if (inClock == TICK) {
+  if (inCLK == TICK) {
     if (timeKeeper.getTimeTick() >= TIME_MIN_INTERVAL) {
       timeKeeper.tick();
       timeKeeperNRF.tick();
@@ -12,50 +12,34 @@ void clockMode(uint8_t inByte) {
 
       lock = false;
       clockCounter++;
-      inClock = TOCK;
+      inCLK = TOCK;
 
       //Serial.println(tempConter);
       //tempConter=0;
     }
   }
 
-  switch (inByte) {
+  switch (inMode) {
 
     //default sequence
-    case START:
+    case (CHANGE_MODULE ^ START_MODULE):
       sequenceState = WAIT_START;
       break;
-    case MIC:
-      sequenceState = TEST_MIC;
-      if (DEBUG)Serial.println("TEST_MIC");
-      break;
-    case STOP:
+    case (CHANGE_MODULE ^ STOP_MODULE):
       sequenceState = STOP;
       if (DEBUG)Serial.println("STOP");
       break;
-    case PWM255:
-      if (DEBUG)Serial.println("PWM 255");
+    case (CHANGE_MODULE ^ PWM_MODULE):
+      if (DEBUG)Serial.println("PWM");
       solenoid_pwm = 255;
       break;
-    case PWM200:
-      if (DEBUG)Serial.println("PWM 200");
+    case (CHANGE_MODULE ^ MIC_MODULE):
+      if (DEBUG)Serial.println("MIC");
       solenoid_pwm = 200;
       break;
-    case PWM150:
-      if (DEBUG)Serial.println("PWM 150");
+    case (CHANGE_MODULE ^ DEBUG_MODULE):
+      if (DEBUG)Serial.println("DEBUG");
       solenoid_pwm = 150;
-      break;
-    case PWM50:
-      if (DEBUG)Serial.println("PWM 50");
-      solenoid_pwm = 50;
-      break;
-    case PWM0:
-      if (DEBUG)Serial.println("PWM 0");
-      solenoid_pwm = 0;
-      break;
-    case DUBUG_C:
-      DEBUG = !DEBUG;
-      Serial.println("DEBUG");
       break;
   }
 

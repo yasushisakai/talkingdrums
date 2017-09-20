@@ -1,4 +1,5 @@
 #include <RH_NRF24.h>
+#include "define.h"
 
 /*
   Helper Functions
@@ -7,7 +8,7 @@
 */
 
 bool initNRF(RH_NRF24 &_nrf, bool printDebug);
-uint8_t checkServer(RH_NRF24 &_nrf, uint8_t & clockIn);
+uint8_t checkServer(RH_NRF24 &_nrf, uint8_t & clockIn, uint8_t & moduleId, int8_t & changeValues);
 bool timer(unsigned long const & currentTime, unsigned long const & previousTime, unsigned long const &interval);
 
 // memo:

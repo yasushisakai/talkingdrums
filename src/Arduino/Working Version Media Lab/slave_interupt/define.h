@@ -2,29 +2,39 @@
 #ifndef Define_h
 #define Define_h
 
-/// pins
+//ID
+//Talking Drum ID module
+#define TD_ID       10
+
+/// DONT Change this values
 #define LED_PIN 3
 #define SOL_PIN 5
 //changed for the use of PWM (Analog Write)
 #define MIC_PIN A0
 
+
+
+
 /// Clock values
+#define TICK    B00000001
 
-#define TICK    B00000010
-#define TOCK    B10000001
-
-#define START   B00000010
-#define MIC     B00000011
-#define STOP    B10000100
+//not Usen int NRF
+#define TOCK    B10000000
 
 
-#define PWM255  B00000101
-#define PWM200  B00000110
-#define PWM150  B00000111
-#define PWM100  B00001000
-#define PWM50   B00001001
-#define PWM0    B00001010
-#define DUBUG_C B00001011
+//different modes.
+#define CHANGE_MODULE     B00000001
+#define START_MODULE      B00000000
+#define STOP_MODULE       B00000010
+#define PWM_MODULE        B00000100
+#define MIC_MODULE        B00000110
+
+#define DEBUG_MODULE      B00001110
+
+
+//Helper 0
+#define ZERO_BYTE         B00000000
+
 
 // this is the time interval for each frame
 // this is one factor to determine the duration of
@@ -44,16 +54,18 @@ const unsigned long  HIT_INTERVAL          = 30L;
 // this interval is for the outputs, LED and solenoid
 
 //threshold peak for the signal processing
-const int THRESHOLD_PEAK = 68; //38
+const int THRESHOLD_PEAK = 90;//68; //38
+ 
+const int DEFAULT_PWM  = 255;
 
 //buffer size of signal processing window
 //BUFFER_SIZE = 25 -> 5ms 45 ->10ms
-const int BUFFER_SIZE = 25;
+const int BUFFER_SIZE = 20;//25
 
 const float f_s   = 0.02; //0.023
 const float bw_s  = 0.028; //0.25
 const float EMA_a_low_s   = 0.15;  //0.18    //initialization of EMA alpha (cutoff-frequency)
-const float EMA_a_high_s  = 0.9;  //0.87
+const float EMA_a_high_s  = 0.87;  //0.87
 
 ///  modes
 // we can do enum if we want
