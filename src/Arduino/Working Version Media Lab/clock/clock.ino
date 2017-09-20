@@ -25,50 +25,13 @@ unsigned long previousTime;
 int counter;
 bool sendActivation;
 
-bool LED_STATE; // is always same with isSend?
+bool LED_STATE; 
 
-// 1
-int currentMode = 1;
-byte buf [2];
-int intBuf = 0;
+// incoming messeage from Serial
 String strBuf = "";
 
-<<<<<<< HEAD
-// #1 byte MODE,
-// #2 byte Index
-uint8_t dataOut [] = {B00000001, B00000001};
-=======
-uint8_t dataOut [] = {B00000001,B00000101,B00000001};
->>>>>>> 72045db72153d3783838c03158867db9a0d4bd3c
-
-//MODES
-uint8_t dataMode [] = {B00000001, // 1  Default sequence
-
-                       B00000010, // 2  Default sequence
-                       B00000011, // 3  Test MIC
-                       B00000100, // 4  Stop
-                       B00000101, // 5  PWM Value  255
-                       B00000110, // 6  PWM Value  200
-                       B00000111, // 7  PWM Value  150
-                       B00001000, // 8  PWM Value  100
-                       B00001001, // 9  PWM Value  50
-                       B00001010,  // 10  PWM Value  0
-                       B00001011   //11 individual threshold modifier
-                      };
-
-String dataModeString [] = {
-  "Default seq",
-  "Default seq",
-  "Test MIC",
-  "Stop",
-  "PWM Value 255",
-  "PWM Value 200",
-  "PWM Value 150",
-  "PWM Value 100",
-  "PWM Value 50",
-  "PWM Value 0",
-  "individual threshold modifier",
-};
+// the dataOut is the data broadcasted to the slave devices
+uint8_t dataOut [2];
 
 void setup() {
 
@@ -85,6 +48,8 @@ void setup() {
   delay(1000);
 
   initNRF(nrf24, DEBUG);
+
+  initByteCommand();
 
   previousTime = millis();
   counter = 0;
@@ -104,22 +69,9 @@ void loop() {
 // this part changes the MODE
   if (Serial.available() > 0) {
     strBuf = Serial.readString();
-    Serial.print("string: ");
-    Serial.println(strBuf);
-    intBuf = strBuf.toInt();
-    Serial.print("recieved: ");
-    Serial.println(intBuf);
-    if (intBuf < sizeof(dataMode)/sizeof(dataMode[0]) ){
-      dataOut[0] = dataMode[intBuf];
-      Serial.print("changed MODE to: ");
-      Serial.print(dataModeString[intBuf]);
-      Serial.print(" byte:(");
-      Serial.print(dataOut[0],BIN);
-      Serial.println(")");
-    } else {
-      Serial.println("index out of MODE configs, ignoring");
-      Serial.println();
-    }
+    msgToByteCommand(strBuf);
+    Serial.println(dataOut[0], BIN);
+    Serial.println(dataOut[1], BIN);
   }
 
 
@@ -139,11 +91,53 @@ void loop() {
     if(dataOut[0] != B00000001){
       Serial.println("back to default seq.");
       Serial.println("");
-      dataOut[0] = B00000001;
+      initByteCommand();
     }
   }
 
 
   digitalWrite(LED_PIN, LED_STATE);
 
+}
+
+// an example of a string
+// 018P45
+// means
+// change no. 18's PWM to 25 out of 32
+// and the command will be
+// { B00100101, B11001001 }
+void  msgToByteCommand (String msg) {
+  // Serial.print("no: ");
+
+  uint8_t  no = msg.substring(0,3).toInt() << 1 ^ 0x1;
+	
+  // Serial.println(no,BIN); 
+
+  uint8_t  val = msg.substring(4,6).toInt() << 3 ^ 0x1; 
+  // last digit should be always 1
+
+  char mode = msg[3];
+  
+  switch (mode) {
+    case 'P': // PWM
+    // do nothing
+    break;
+    case 'M': // MICTHRESHOLD
+    // add 2
+    val ^= 0x2;
+    break;
+    default:
+    break;
+  }
+
+  
+  dataOut[0] = no;
+  dataOut[1] = val;
+
+  return;
+}
+
+void initByteCommand () {
+  dataOut[0] = B00000001;
+  dataOut[1] = B00000000;
 }
