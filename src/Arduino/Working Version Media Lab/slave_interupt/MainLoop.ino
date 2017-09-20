@@ -40,7 +40,7 @@ void listenSequence() {
   if (DEBUG) Serial.print("LISTEN SEQUENCE");
 
   //get if from the bandpass filter
-  micHit = bandPassFilter.isHit();
+  micHit = bandPassFilter.isHit(micThreshold);
 
   if (DEBUG) printSequenceIndex();
 
@@ -300,6 +300,7 @@ void acticateSequenceLoop() {
         calibrateMic();
         break;
 
+      //hear the NRF
       case CALIBRATE_TIME:
         /*
           obtain the max  time tick from the RF. then only call RF methods only at the las 10ms,

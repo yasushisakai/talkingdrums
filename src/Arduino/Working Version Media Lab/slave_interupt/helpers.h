@@ -8,7 +8,7 @@
 */
 
 bool initNRF(RH_NRF24 &_nrf, bool printDebug);
-uint8_t checkServer(RH_NRF24 &_nrf, uint8_t & clockIn, uint8_t & moduleId, int8_t & changeValues);
+uint8_t checkServer(RH_NRF24 &_nrf, uint8_t & clockIn, uint8_t & moduleId, uint8_t & modeId, uint8_t & changeValue, uint8_t & activateNRFChange);
 bool timer(unsigned long const & currentTime, unsigned long const & previousTime, unsigned long const &interval);
 
 // memo:
