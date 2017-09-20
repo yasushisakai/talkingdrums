@@ -4,6 +4,8 @@ Serial myPort;  // The serial port
 String myString = "";
 int lf = 10;
 
+Device device;
+
 void setup() {
   size(500, 500);
   background(0);
@@ -20,6 +22,8 @@ void setup() {
   myPort.clear();
   myString = myPort.readStringUntil(lf);
   myString = null;
+  
+  device = new Device(12, 10, 10);
 }
 
 void draw() {
@@ -32,10 +36,13 @@ void draw() {
       println(myString);
     }
   }
+  device.draw();
 }
 
 void mousePressed() {
-  myPort.write();
+  // myPort.write("012P25");
+  // println("changed no.12 PWM value of 25");
+  device.check(mouseX, mouseY);
 }
 
 void keyPressed() {
