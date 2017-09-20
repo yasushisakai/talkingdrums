@@ -4,28 +4,27 @@ Serial myPort;  // The serial port
 String myString = "";
 int lf = 10;
 
+Device device;
+
 void setup() {
   size(500, 500);
   background(0);
   // List all the available serial ports
-  println(Serial.list());
+  for(int i = 0;i < Serial.list().length; i++){
+   println(Serial.list()[i]); 
+  }
   // I know that the first port in the serial list on my mac
   // is always my  Keyspan adaptor, so I open Serial.list()[0].
   // Open whatever port is the one you're using.
+  
+  // As of this RaspberryPi3, the index is 1
   myPort = new Serial(this, Serial.list()[1], 9600);
   myPort.clear();
   myString = myPort.readStringUntil(lf);
   myString = null;
+  
+  device = new Device(12, 10, 10);
 }
-
-// 1  Default tick
-// 2  Test MIC
-// 3  Stop
-// 4  PWM Value  255
-// 5  PWM Value  200
-// 6  PWM Value  150
-// 7  PWM Value  100
-// 8  PWM Value  50
 
 void draw() {
   background(0);
@@ -37,12 +36,16 @@ void draw() {
       println(myString);
     }
   }
+  device.draw();
+}
+
+void mousePressed() {
+  // myPort.write("012P25");
+  // println("changed no.12 PWM value of 25");
+  device.check(mouseX, mouseY);
 }
 
 void keyPressed() {
-  if (key == 'a') {
-    save(frameCount+".png");
-  }
 
   if (key == '1') {
     myPort.write(0);
