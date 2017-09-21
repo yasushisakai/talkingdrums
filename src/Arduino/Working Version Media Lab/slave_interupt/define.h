@@ -4,7 +4,7 @@
 
 //ID
 //Talking Drum ID module
-#define TD_ID       12
+#define TD_ID       1
 
 /// DONT Change this values
 #define LED_PIN 3

@@ -1,8 +1,6 @@
 PImage inImage;
 PImage pixImage;
 
-String imageName = "music.png"; 
-
 int    currentColor;
 
 //iteration for pixels
@@ -26,15 +24,18 @@ void setupGraphics() {
 }
 
 void setupImage() {
-  inImage = loadImage(imageName);
+  inImage = loadImage(IMAGE_NAME);
+  //inImage.filter(GRAY);
+  
+  
   inImage.updatePixels();
 
   iterPixelX = 0;
   iterPixelY = 0;
 
   //number of pixels depending on the width and the height
-  numberStepsX = 20;
-  numberStepsY = 20;
+  numberStepsX = 50;
+  numberStepsY = 50;
 
   numPixelsX = ceil((float)inImage.width / (float)numberStepsX);
   numPixelsY = ceil((float)inImage.height / (float)numberStepsY);

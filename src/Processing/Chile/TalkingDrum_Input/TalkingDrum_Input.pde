@@ -12,7 +12,7 @@ boolean debug = false;
 
 
 //reading image information.
-String IMAGE_NAME = "music.png"; 
+String IMAGE_NAME = "bb.png";//"music.png"; 
 int BAUD_RATE = 115200;
 
 int scalefraction = 0;
@@ -31,14 +31,19 @@ void setup() {
 
 
 void draw() {
-  background(0);
+  background(50);
 
 
   if (debug) {
     drawImage();  
-    image(pixImage, width/2.0, 0,  width/2.0, height/2.0);
-  }else{
-     image(pixImage, 0, 0);
+    image(pixImage, width/2.0, 0, width/2.0, height/2.0);
+  } else {
+
+
+    image(pixImage, 0, 0);
+
+    noFill();
+    stroke(0, 0, 255);
+    rect(iterPixelX * numberStepsX, iterPixelY * numberStepsY, numberStepsX, numberStepsY);
   }
-  
 }
