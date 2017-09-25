@@ -24,10 +24,23 @@ void setupGraphics() {
 }
 
 void setupImage() {
-  inImage = loadImage(IMAGE_NAME);
+
+  //load the newest image in the directory output images
+  String output_image_dir = sketchPath("")+"../output_images/";
+  File fp= getLatestFilefromDir(output_image_dir);
+  
+  String newestImage = fp.getName();
+  
+  if(newImage){
+    inImage = loadImage(output_image_dir + newestImage);
+    println("Image loaded "+newestImage);
+  }else{
+    inImage = loadImage(IMAGE_NAME);
+    println("Image loaded "+IMAGE_NAME);
+  }
   //inImage.filter(GRAY);
-  
-  
+
+
   inImage.updatePixels();
 
   iterPixelX = 0;
@@ -58,8 +71,8 @@ PImage pixeleted(int stepX, int stepY) {
 
   int numPixImageX = ceil( pixImage.width / (float) stepX );
   int numPixImageY = ceil( pixImage.height / (float) stepY );
-  
-  
+
+
   color col = color(0);
 
   //process the Image
@@ -73,7 +86,7 @@ PImage pixeleted(int stepX, int stepY) {
         interY += stepY;
         col = inImage.get(interX, interY);
       }
-      
+
       pixImage.set(i, j, col);
     }
 

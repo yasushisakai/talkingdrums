@@ -6,8 +6,8 @@ void setupPort() {
   print("setting up Port");
 
   printArray(Serial.list());
-  
-  if(serialId == -1){
+
+  if (serialId == -1) {
     serialId = Serial.list().length -1;
   }
 
@@ -18,6 +18,9 @@ void setupPort() {
     readPort = "";
     initSerialPort = true;
     println("connected to: "+portName);
+
+    int lf = 10;
+    myPort.bufferUntil(lf);
   }
   catch(Exception e) {
     initSerialPort = false;
@@ -26,8 +29,6 @@ void setupPort() {
 
 
 
-  int lf = 10;
-  myPort.bufferUntil(lf);
 
   mSendData = new byte[numBytes];
 }

@@ -6,8 +6,8 @@ void setupPort() {
   print("setting up Port");
 
   printArray(Serial.list());
-  
-  if(serialId == -1){
+
+  if (serialId == -1) {
     serialId = Serial.list().length -1;
   }
 
@@ -18,15 +18,16 @@ void setupPort() {
     readPort = "";
     initSerialPort = true;
     println("connected to: "+portName);
+
+    int lf = 10;
+    myPort.bufferUntil(lf);
   }
   catch(Exception e) {
     initSerialPort = false;
     println("cannot connect to: "+portName);
   }
-  
 
-  int lf = 10;
-  myPort.bufferUntil(lf);
+
 
   mSendData = new byte[numBytes];
 }
@@ -54,20 +55,20 @@ void serialEvent(Serial p) {
   }
 }
 
- int binaryToInteger(String binary) {
-    char[] numbers = binary.toCharArray();
-    int result = 0;
-    
-    //orubt
-    for(int i = 0; i < numbers.length; i++){
-      print(numbers[i]);
+int binaryToInteger(String binary) {
+  char[] numbers = binary.toCharArray();
+  int result = 0;
+
+  //orubt
+  for (int i = 0; i < numbers.length; i++) {
+    print(numbers[i]);
+  }
+  int numBit = 8;
+  for (int i = numBit - 1; i>=0; i--)
+    if (numbers[i]=='1') {
+      result += Math.pow(2, (numBit - i - 1));
     }
-    int numBit = 8;
-    for(int i = numBit - 1; i>=0; i--)
-        if(numbers[i]=='1'){
-            result += Math.pow(2, (numBit - i - 1));
-        }
-    return result;
+  return result;
 }
 
 String toBitString( int x, int bits ) {

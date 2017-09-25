@@ -1,15 +1,19 @@
 import processing.serial.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 Serial myPort;  // Create object from Serial class
 
 boolean initSerialPort = false;
 
 //change this value to initialize the serial Id.
 //default -1 which is Serial.list().length - 1
-int serialId = -1;
-
+int serialId = 0;
 
 boolean debug = false;
 
+//get newest image from the file directory
+boolean newImage = false;
 
 //reading image information.
 String IMAGE_NAME = "bb.png";//"music.png"; 

@@ -30,3 +30,15 @@ void draw() {
   background(0);
   image(pg, 0, 0);
 }
+
+void keyPressed() {
+  if (key == 'a') {
+    saveImage();
+  }
+}
+
+
+void exit() {
+  println("exiting");
+  saveImage();
+}
