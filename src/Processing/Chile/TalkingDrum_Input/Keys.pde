@@ -16,9 +16,15 @@ void keyPressed(){
   }
   
   if(key == '1'){
-   String output_image_dir = sketchPath("")+"../output_images/";
-   File fp= getLatestFilefromDir(output_image_dir);
+   //String output_image_dir = sketchPath("")+"../output_images/";
+   File fp= getLatestFilefromDir(outputImageDir);
    println(fp.getName());
   }
+  
+  if(key == 'z'){
+   requestImage(); 
+  }
+  
+ 
   
 }

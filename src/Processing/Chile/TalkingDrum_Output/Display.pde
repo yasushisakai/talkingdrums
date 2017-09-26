@@ -42,6 +42,8 @@ void setupImage() {
 
   numPixelsX = ceil((float)inImage.width / (float)numberStepsX);
   numPixelsY = ceil((float)inImage.height / (float)numberStepsY);
+  
+  println(numPixelsX+", "+numPixelsY);
 }
 
 void drawImage() {
