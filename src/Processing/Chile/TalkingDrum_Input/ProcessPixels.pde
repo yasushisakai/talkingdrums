@@ -26,14 +26,14 @@ void setupGraphics() {
 void setupImage() {
 
   //load the newest image in the directory output images
-  String output_image_dir = sketchPath("")+"../output_images/";
-  File fp= getLatestFilefromDir(output_image_dir);
+  File fp= getLatestFilefromDir(outputImageDir);
   
   String newestImage = fp.getName();
   
   if(newImage){
-    inImage = loadImage(output_image_dir + newestImage);
-    println("Image loaded "+newestImage);
+    String dir = outputImageDir +"/"+ newestImage;
+    inImage = loadImage(dir);
+    println("Image loaded "+dir);
   }else{
     inImage = loadImage(imageName);
     println("Image loaded "+imageName);

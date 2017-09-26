@@ -1,11 +1,11 @@
 /*
 Talking Drums code for processing the output image an transfering back to the input program
-
-Thomas Sanchez Lengeling
-
-Yasushi Sekai
-Nicole L'Huillier
-*/
+ 
+ Thomas Sanchez Lengeling
+ 
+ Yasushi Sekai
+ Nicole L'Huillier
+ */
 import processing.serial.*;
 import oscP5.*;
 import netP5.*;
@@ -37,11 +37,11 @@ void setup() {
   setupImage();
 
   pixImage = pixeleted(numberStepsX, numberStepsY);
-  
+
   setupPort();
-  
+
   setupOSC();
-  
+
   imageSender = new ImageSender();
 }
 
@@ -51,24 +51,21 @@ void draw() {
   image(pixImage, 0, 0);//inImage.width, 0);
   //background(0);
   //image(pg, 0, 0);
-  
 }
 
 void keyPressed() {
   if (key == 'a') {
     saveImage();
   }
-  
-  if(key == '1'){
-   transferImage(); 
-  }
-  
 
+  if (key == '1') {
+    transferImage();
+  }
 }
 
 
 void exit() {
   println("exiting");
- 
-  saveImage();
+  sendImage = true;
+  transferImage();
 }

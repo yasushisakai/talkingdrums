@@ -24,12 +24,13 @@ void transferImage() {
   if (sendImage) {
 
     int s = second();  // Values from 0 - 59
-    int mi = minute(); 
+    int mi = minute();
+    int h = hour(); 
     int d = day();    // Values from 1 - 31
     int m = month();  // Values from 1 - 12
     int y = year();
 
-    String timeString = "td_"+y+"_"+m+"_"+d+"_"+mi+"_"+s;
+    String timeString = "td_"+y+"_"+m+"_"+d+"_"+h+"_"+mi+"_"+s;
 
     OscMessage myMessage = new OscMessage("/name");
     myMessage.add(timeString);

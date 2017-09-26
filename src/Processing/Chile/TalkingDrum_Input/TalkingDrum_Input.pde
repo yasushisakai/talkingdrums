@@ -19,8 +19,8 @@ NetAddress myRemoteLocation;
 
 // Create object from Serial class
 Serial myPort; 
-
 boolean initSerialPort = false;
+int BAUD_RATE = 115200;
 
 //change this value to initialize the serial Id.
 //default -1 which is Serial.list().length - 1
@@ -34,10 +34,11 @@ boolean newImage = false;
 //reading image information.
 String imageName = "music.png";//"music.png"; 
 
-int BAUD_RATE = 115200;
 
 int scalefraction = 0;
 
+
+//received images sequeces
 ImageReceiver  imageReceiver;
 PImage newReceivedImage;
 String receivedImageName = "";
@@ -46,6 +47,8 @@ String outputImageDir = "";
 
 void setup() {
   size(1270, 800);
+  
+  outputImageDir = sketchPath("")+"../output_images";
 
   setupGraphics();
 
@@ -58,8 +61,8 @@ void setup() {
   setupOSC();
 
   imageReceiver = new ImageReceiver(inImage.width, inImage.height);
-  
-  outputImageDir = sketchPath("")+"../output_images";
+
+
 }
 
 
