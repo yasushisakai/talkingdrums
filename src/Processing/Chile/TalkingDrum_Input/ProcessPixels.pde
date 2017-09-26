@@ -35,8 +35,8 @@ void setupImage() {
     inImage = loadImage(output_image_dir + newestImage);
     println("Image loaded "+newestImage);
   }else{
-    inImage = loadImage(IMAGE_NAME);
-    println("Image loaded "+IMAGE_NAME);
+    inImage = loadImage(imageName);
+    println("Image loaded "+imageName);
   }
   //inImage.filter(GRAY);
 

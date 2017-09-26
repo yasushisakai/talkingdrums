@@ -32,7 +32,8 @@ boolean debug = false;
 boolean newImage = false;
 
 //reading image information.
-String IMAGE_NAME = "bb.png";//"music.png"; 
+String imageName = "music.png";//"music.png"; 
+
 int BAUD_RATE = 115200;
 
 int scalefraction = 0;
@@ -56,7 +57,7 @@ void setup() {
 
   setupOSC();
 
-  imageReceiver = new ImageReceiver(numPixelsX, numPixelsY);
+  imageReceiver = new ImageReceiver(inImage.width, inImage.height);
   
   outputImageDir = sketchPath("")+"../output_images";
 }
