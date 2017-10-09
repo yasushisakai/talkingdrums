@@ -49,6 +49,8 @@ void serialEvent(Serial p) {
       println(intSerial);
 
       offSreenRender(color(intSerial));
+      
+      activateFlash = true;
 
       updateIteration();
     }

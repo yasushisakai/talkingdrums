@@ -30,27 +30,45 @@ int BAUD_RATE = 115200;
 ImageSender imageSender;
 
 void setup() {
-  size(600, 600);
+  //fullScreen();
+
+  size(700, 700);
+
 
   setupGraphics();
 
   setupImage();
 
   pixImage = pixeleted(numberStepsX, numberStepsY);
+  pixImage = inImage;
 
   setupPort();
 
   setupOSC();
 
   imageSender = new ImageSender();
+  
+  flash();
 }
 
 
 void draw() {
-
-  image(pixImage, 0, 0);//inImage.width, 0);
   //background(0);
-  //image(pg, 0, 0);
+
+  //image(pixImage, 0, 0);//inImage.width, 0);
+  //background(0);
+  image(pg, 0, 0, width, height);
+
+  if (activateFlash) {
+    image(flash, 0, 0, width, height);
+
+    if (timeCounter > maxCounter) {
+      activateFlash = false;
+      timeCounter = 0;
+    }
+    timeCounter++;
+  }
+  
 }
 
 void keyPressed() {
@@ -60,6 +78,18 @@ void keyPressed() {
 
   if (key == '1') {
     transferImage();
+  }
+  
+  if(key == '2'){
+   activateFlash = true; 
+  }
+
+  if (key == '3') {
+
+    for (int i  =0; i < 1000; i++) {
+      offSreenRender(color(0, random(100), 0));
+      updateIteration();
+    }
   }
 }
 

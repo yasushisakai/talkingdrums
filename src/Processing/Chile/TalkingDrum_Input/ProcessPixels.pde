@@ -47,8 +47,8 @@ void setupImage() {
   iterPixelY = 0;
 
   //number of pixels depending on the width and the height
-  numberStepsX = 50;
-  numberStepsY = 50;
+  numberStepsX = 1;
+  numberStepsY = 1;
 
   numPixelsX = ceil((float)inImage.width / (float)numberStepsX);
   numPixelsY = ceil((float)inImage.height / (float)numberStepsY);
@@ -62,6 +62,7 @@ PImage pixeleted(int stepX, int stepY) {
   PImage pixImage = createImage(inImage.width, inImage.height, RGB);
   pixImage.updatePixels();
 
+/*
   int counterPix = 0;
   int centerX = int(stepX / 2.0);
   int centerY  = int(stepY / 2.0);
@@ -96,7 +97,7 @@ PImage pixeleted(int stepX, int stepY) {
       interX += stepX;
     }
   }
-
+  */
   return pixImage;
 }
 

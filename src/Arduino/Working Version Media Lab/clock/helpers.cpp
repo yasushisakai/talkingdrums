@@ -4,19 +4,19 @@
 
 boolean initNRF(RH_NRF24 &_nrf, bool DEBUG) {
   if (!_nrf.init()) {
-    //if (DEBUG) Serial.println("E:(RF)failed to init");
+    if (DEBUG) Serial.println("E:(RF)failed to init");
     return false;
   }
 
   if (!_nrf.setChannel(1)) {
-   // if (DEBUG) Serial.println("E:(RF)failed to set CHNL");
+    if (DEBUG) Serial.println("E:(RF)failed to set CHNL");
     return false;
   }
 
   if (!_nrf.setRF(RH_NRF24::DataRate2Mbps, RH_NRF24::TransmitPower0dBm)) {
-    //if (DEBUG)Serial.println("E:(RF)failed to set RF");
+    if (DEBUG)Serial.println("E:(RF)failed to set RF");
   }
- // if (DEBUG) Serial.println("L: nrf connected");
+  if (DEBUG) Serial.println("L: nrf connected");
   delay(10);
   return true;
 }

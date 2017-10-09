@@ -13,6 +13,7 @@ void keyPressed(){
   
   if(key == '3'){
     //print(sketchPath("")+"../output_images/");
+    activateFlash = true;
   }
   
   if(key == '1'){
@@ -23,6 +24,10 @@ void keyPressed(){
   
   if(key == 'z'){
    requestImage(); 
+  }
+  
+  if(key == '4'){
+    updateIteration(); 
   }
   
  

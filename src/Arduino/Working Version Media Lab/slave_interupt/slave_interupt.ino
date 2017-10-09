@@ -29,7 +29,7 @@
 */
 
 //define SERVER SLAVE
-#define SERVER_SLAVE 1
+#define SERVER_SLAVE 0
 
 //1 -> server
 //0 all the little ones.
@@ -44,7 +44,8 @@ TimeKeeper timeKeeperNRF;
 bool isTestMic = true;
 
 //print debug information
-bool  DEBUG      = false;
+bool  DEBUG      = true
+;
 bool const DEBUG_TIME = false;
 
 

@@ -8,7 +8,7 @@ void setupPort() {
   printArray(Serial.list());
 
   if (serialId == -1) {
-    serialId = Serial.list().length -1;
+    serialId = 1;//Serial.list().length -1;
   }
 
   String portName  = "";
@@ -17,16 +17,19 @@ void setupPort() {
     myPort = new Serial(this, portName, BAUD_RATE);
     readPort = "";
     initSerialPort = true;
-    println("connected to: "+portName);
+    println("connected to: "+portName+" "+initSerialPort);
 
-    int lf = 10;
-    myPort.bufferUntil(lf);
   }
   catch(Exception e) {
     initSerialPort = false;
     println("cannot connect to: "+portName);
   }
 
+  if (initSerialPort) {
+
+    int lf = 10;
+    myPort.bufferUntil(lf);
+  }
 
 
 
@@ -47,6 +50,7 @@ void serialEvent(Serial p) {
       int centralPixY = iterPixelY * numberStepsY + int(numberStepsY/2.0);
 
       color gray = pixImage.get(centralPixX, centralPixY);
+      
       sendGrayColor(gray);
       updateIteration();
     }

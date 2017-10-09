@@ -1,7 +1,7 @@
 PImage inImage;
 PImage pixImage;
 
-String imageName = "music.png"; 
+String imageName = "unnamed.jpg"; 
 
 int    currentColor;
 
@@ -23,7 +23,7 @@ PGraphics pg;
 
 void setupGraphics() {
   pg = createGraphics(width, height);
-  
+
   pg.beginDraw();
   pg.background(0);
   pg.endDraw();
@@ -37,12 +37,12 @@ void setupImage() {
   iterPixelY = 0;
 
   //number of pixels depending on the width and the height
-  numberStepsX = 20;
-  numberStepsY = 20;
+  numberStepsX = 1;
+  numberStepsY = 1;
 
   numPixelsX = ceil((float)inImage.width / (float)numberStepsX);
   numPixelsY = ceil((float)inImage.height / (float)numberStepsY);
-  
+
   println(numPixelsX+", "+numPixelsY);
 }
 
@@ -54,40 +54,44 @@ PImage pixeleted(int stepX, int stepY) {
   PImage pixImage = createImage(inImage.width, inImage.height, RGB);
   pixImage.updatePixels();
 
-  int counterPix = 0;
-  int centerX = int(stepX / 2.0);
-  int centerY  = int(stepY / 2.0);
+  /*
 
-  int interX = centerX;
-  int interY = centerY;
-
-  int numPixImageX = ceil( pixImage.width / (float) stepX );
-  int numPixImageY = ceil( pixImage.height / (float) stepY );
-
-
-  color col = color(0);
-
-  //process the Image
-  for (int i = 0; i < pixImage.width; i++) {
-    for (int j = 0; j < pixImage.height; j++) {
-
-      //change color depending ifon the center pixel
-      if (j % interY == 0) {
-        counterPix++;
-
-        interY += stepY;
-        col = inImage.get(interX, interY);
-      }
-
-      pixImage.set(i, j, col);
-    }
-
-    interY = (int)centerY;
-
-    if (i %  stepX == 0) {
-      interX += stepX;
-    }
-  }
+   int counterPix = 0;
+   int centerX = int(stepX / 2.0);
+   int centerY  = int(stepY / 2.0);
+   
+   int interX = centerX;
+   int interY = centerY;
+   
+   int numPixImageX = ceil( pixImage.width / (float) stepX );
+   int numPixImageY = ceil( pixImage.height / (float) stepY );
+   
+   
+   color col = color(0);
+   
+   //process the Image
+   for (int i = 0; i < pixImage.width; i++) {
+   for (int j = 0; j < pixImage.height; j++) {
+   
+   //change color depending ifon the center pixel
+   if (j % interY == 0) {
+   counterPix++;
+   
+   interY += stepY;
+   col = inImage.get(interX, interY);
+   }
+   
+   pixImage.set(i, j, col);
+   }
+   
+   interY = (int)centerY;
+   
+   if (i %  stepX == 0) {
+   interX += stepX;
+   }
+   }
+   
+   */
 
   return pixImage;
 }
@@ -95,7 +99,7 @@ PImage pixeleted(int stepX, int stepY) {
 void updateIteration() {
   iterPixelX++;
 
-  if (iterPixelX >= numPixelsX) {
+  if (iterPixelX > numPixelsX) {
     iterPixelY++;
     iterPixelX = 0;
   }
@@ -111,9 +115,20 @@ void updateIteration() {
 }
 
 void offSreenRender(color col) {
+
+  int locationX =  iterPixelX * numberStepsX;
+  int locationY = iterPixelY * numberStepsY;
+
   pg.beginDraw();
-  pg.noStroke();
-  pg.fill(col);
-  pg.rect( iterPixelX * numberStepsX, iterPixelY * numberStepsY, numberStepsX, numberStepsY);
+  //pg.noFill();
+  //pg.stroke(col);
+  //pg.fill(col);
+  //pg.stroke(20, random(100), 10);
+  //pg.fill(col);
+
+  pg.stroke(col);
+  pg.point(locationX, locationY);// numberStepsX, numberStepsY);
   pg.endDraw();
+
+  println(locationX+ " "+locationY );
 }

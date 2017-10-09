@@ -24,7 +24,7 @@ int BAUD_RATE = 115200;
 
 //change this value to initialize the serial Id.
 //default -1 which is Serial.list().length - 1
-int serialId = 0;
+int serialId = -1;
 
 boolean debug = false;
 
@@ -32,7 +32,7 @@ boolean debug = false;
 boolean newImage = false;
 
 //reading image information.
-String imageName = "music.png";//"music.png"; 
+String imageName = "unnamed.jpg";//"music.png"; 
 
 
 int scalefraction = 0;
@@ -46,8 +46,8 @@ String receivedImageName = "";
 String outputImageDir = "";
 
 void setup() {
-  size(1270, 800);
-  
+  fullScreen();
+
   outputImageDir = sketchPath("")+"../output_images";
 
   setupGraphics();
@@ -55,6 +55,7 @@ void setup() {
   setupImage();
 
   pixImage = pixeleted(numberStepsX, numberStepsY);
+  pixImage = inImage;
 
   setupPort();
 
@@ -62,12 +63,12 @@ void setup() {
 
   imageReceiver = new ImageReceiver(inImage.width, inImage.height);
 
-
+  flash();
 }
 
 
 void draw() {
-  background(50);
+  background(0);
 
 
   if (debug) {
@@ -77,8 +78,19 @@ void draw() {
     image(pixImage, 0, 0);
 
     noFill();
-    stroke(0, 0, 255);
+    strokeWeight(5);
+    stroke(255);
     rect(iterPixelX * numberStepsX, iterPixelY * numberStepsY, numberStepsX, numberStepsY);
+
+    if (activateFlash) {
+      image(flash, 0, 0, width, height);
+
+      if (timeCounter > maxCounter) {
+        activateFlash = false;
+        timeCounter = 0;
+      }
+      timeCounter++;
+    }
   }
 
   //saving process, the recevied images from the output is locally saved.
