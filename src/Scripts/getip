@@ -1,0 +1,46 @@
+#!/usr/bin/python
+
+import socket
+from urllib2 import urlopen, URLError, Request
+import json
+from time import sleep
+
+
+def internet_on(test_ip='http://216.58.192.142'):
+    try:
+        urlopen(test_ip, timeout=1)
+        return True
+    except URLError as err:
+        print(err)
+        return False
+
+
+# check for internet connection
+while internet_on() is False:
+    sleep(30)
+    print 'no internet'
+
+local_hostname = socket.gethostname()
+
+info = {}
+info["ip"] = urlopen('http://ip.42.pl/raw').read()
+
+data = json.dumps(info)
+
+
+print(data)
+
+url = "https://cityio.media.mit.edu/api/table/update/{}_table".format(local_hostname)
+
+req = Request(
+        url, 
+        data, 
+        {'Content-Type': 'application/json'}
+        )
+
+f = urlopen(req)
+
+response = f.read()
+
+f.close()
+
