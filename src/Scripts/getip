@@ -26,11 +26,9 @@ info = {}
 info["ip"] = urlopen('http://ip.42.pl/raw').read()
 
 data = json.dumps(info)
+# print(data)
 
-
-print(data)
-
-url = "https://cityio.media.mit.edu/api/table/update/{}_table".format(local_hostname)
+url = "https://cityio.media.mit.edu/api/table/update/{}".format(local_hostname)
 
 req = Request(
         url, 
