@@ -10,6 +10,7 @@ double percent = 0.0;
 int cursor = 0;
 uint8_t value = 0;
 bool isIncr = false;
+bool isReady = false;
 
 auto lastIncr = std::chrono::system_clock::now();
 
@@ -17,7 +18,11 @@ auto lastIncr = std::chrono::system_clock::now();
 void ofApp::setup(){
 
   // serial.listDevices();
-  serial.setup(0, 115200);
+  bool isReady = serial.setup(0, 115200);
+
+  if(isReady) {
+    ofLog(OF_LOG_NOTICE) << "ready" ;
+  }
 
   // ofSetMinMagFilters(GL_NEAREST, GL_NEAREST);
 
@@ -27,6 +32,8 @@ void ofApp::setup(){
   //center the big image
   start.x = (ofGetWindowWidth() - (image.getWidth() * multi)) * 0.5;
   start.y = (ofGetWindowHeight() - (image.getHeight() * multi)) * 0.5;
+
+  incrementCursor(cursor, value);
 
 }
 
@@ -42,27 +49,8 @@ void ofApp::incrementCursor(int &c, uint8_t &v){
 
   if(!serial.writeByte(v)){
     ofLog(OF_LOG_NOTICE) << "could not send byte";
-  }
-
-
- //  while(true){
- //    if(serial.available() > 1) {
- //      ofLog(OF_LOG_NOTICE) << "break";
- //      break;
- //    }
- //  }
-
-  int result = serial.readByte();
-
-  switch (result) {
-    case OF_SERIAL_NO_DATA:
-      ofLog(OF_LOG_NOTICE) << "no data";
-      break;
-    case OF_SERIAL_ERROR:
-      ofLog(OF_LOG_ERROR) << "error reading";
-      break;
-    default:
-      ofLog(OF_LOG_NOTICE) << "result: " << result;
+  } else {
+    ofLog(OF_LOG_NOTICE) << "wrote on serial";
   }
 
   c++;
@@ -70,14 +58,24 @@ void ofApp::incrementCursor(int &c, uint8_t &v){
 
 //--------------------------------------------------------------
 void ofApp::update(){
+
+  // check for the 's'
+  if(serial.available() > 1) {
+    int result = serial.readByte();
+
+    ofLog(OF_LOG_NOTICE) << "result " << result;
+
+    if (result == 115) isReady = true; 
+  }
+
   auto now = std::chrono::system_clock::now();
   std::chrono::duration<double> elapsed = now - lastIncr;
   
   if(elapsed.count() > interval) {
     lastIncr = now;
     isIncr = true;
-
-    incrementCursor(cursor, value); 
+    
+    if (isReady) incrementCursor(cursor, value); 
   }else {
     percent = elapsed.count() / (double)interval;
   }
@@ -110,8 +108,9 @@ void ofApp::draw(){
   y = start.y + image.getHeight() * multi + 10;
   ofDrawRectangle(x, y, 100, 100);
 
-  if(isIncr) {
+  if(isIncr && isReady) {
     ofClear(ofColor::white);
+    isReady = false;
     isIncr = false;
   }
 }
