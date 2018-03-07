@@ -6,7 +6,6 @@
 class ofApp : public ofBaseApp{
 
 	public:
-                void incrementCursor(int &c, uint8_t &v);
 		void setup();
 		void update();
 		void draw();
@@ -23,9 +22,19 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 
-                
-                int bytesRequired = 12;
-                unsigned char bytes[12];
-                int bytesRemaining = bytesRequired;
-		
+                unsigned char bytes[16];
+
+                // this is hardcoded!
+                const int imageWidth{150};
+                const int imageHeight{100};
+                ofImage image;
+                ofPoint start;
+                ofSerial serial;
+                int multi{7};
+                int cursor{0};
+                uint8_t value{0};
+                bool hasReceived{false};
+
+                const string checkHead{"L: r="};
+                const string base_url{"http://biteater.media.mit.edu/image/send/"};
 };
