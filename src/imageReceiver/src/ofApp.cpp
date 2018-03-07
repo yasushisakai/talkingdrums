@@ -40,26 +40,29 @@ void ofApp::update(){
 
       default:
         string message(reinterpret_cast<char*>(bytes));
-        ofLog(OF_LOG_NOTICE) << "bytes: " << message << endl;
+        // starts with
         if(message.compare(0, checkHead.length(), checkHead) == 0){
-          // match
-          string vb(message.substr(checkHead.length(), 7));
-          bitset<7> v (vb);
+          bitset<7> v (message.substr(checkHead.length(), 7));
 
-          value = static_cast<uint8_t>(v.to_ulong());
-          image.setColor(cursor, value);
+          ofLog(OF_LOG_NOTICE) << "bitset " << v << ", " << v.to_ulong()  << endl;
+
+          value = static_cast<unsigned char>(v.to_ulong());
+
+          image.setColor(cursor, ofColor(value));
+          image.update();
+          
           
           stringstream url;
           url << base_url;
           url << cursor;
           url << "/";
-          url << value;
+          url << v.to_ulong();
           url << "/";
 
           // TODO: better if async
           ofHttpResponse res = ofLoadURL(url.str());
 
-          if(res.error != "") {
+          if(res.error != "OK") {
             ofLog(OF_LOG_ERROR, res.error);
           }
 
@@ -76,7 +79,11 @@ void ofApp::draw(){
   ofBackground(0);
   ofSetColor(ofColor::white);
 
-  image.draw(start.x, start.y, image.getWidth() * multi, image.getHeight() * multi);
+  int iw = imageWidth * multi;
+  int ih = imageHeight * multi;
+
+  image.draw(start.x, start.y, iw, ih);
+  ofDrawRectangle(start.x, start.y, iw, ih);
 
   int x = start.x + multi * (cursor % (int)image.getWidth());
   int y = start.y + multi * (cursor / (int)image.getWidth());
@@ -90,6 +97,10 @@ void ofApp::draw(){
   x = start.x;
   y = start.y + image.getHeight() * multi + 10;
   ofDrawRectangle(x, y, 100, 100);
+
+  ofSetColor(ofColor::white);
+  ofNoFill();
+  ofDrawRectangle(x,y, 100, 100);
 
   if(hasReceived) {
     ofClear(ofColor::white);
