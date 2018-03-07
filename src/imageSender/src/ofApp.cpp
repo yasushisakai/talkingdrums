@@ -21,19 +21,29 @@ void ofApp::setup(){
   bool isReady = serial.setup(0, 115200);
 
   if(isReady) {
-    ofLog(OF_LOG_NOTICE) << "ready" ;
+    ofLog(OF_LOG_NOTICE) << "serial ready" ;
   }
 
-  // ofSetMinMagFilters(GL_NEAREST, GL_NEAREST);
-
-  image.load("image.png");
-  image.getTextureReference().setTextureMinMagFilter(GL_NEAREST,GL_NEAREST);
+  image.load("image.gif");
+  image.getTexture().setTextureMinMagFilter(GL_NEAREST,GL_NEAREST);
   pixels = image.getPixels();
-  //center the big image
+  
+  // center the big image
   start.x = (ofGetWindowWidth() - (image.getWidth() * multi)) * 0.5;
   start.y = (ofGetWindowHeight() - (image.getHeight() * multi)) * 0.5;
 
+  // ofLog(OF_LOG_NOTICE) << "x: " << ofGetWindowWidth() << "y: " << ofGetWindowHeight() << endl;
+
   incrementCursor(cursor, value);
+
+  // json example
+  /*
+  using json = nlohmann::json;
+  
+  auto re = ofLoadURL("http://biteater.media.mit.edu/image/send/1/255/");
+  auto j = json::parse(re.data);
+  ofLog(OF_LOG_NOTICE) << j["key"] << endl;
+  */
 
 }
 
