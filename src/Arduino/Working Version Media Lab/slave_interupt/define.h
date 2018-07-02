@@ -8,7 +8,11 @@
 
 /// DONT Change this values
 #define LED_PIN 3
-#define SOL_PIN 5
+
+#define SOL_PHASE  5
+#define SOL_ENABLE 4
+#define SOL_SLEEP  6
+
 //changed for the use of PWM (Analog Write)
 #define MIC_PIN A0
 

@@ -9,7 +9,7 @@
 
    Talking drums...
         ___           ___       ___           ___           ___
-       /\  \         /\__\     /\  \         /\__\         /\  \
+       /\  \         /\__\     /\  \         /\__\     dfv er    /\  \
       /::\  \       /:/  /    /::\  \       /:/  /        /::\  \
      /:/\ \  \     /:/  /    /:/\:\  \     /:/  /        /:/\:\  \
     _\:\~\ \  \   /:/  /    /::\~\:\  \   /:/__/  ___   /::\~\:\  \
@@ -29,7 +29,7 @@
 */
 
 //define SERVER SLAVE
-#define SERVER_SLAVE 1
+#define SERVER_SLAVE 0
 
 //1 -> server
 //0 all the little ones.
@@ -45,7 +45,7 @@ bool isTestMic = true;
 
 //print debug information
 bool  DEBUG      = true
-;
+                   ;
 bool const DEBUG_TIME = false;
 
 
@@ -174,16 +174,19 @@ void setup() {
   setInitSequence();
 
   pinMode(LED_PIN, OUTPUT);
-  pinMode(SOL_PIN, OUTPUT);
+  pinMode(SOL_ENABLE, OUTPUT);
 
   if (sequenceState == TEST_MIC) {
-    analogWrite(SOL_PIN, 255);
+    //analogWrite(SOL_PIN, 255);
+    analogWrite(SOL_PHASE, 255);
+    digitalWrite(SOL_ENABLE, HIGH);
+    analogWrite(SOL_SLEEP, 255);
   }
   digitalWrite(LED_PIN, HIGH);
   delay(100);
 
   digitalWrite(LED_PIN, LOW);
-  analogWrite(SOL_PIN, 0);
+  //analogWrite(SOL_PIN, 0);
 
 
   bitIndex = sequenceIndex = 0;
@@ -257,10 +260,18 @@ void loop() {
   if (sequenceState == PULSE_PLAY || sequenceState == HEADER_PLAY || sequenceState == TEST_SOLENOID) {
     if (timeKeeper.getTimeHit() > 10L ) {
       if (timeKeeper.checkHit()) {
-        analogWrite(SOL_PIN, solenoid_pwm);
+
+        analogWrite(SOL_PHASE, 255);
+        digitalWrite(SOL_ENABLE, HIGH);
+        analogWrite(SOL_SLEEP, 255);
+
         digitalWrite(LED_PIN, HIGH);
       } else {
-        analogWrite(SOL_PIN, 0);
+        //sleep
+        analogWrite(SOL_PHASE, 0);
+        digitalWrite(SOL_ENABLE, LOW);
+        analogWrite(SOL_SLEEP, 0);
+
         digitalWrite(LED_PIN, 0);
       }
     }
