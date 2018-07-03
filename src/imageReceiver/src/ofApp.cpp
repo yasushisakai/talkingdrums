@@ -8,11 +8,15 @@ void ofApp::setup(){
   image.allocate(imageWidth, imageHeight, OF_IMAGE_GRAYSCALE);
   image.getTexture().setTextureMinMagFilter(GL_NEAREST,GL_NEAREST);
   // do we want to wash it?
-  // serial.listDevices();
+  serial.listDevices();
+  
   bool isReady = serial.setup(0, 115200);
 
   if(isReady) {
     ofLog(OF_LOG_NOTICE) << "serial ready" ;
+  } else {
+	  ofLog(OF_LOG_ERROR) << "serial not ready";
+	  exit();
   }
 
   //center the big image
