@@ -1,4 +1,3 @@
-
 import processing.serial.*;
 import http.requests.*;
 
