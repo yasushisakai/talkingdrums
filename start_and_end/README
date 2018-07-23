@@ -1,0 +1,16 @@
+whats inside this folder
+
+* [sender] [receiver] 
+processing sketches for the start and end computers
+
+* [arduino_test]
+arduino test scripts for testing the ins and outs,
+I've been using black boards from sparkfun.
+
+* [server]
+server program running to collect data
+
+** endpoints
+as of 2018-07-23 the following endpoint is alive
+
+https://cityio.media.mit.edu/image/send/{index}/{value}
