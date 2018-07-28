@@ -7,7 +7,8 @@ boolean willSend = false;
 boolean isSerial= true;
 
 void setup() {
-  size(1068, 768);
+  // size(1068, 768);
+  fullScreen();
   try {
     port = new Serial(this, Serial.list()[Serial.list().length-1], 115200);
   } catch (Exception e) {
