@@ -5,20 +5,23 @@ Serial port;
 byte n;
 int i;
 int cnt;
+boolean isSerial = true;
 
 void setup() {
   fullScreen();
 
-  port = new Serial(this, Serial.list()[Serial.list().length-1], 115200);
-
+  try {
+    port = new Serial(this, Serial.list()[Serial.list().length-1], 115200);
+  } catch (Exception e) {
+    isSerial = false; 
+  }
   n = (byte) 0;
   cnt = 0;
-  
 }
 
 void draw() {
 
-  if(port.available() > 0) {
+  if(port.available() > 0 && isSerial) {
     
     String incoming = port.readString();
     background(255,0,0);
@@ -28,10 +31,14 @@ void draw() {
       i = Integer.parseInt(b, 2);
       background(i);
       println(b + ":" + i);
-
-      GetRequest get = new GetRequest("https://cityio.media.mit.edu/talkingdrums/image/send/" + cnt + "/" + i);
-      get.send();
-      cnt ++;
+      
+      try {
+        GetRequest get = new GetRequest("https://cityio.media.mit.edu/talkingdrums/image/send/" + cnt + "/" + i);
+        get.send();
+        cnt ++;
+      } catch (Exception e) {
+        println("error sending to server"); 
+      }
 
     }
   }
