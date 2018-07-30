@@ -43,9 +43,11 @@ void draw() {
 }
 
 void sendMessage(byte d) {
-  String binStr = String.format("%8s", Integer.toBinaryString(d & 0xFF)).replace(' ','0');
-  String message = "L: r=" + binStr;
+  // String binStr = String.format("%8s", Integer.toBinaryString(d & 0xFF)).replace(' ','0');
+  // String message = "L: r=" + binStr;
 
-  port.write(message);
+  // port.write(message);
+  //
+  port.write(d); // because the communication protocol is different in and out
   println("Sent message: \""+ message + "\"");
 }
