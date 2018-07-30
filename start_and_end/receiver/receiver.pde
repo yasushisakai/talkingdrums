@@ -20,9 +20,7 @@ void setup() {
 }
 
 void draw() {
-
   if(port.available() > 0 && isSerial) {
-    
     String incoming = port.readString();
     background(255,0,0);
 
@@ -33,13 +31,12 @@ void draw() {
       println(b + ":" + i);
       
       try {
-        GetRequest get = new GetRequest("https://cityio.media.mit.edu/talkingdrums/image/send/" + cnt + "/" + i);
+        GetRequest get = new GetRequest("https://cityio.media.mit.edu/talkingdrums/image/send/" + i);
         get.send();
         cnt ++;
       } catch (Exception e) {
         println("error sending to server"); 
       }
-
     }
   }
 

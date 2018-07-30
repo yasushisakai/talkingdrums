@@ -26,21 +26,20 @@ void draw() {
 
   try {
     GetRequest get = new GetRequest(
-      "https://cityio.media.mit.edu/talkingdrums/image/receive");
+      "https://cityio.media.mit.edu/talkingdrums/image/get/next");
     get.send();
     JSONObject obj = parseJSONObject(get.getContent());
-    println(obj.get("cnt"));
-    if(!willSend){
+    // println(obj.get("cnt"));
+    if (!willSend) {
       willSend = true;
-      println("**sending enabled**");
+      println("** sending enabled **");
     }
-    n = (byte)obj.getInt("cnt");
+    n = (byte)obj.getInt("value");
   } catch (Exception e){
     println("server not sending bytes");
     willSend = false; 
   }
-
-  if(willSend) sendMessage(n);
+  if (willSend) sendMessage(n);
 }
 
 void sendMessage(byte d) {
