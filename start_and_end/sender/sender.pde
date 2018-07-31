@@ -3,21 +3,30 @@ import http.requests.*;
 
 Serial port;
 byte n;
-boolean willSend = false;
-boolean isSerial= true;
+
+
+enum Mode {
+  INITIAL,
+  RUNNING,
+  SERVER_STOPPED,
+  SERIAL_ERROR, 
+}
+
+Mode mode = INITIAL;
+
 
 void setup() {
-  // size(1068, 768);
   fullScreen();
   try {
     port = new Serial(this, Serial.list()[Serial.list().length-1], 115200);
   } catch (Exception e) {
-    isSerial = false;
+    mode = SERIAL_ERROR;
   }
+
   n = (byte) 0;
   
   // super slow 
-  frameRate(0.1);
+  frameRate(0.055555); // approx. 18sec / frame
 }
 
 void draw() {
@@ -29,17 +38,33 @@ void draw() {
       "https://cityio.media.mit.edu/talkingdrums/image/get/next");
     get.send();
     JSONObject obj = parseJSONObject(get.getContent());
-    // println(obj.get("cnt"));
-    if (!willSend) {
-      willSend = true;
-      println("** sending enabled **");
+    n = (byte) obj.getInt("value");
+
+    if(mode != SERIAL_ERROR) {
+      mode = RUNNING; 
     }
-    n = (byte)obj.getInt("value");
+
   } catch (Exception e){
+    // might be a json parseing error too
     println("server not sending bytes");
-    willSend = false; 
+    mode = SERVER_STOPPED;
   }
-  if (willSend) sendMessage(n);
+
+  if (mode == RUNNING) {
+    pushStyle();
+    stroke(255, 0, 0);
+    text("sending:" + n + "", 15, 15);
+    popStyle();
+    sendMessage(n);
+  }
+
+  if(mode != RUNNING) {
+    pushStyle();
+    stroke(255, 0, 0);
+    rect(0, 0, width, height);
+    popStyle();
+    println("error code: " + mode);
+  }
 }
 
 void sendMessage(byte d) {
