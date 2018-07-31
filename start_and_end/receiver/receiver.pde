@@ -13,7 +13,7 @@ enum Mode {
   SERIAL_ERROR, 
 }
 
-Mode mode = INITIAL;
+Mode mode = Mode.INITIAL;
 
 void setup() {
   fullScreen();
@@ -21,7 +21,7 @@ void setup() {
   try {
     port = new Serial(this, Serial.list()[Serial.list().length-1], 115200);
   } catch (Exception e) {
-    mode = SERIAL_ERROR;
+    mode = Mode.SERIAL_ERROR;
   }
 
   n = (byte) 0;
@@ -29,7 +29,7 @@ void setup() {
 }
 
 void draw() {
-  if(port.available() > 0 && mode != SERIAL_ERROR) {
+  if(port.available() > 0 && mode != Mode.SERIAL_ERROR) {
     String incoming = port.readString();
     background(255,0,0);
 
@@ -43,16 +43,16 @@ void draw() {
         GetRequest get = new GetRequest("https://cityio.media.mit.edu/talkingdrums/image/send/" + i);
         get.send();
         cnt ++;
-        mode = RUNNING;
+        mode = Mode.RUNNING;
       } catch (Exception e) {
         println("error sending to server"); 
-        mode = SERVER_STOPPED;
+        mode = Mode.SERVER_STOPPED;
       }
     }
 
-    if(mode == RUNNING) {
+    if(mode == Mode.RUNNING) {
       pushStyle();
-      stroke(255, 0, 0);
+      fill(255, 0, 0);
       text("received: " + i, 15, 15 );
       popStyle();
     } else {
