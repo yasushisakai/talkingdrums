@@ -1,10 +1,8 @@
 
 const long baud = 115200;
-const byte bitsCount = 8;
+uint8_t test = B00000000;
 
-const char header[ ] = "L: r=";
-char message[14];
-byte value = 255;
+byte value = test;
 
 void setup() {
   Serial.begin(baud);
@@ -12,22 +10,21 @@ void setup() {
 }
 
 void loop() {
-  delay(1000);
-  
-  // char str[bitsCount+1];
 
-  char str[9];
-  
-  for(int i=0;i<8;i++){
-     str[7-i] = bitRead(value, i) + 48;
-  }
-  // Serial.println(value);
-  str[8] = '\0';
-  
+  Serial.write(value);
 
-  sprintf(message, "%s%s", header, str);
-  Serial.println(message);
+  // if(value == test) {
+  //    value = B00000000;
+  //  } else {
+  //    value = test;
+  //  }
 
-  value--;
+  value++;
 
+    if(Serial.available() > 0) {
+       String message = Serial.readString();
+       // Serial.println(message);
+       Serial.flush();
+    }
+    delay(18000);
 }
