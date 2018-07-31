@@ -12,7 +12,7 @@ enum Mode {
   SERIAL_ERROR, 
 }
 
-Mode mode = Mode.NITIAL;
+Mode mode = Mode.INITIAL;
 
 void setup() {
   fullScreen();
@@ -51,8 +51,8 @@ void draw() {
 
   if (mode == Mode.RUNNING) {
     pushStyle();
-    stroke(255, 0, 0);
-    text("sending:" + n + "", 15, 15);
+    fill(255, 0, 0);
+    text("sending: " + n, 15, 15);
     popStyle();
     sendMessage(n);
   }
@@ -73,5 +73,5 @@ void sendMessage(byte d) {
   // port.write(message);
   //
   port.write(d); // because the communication protocol is different in and out
-  println("Sent message: \""+ message + "\"");
+  println("Sent message: \""+ d + "\"");
 }
