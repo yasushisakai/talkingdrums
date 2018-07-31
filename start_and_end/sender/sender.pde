@@ -12,15 +12,14 @@ enum Mode {
   SERIAL_ERROR, 
 }
 
-Mode mode = INITIAL;
-
+Mode mode = Mode.NITIAL;
 
 void setup() {
   fullScreen();
   try {
     port = new Serial(this, Serial.list()[Serial.list().length-1], 115200);
   } catch (Exception e) {
-    mode = SERIAL_ERROR;
+    mode = Mode.SERIAL_ERROR;
   }
 
   n = (byte) 0;
@@ -40,17 +39,17 @@ void draw() {
     JSONObject obj = parseJSONObject(get.getContent());
     n = (byte) obj.getInt("value");
 
-    if(mode != SERIAL_ERROR) {
-      mode = RUNNING; 
+    if(mode != Mode.SERIAL_ERROR) {
+      mode = Mode.RUNNING; 
     }
 
   } catch (Exception e){
     // might be a json parseing error too
-    println("server not sending bytes");
-    mode = SERVER_STOPPED;
+    println("server not sending bytes, Exception: " + e);
+    mode = Mode.SERVER_STOPPED;
   }
 
-  if (mode == RUNNING) {
+  if (mode == Mode.RUNNING) {
     pushStyle();
     stroke(255, 0, 0);
     text("sending:" + n + "", 15, 15);
@@ -58,7 +57,7 @@ void draw() {
     sendMessage(n);
   }
 
-  if(mode != RUNNING) {
+  if(mode != Mode.RUNNING) {
     pushStyle();
     stroke(255, 0, 0);
     rect(0, 0, width, height);
