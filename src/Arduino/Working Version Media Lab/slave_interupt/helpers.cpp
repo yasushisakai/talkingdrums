@@ -45,8 +45,7 @@ uint8_t  checkServer(RH_NRF24 &_nrf, uint8_t & clockIn, uint8_t & moduleId, uint
       //Serial.println("TICK");
 
       if (mode == 2) {
-       // _nrf.send(inMSG, sizeof(inMSG));
-      //  _nrf.waitPacketSent();
+
       }
     }
 

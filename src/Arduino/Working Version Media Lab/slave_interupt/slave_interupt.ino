@@ -48,7 +48,6 @@ bool isTestMic = true;
 bool  DEBUG      = true;
 bool  DEBUG_IN   = false;
 
-;
 bool const DEBUG_TIME = false;
 
 
@@ -191,10 +190,11 @@ uint8_t inCommingMSg[2] = {B00010000, B00010000};
 int LIMIT_READ_COUNTER = 99;
 
 int counterIteratios = 0;
-
 int resetCounter = 0;
 
 bool activateSend = false;
+
+
 
 void setup() {
 
@@ -264,14 +264,7 @@ void loop() {
 
   //  micThreshold = analogRead(POT_CAL_01);
 
-  /*
-    Serial.print("low: ");
-    Serial.print(potCal_1);
-    Serial.print(" ");
-    Serial.print("high: ");
-    Serial.println(potCal_2);
-  */
-
+  
   //collect signal readings with the interrupt function
 
   if (sequenceState == TEST_MIC) {
@@ -291,8 +284,6 @@ void loop() {
     //Serial.println(valueByte);
 
     clockMode(clkTICK, clkMode, clkValue);
-
-
   }
 
   activateSequenceLoop();
@@ -300,7 +291,6 @@ void loop() {
   //update times (now - prev)
   timeKeeper.updateTimes();
   timeKeeperNRF.updateTimes();
-
 
   //feedback
   if (sequenceState == RESET ||  sequenceState == ANALYZE || sequenceState == WAIT_START || sequenceState == CALIBRATE_TIME) {
@@ -334,11 +324,6 @@ void loop() {
   }
 
   if (activateSend) {
-    nrf24.send((uint8_t*)inCommingMSg, sizeof(inCommingMSg));
-    nrf24.waitPacketSent();
-
-    nrf24.send((uint8_t*)inCommingMSg, sizeof(inCommingMSg));
-    nrf24.waitPacketSent();
 
     activateSend = false;
     setSequenceState(HEADER_PLAY);

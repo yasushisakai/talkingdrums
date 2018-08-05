@@ -429,6 +429,8 @@ void activateSequenceLoop() {
         break;
 
     } // switch
+    
+    
     //clean bandpass
     //Serial.print("clean");
     bandPassFilter.resetSignalMinMax();
