@@ -309,13 +309,9 @@ void loop() {
   }
 
   if (activateSend) {
-
     activateSend = false;
     setSequenceState(HEADER_PLAY);
     if (DEBUG) Serial.println("PLAY HEADER ");
-
   }
-
-
 
 }

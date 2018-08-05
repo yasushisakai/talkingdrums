@@ -126,7 +126,10 @@ void headerPlay() {
   if (DEBUG) Serial.print(bitIndex);
   if (DEBUG) Serial.print(" ");
 
-  if (headerSequence[bitIndex]) timeKeeper.hit();
+  if (headerSequence[bitIndex]){
+     timeKeeper.hit();
+  }
+  
   bitIndex++;
 
   if (bitIndex == 3 ) { //110

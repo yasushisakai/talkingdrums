@@ -1,6 +1,10 @@
 #include "Arduino.h"
 #include "TimeKeeper.h"
 
+/*
+ * Function for time keeping 
+ */
+
 
 uint8_t  TimeKeeper::signalCount = 0;
 uint8_t  TimeKeeper::signalLimit = 4;
