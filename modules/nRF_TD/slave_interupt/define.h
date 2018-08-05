@@ -46,6 +46,12 @@
 //Helper 0
 #define ZERO_BYTE         B00000000
 
+//Protocol
+
+#define READY_BYTE   B00000000
+#define READ_BYTE    B00000001
+#define WRITE_BYTE   B00000010
+#define FINAL_BYTE   B00001010
 
 // this is the time interval for each frame
 // this is one factor to determine the duration of

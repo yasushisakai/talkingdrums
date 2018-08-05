@@ -41,7 +41,7 @@ void listenSequence() {
 
   if (DEBUG) printSequenceIndex();
 
-  if (bitIndex < SEQBITS ){
+  if (bitIndex < SEQBITS ) {
     recording[sequenceIndex][bitIndex] = micHit;
   }
 
@@ -104,11 +104,7 @@ void analyzeSequence() {
     // IMPORTANT!! this line is for the ImageReciever app!!
     //
     //
-    Serial.print("L: r=");
-    for (itri = 0; itri < SEQBITS; itri++) {
-      Serial.print(playSequence[itri]);
-    }
-    Serial.println();
+    writeToReceiver(playSequence);
 
     //
     // prints the recordings
@@ -200,97 +196,5 @@ void resetLoop() {
   resetSequence();
 
   if (DEBUG) Serial.println(clockCounter);
-}
-
-void readInputArray() {
-  if (clockCounter > LIMIT_READ_COUNTER) {
-
-
-    if (readInBytes) {
-      if (DEBUG) Serial.println(" ");
-      if (DEBUG) Serial.println("incoming bytes");
-
-      int val = Serial.readBytes(byteMSG8, 1);
-
-      // Reset values when an array of bits is received
-      if (val > 0 || DEBUG == true) {
-        if (DEBUG) Serial.println("clean Serial");
-
-
-        if (DEBUG) {
-          Serial.print("Number cycles ");
-          Serial.println(clockCounter);
-        }
-        //clean
-
-        Serial.flush();
-        for (itri = 0; itri < 10; itri++) {
-          char f = Serial.read();
-        }
-
-        for (itri = 0; itri < 8; itri++) {
-          playSequence[itri] = (bitRead((byte)byteMSG8[0], itri ) == 1 ? true : false);
-          
-          // playSequence[itri] = (bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
-        }
-
-        inCommingMSg[0] = byteMSG8[0];
-
-
-        if (SERVER_SLAVE == 2) {
-          Serial.print("sent  ");
-          Serial.println(inCommingMSg[0]);
-        }
-
-        if (DEBUG_IN) {
-          Serial.print("read in: ");
-          for (itri = 0; itri < 8; itri++) {
-            Serial.print( playSequence[itri] );
-            Serial.print(" " );
-            // playSequence[itri] = (bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
-          }
-          Serial.println(" - ");
-        }
-
-
-        // 7 - itri
-        readInBytes = true;
-        requestByte = false;
-        bitIndex = 0;
-        sequenceIndex = 0;
-        clockCounter = 0;
-
-        if (DEBUG) Serial.print(clockCounter);
-        if (DEBUG) Serial.print(" ");
-
-
-        setSequenceState(SEND_INPUT);
-
-        //fill header
-
-        for (itri = 0; itri < 3; itri++) {
-          headerSequence[itri] = correctHeader[itri];
-        }
-
-        //make sure that we are going to play the header
-        isHead = true;
-
-      } //got msg
-    }
-
-    //send byte request and read
-    if (requestByte) {
-      if (DEBUG) Serial.println("request bytes");
-
-      //change to println() to enable easier read with readString() in processing
-      //Serial.write('s');
-
-      Serial.println("s");
-
-      requestByte = false;
-      readInBytes = true;
-    }
-  }
-  if (DEBUG) Serial.print(clockCounter);
 }
 

@@ -256,7 +256,6 @@ void loop() {
   } else {
     bandPassFilter.filterSignal();
   }
-
   
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
@@ -266,7 +265,6 @@ void loop() {
     valueByte = checkServer(nrf24, clkTICK, clkModuleId, clkMode, clkValue, activateNRFMode, inCommingMSg[0], SERVER_SLAVE); //10ms  -30count
 
     //Serial.println(valueByte);
-
     clockMode(clkTICK, clkMode, clkValue);
   }
 
@@ -285,7 +283,6 @@ void loop() {
   if (sequenceState == TEST_MIC || sequenceState == LISTEN_HEADER || sequenceState == LISTEN_SEQUENCE) {
     digitalWrite(LED_PIN, timeKeeper.checkHit());
   }
-
 
   //Main activation for the solenoid and LED
   if (sequenceState == PULSE_PLAY || sequenceState == HEADER_PLAY || sequenceState == TEST_SOLENOID) {
