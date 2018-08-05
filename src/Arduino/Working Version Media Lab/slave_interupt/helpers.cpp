@@ -34,8 +34,6 @@ uint8_t  checkServer(RH_NRF24 &_nrf, uint8_t & clockIn, uint8_t & moduleId, uint
 
   uint8_t enableChange = 1;
 
-
-
   if (_nrf.recv(buf, &len)) {
 
     //first byte is the TICK

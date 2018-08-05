@@ -84,35 +84,24 @@ bool correctHeader[] = {1, 1, 0};
 bool headerSequence[(sizeof(correctHeader) / sizeof(bool)) * SEQITER];
 
 //SEQUENCE
-
 bool recording[SEQITER][SEQBITS];
 bool playSequence[SEQBITS];
 
+//debug sequence
 bool debugSequence[]    = {0, 0, 0, 1, 0, 0, 1, 1};
 bool debugSequenceTap[] = {1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1};
 
-
+//first calibration
 bool firstCalibration = true;
-
-float buffSignal[30];
-uint8_t maxBuffer = sizeof(buffSignal) / sizeof(float);
-
-bool ledTick = false;
 
 //clock cyles keepers
 uint8_t clockCounter = 0;
 
 ///Signal Processing
-
 float f_s   = 0.01; //0.023
 float bw_s  = 0.015; //0.25
 float EMA_a_low_s   = 0.04;  //0.18    //initialization of EMA alpha (cutoff-frequency)
 float EMA_a_high_s  = 0.2;  //0.87
-
-float prev_f_s = 0;
-float prev_bw_s = 0;
-float prev_EMA_a_low_s = 0;
-float prev_EMA_a_high_s = 0;
 
 // BandPadd Filter
 BandPassFilter bandPassFilter(f_s, bw_s, EMA_a_low_s, EMA_a_high_s, BUFFER_SIZE);
@@ -127,7 +116,7 @@ int indexMic = 0;
 unsigned long nrfTime     = 240L;
 unsigned long nrfCallTime = 10;
 
-//iterators
+//iterators for the whole system
 uint8_t itri = 0;
 uint8_t itrj = 0;
 uint8_t itrCounter = 0;
@@ -138,8 +127,6 @@ unsigned long tempConter = 0;
 unsigned long cTime = 0;
 
 uint8_t valueByte = B00000000;
-
-
 
 
 /// PWM-ing the Solenoid will need additional test 0-255
@@ -189,11 +176,10 @@ uint8_t inCommingMSg[2] = {B00010000, B00010000};
 */
 int LIMIT_READ_COUNTER = 99;
 
-int counterIteratios = 0;
+//check counter
 int resetCounter = 0;
 
 bool activateSend = false;
-
 
 
 void setup() {
@@ -237,7 +223,6 @@ void setup() {
 
   setupInterrupt();
 
-
   if (DEBUG) Serial.print("MIC: ");
   if (DEBUG) Serial.print(THRESHOLD_PEAK);
   if (DEBUG) Serial.print("  Solenoid PWM: ");
@@ -266,17 +251,16 @@ void loop() {
 
   
   //collect signal readings with the interrupt function
-
   if (sequenceState == TEST_MIC) {
     bandPassFilter.filterSignal(true);
   } else {
     bandPassFilter.filterSignal();
-    counterIteratios++;
   }
+
+  
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
   //only check server the last 10 ms of the global time.
-
 
   if (timeKeeperNRF.isTick() ) {
     valueByte = checkServer(nrf24, clkTICK, clkModuleId, clkMode, clkValue, activateNRFMode, inCommingMSg[0], SERVER_SLAVE); //10ms  -30count
@@ -303,6 +287,7 @@ void loop() {
   }
 
 
+  //Main activation for the solenoid and LED
   if (sequenceState == PULSE_PLAY || sequenceState == HEADER_PLAY || sequenceState == TEST_SOLENOID) {
     if (timeKeeper.getTimeHit() > 40L ) {
       if (timeKeeper.checkHit()) {

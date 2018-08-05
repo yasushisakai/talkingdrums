@@ -33,7 +33,6 @@ void calibrateMic() {
 }
 
 
-
 //listen to the incomming date from the microphone
 void listenSequence() {
 
@@ -230,7 +229,7 @@ void readInputArray() {
 
         for (itri = 0; itri < 8; itri++) {
           playSequence[itri] = (bitRead((byte)byteMSG8[0], itri ) == 1 ? true : false);
-          //send it
+          
           // playSequence[itri] = (bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
         }
 
@@ -241,8 +240,6 @@ void readInputArray() {
           Serial.print("sent  ");
           Serial.println(inCommingMSg[0]);
         }
-
-
 
         if (DEBUG_IN) {
           Serial.print("read in: ");
@@ -256,7 +253,6 @@ void readInputArray() {
 
 
         // 7 - itri
-
         readInBytes = true;
         requestByte = false;
         bitIndex = 0;
@@ -274,7 +270,6 @@ void readInputArray() {
         for (itri = 0; itri < 3; itri++) {
           headerSequence[itri] = correctHeader[itri];
         }
-
 
         //make sure that we are going to play the header
         isHead = true;
@@ -298,7 +293,7 @@ void readInputArray() {
   if (DEBUG) Serial.print(clockCounter);
 }
 
-//---------------Main loop
+//---------------Main loop---------------------------
 //----------------------------------------------------
 void activateSequenceLoop() {
   if (!lock) {
@@ -363,7 +358,6 @@ void activateSequenceLoop() {
         1. listens for the right header
         2. listens for the sequence
       */
-
       case LISTEN_HEADER:
         if (DEBUG) Serial.print("LISTEN HEADER ");
         listenHeader();

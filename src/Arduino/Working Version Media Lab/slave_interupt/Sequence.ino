@@ -1,8 +1,12 @@
-void setSequenceState(byte state) {
+//set the sequence type
+void setSequenceState(byte state) 
+{
   sequenceState = state;
 }
 
-void printSequenceIndex() {
+//print the sequence index
+void printSequenceIndex() 
+{
   Serial.print("L: ");
   Serial.print(sequenceIndex);
   Serial.print(", ");
@@ -12,6 +16,7 @@ void printSequenceIndex() {
   Serial.print(" ");
 }
 
+//print the recordings
 void printRecordings() {
   for (itri = 0; itri < SEQITER; itri++) {
     Serial.print("L: ");
@@ -24,7 +29,6 @@ void printRecordings() {
   }
 
   // check sequence if its correct
-
   bool flag = true;
   for (itri = 0; itri < SEQBITS; itri++) {
     if (debugSequence[itri] != playSequence[itri]) {
@@ -38,6 +42,7 @@ void printRecordings() {
     Serial.println("L:sequence incorrect");
   }
 
+  //print the playing sequence
   Serial.print("L: playing=");
   Serial.print(sequenceIndex);
   Serial.print(", ");

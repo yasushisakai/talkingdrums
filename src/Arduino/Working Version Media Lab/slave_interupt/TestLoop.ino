@@ -14,7 +14,6 @@ void testMic()
 //Test solenoid
 void testDebugSequence()
 {
-
   //repeat three times the header
   //then repeat three times the input sequence.
   micHit = debugSequenceTap[itrj + itri];
@@ -53,9 +52,9 @@ void testDebugSequence()
 
 }
 
-
 //test solenoid sequence.
-void testSolenoid() {
+void testSolenoid() 
+{
 
   micHit = debugSequenceTap[itri];
 
@@ -86,7 +85,8 @@ bool debugTimes()
 }
 
 //reset sequence values
-void resetSequence() {
+void resetSequence() 
+{
   //reset sequences
   for (itri = 0; itri < SEQBITS; itri++) {
     playSequence[itri] = false;

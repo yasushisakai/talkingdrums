@@ -9,10 +9,12 @@
 /// DONT Change this values
 #define LED_PIN 3
 
+//pin values for the solenoids
 #define SOL_PHASE  5
 #define SOL_ENABLE 4
 #define SOL_SLEEP  6
 
+//pin values for the pots
 #define POT_POT    A1   
 #define POT_CAL_01 A2
 #define POT_CAL_02 A3
@@ -62,14 +64,12 @@
 const unsigned long  HIT_INTERVAL          = 75L;
 // this interval is for the outputs, LED and solenoid
 
-
  
 const int DEFAULT_PWM  = 255;
 
 //buffer size of signal processing window
 //BUFFER_SIZE = 25 -> 5ms 45 ->10ms
 const int BUFFER_SIZE = 9;//25
-
 
 
 ///  modes

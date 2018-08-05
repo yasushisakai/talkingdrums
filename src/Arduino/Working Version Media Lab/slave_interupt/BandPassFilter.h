@@ -171,16 +171,9 @@ class BandPassFilter {
 
     //return if there is hit
     bool isHit(int mic_Threshold) {
-      // if (conv_output >  mic_Threshold) {
-
       int peak_peak = abs(signalMax - signalMin);
       //Serial.println(peak_peak);
       if (peak_peak > mic_Threshold) { //TODO create thresholdPeak dynamically
-
-        // Serial.print(signalMax);
-        // Serial.print(" ");
-
-
         return true;
       }
       return false;

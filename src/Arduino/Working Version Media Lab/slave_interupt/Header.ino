@@ -1,3 +1,4 @@
+//init sequence
 void setInitSequence() {
   if (SERVER_SLAVE == 1 || SERVER_SLAVE == 2) {
     sequenceState = READ_INPUT;
@@ -6,8 +7,8 @@ void setInitSequence() {
   }
 }
 
+//listening to header
 void listenHeader() {
-
 
   //get hit from the bandpass filter
   micHit = bandPassFilter.isHit(micThreshold);
@@ -116,6 +117,7 @@ void listenHeader() {
   if (DEBUG) Serial.println(clockCounter);
 }
 
+//header play
 void headerPlay() {
 
   if (DEBUG) Serial.print("s ");
