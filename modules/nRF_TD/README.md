@@ -1,0 +1,1 @@
+- for the first device, change the change the SERVER_SLAVE macro to 1
