@@ -16,12 +16,15 @@ void clockMode(uint8_t & inCLK, uint8_t  inMode, uint8_t  inValue ) {
 
       //Serial.println(tempConter);
       //tempConter=0;
+
     }
   }
 
 
+
   //set the value only once
-  if (activateNRFMode == 1) {
+  /*
+    if (activateNRFMode == 1) {
     switch (inMode) {
 
       case (PWM_MODE):
@@ -29,7 +32,7 @@ void clockMode(uint8_t & inCLK, uint8_t  inMode, uint8_t  inValue ) {
         if (DEBUG)Serial.println("new PWM: ");
         if (DEBUG)Serial.println(solenoid_pwm);
         break;
-        
+
       case (MIC_MODE):
         micThreshold = inValue;
         if (DEBUG)Serial.println("New MIC: ");
@@ -42,7 +45,7 @@ void clockMode(uint8_t & inCLK, uint8_t  inMode, uint8_t  inValue ) {
         resetSequence();
         if (DEBUG)Serial.println("Return");
         break;
-        
+
       case (SONLENOID_MODE):
         setSequenceState(TEST_SOLENOID);
 
@@ -56,7 +59,7 @@ void clockMode(uint8_t & inCLK, uint8_t  inMode, uint8_t  inValue ) {
         setSequenceState(CALIBRATE_MIC);
         if (DEBUG)Serial.println("Calibrate Mic");
         break;
-        
+
       case (DEBUG_MODE):
         DEBUG = !DEBUG;
         Serial.print("DEBUG Toggle ");
@@ -65,7 +68,8 @@ void clockMode(uint8_t & inCLK, uint8_t  inMode, uint8_t  inValue ) {
 
     }
     activateNRFMode = 0;
-  }
+    }
+  */
 
 
 }

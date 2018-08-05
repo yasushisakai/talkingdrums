@@ -1,5 +1,5 @@
 void setInitSequence() {
-  if (SERVER_SLAVE == 1) {
+  if (SERVER_SLAVE == 1 || SERVER_SLAVE == 2) {
     sequenceState = READ_INPUT;
   } else {
     sequenceState = WAIT_START;
@@ -7,7 +7,7 @@ void setInitSequence() {
 }
 
 void listenHeader() {
-  if (DEBUG) Serial.print("LISTEN HEADER ");
+
 
   //get hit from the bandpass filter
   micHit = bandPassFilter.isHit(micThreshold);
@@ -73,6 +73,10 @@ void listenHeader() {
     if (DEBUG) Serial.print("B: ");
     if (DEBUG) Serial.print(bitIndex);
     if (DEBUG) Serial.print(" ");
+    if (DEBUG) Serial.print(micHit);
+    if (DEBUG) Serial.print(" ");
+    if (DEBUG) Serial.print(numHeaderBits);
+    if (DEBUG) Serial.print(" ");
 
     if (isHead && bitIndex == numHeaderBits) {
       //Serial.print("L: found head"); // notify head detection to ImageReciever
@@ -100,8 +104,14 @@ void listenHeader() {
     isFirstHit     = false;
     clockCounter = 1;
     timeKeeper.hit();//led feedback
-    if (DEBUG) Serial.print("FH ");
+    if (DEBUG) {
+      Serial.print("FH ");
+      Serial.print(micHit);
+    }
   }
+
+  //clean bandpass
+
 
   if (DEBUG) Serial.println(clockCounter);
 }
@@ -110,6 +120,9 @@ void headerPlay() {
 
   if (DEBUG) Serial.print("s ");
   if (DEBUG) Serial.print(headerSequence[bitIndex]);
+  if (DEBUG) Serial.print(" ");
+  if (DEBUG) Serial.print(bitIndex);
+  if (DEBUG) Serial.print(" ");
 
   if (headerSequence[bitIndex]) timeKeeper.hit();
   bitIndex++;
@@ -120,6 +133,8 @@ void headerPlay() {
 
     if (headerBitCounter == SEQITER) {
       headerBitCounter = 0;
+      bitIndex = 0;
+      if (DEBUG) Serial.print(" next pulse play");
       setSequenceState(PULSE_PLAY); // it won't go to WAIT_PLAY
     }
 

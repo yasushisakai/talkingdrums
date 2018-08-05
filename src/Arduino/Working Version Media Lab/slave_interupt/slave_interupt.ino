@@ -29,9 +29,10 @@
 */
 
 //define SERVER SLAVE
-#define SERVER_SLAVE 0
+#define SERVER_SLAVE 2
 
 //1 -> server
+//2 -> sender
 //0 all the little ones.
 
 
@@ -44,8 +45,10 @@ TimeKeeper timeKeeperNRF;
 bool isTestMic = true;
 
 //print debug information
-bool  DEBUG      = true
-                   ;
+bool  DEBUG      = true;
+bool  DEBUG_IN   = false;
+
+;
 bool const DEBUG_TIME = false;
 
 
@@ -63,7 +66,7 @@ bool const useHeader  = true;  // cares about the header or not
 */
 
 ///Sequence
-byte sequenceState = 0;// READ_INPUT;//TEST_MIC; //TEST_MIC;
+byte sequenceState = 0;//TEST_MIC;//TEST_SOLENOID;//TEST_MIC;// READ_INPUT;//TEST_MIC; //TEST_MIC;
 byte sequenceIndex = 0;
 byte bitIndex      = 0;
 
@@ -101,6 +104,17 @@ bool ledTick = false;
 uint8_t clockCounter = 0;
 
 ///Signal Processing
+
+float f_s   = 0.01; //0.023
+float bw_s  = 0.015; //0.25
+float EMA_a_low_s   = 0.04;  //0.18    //initialization of EMA alpha (cutoff-frequency)
+float EMA_a_high_s  = 0.2;  //0.87
+
+float prev_f_s = 0;
+float prev_bw_s = 0;
+float prev_EMA_a_low_s = 0;
+float prev_EMA_a_high_s = 0;
+
 // BandPadd Filter
 BandPassFilter bandPassFilter(f_s, bw_s, EMA_a_low_s, EMA_a_high_s, BUFFER_SIZE);
 
@@ -111,8 +125,8 @@ int indexMic = 0;
 //calibrate numers of NF calls
 //in theory we are only going to chance the time once,
 //if we change the time, we can recalibrate using the incomming values.
-unsigned long nrfTime     = 130L;
-unsigned long nrfCallTime = 20L;
+unsigned long nrfTime     = 240L;
+unsigned long nrfCallTime = 10;
 
 //iterators
 uint8_t itri = 0;
@@ -141,6 +155,9 @@ uint8_t clkModuleId = byte(TD_ID);
 //value for changing the modules, mic calibration, pwm
 uint8_t clkPWM  = solenoid_pwm;
 
+//threshold peak for the signal processing
+int THRESHOLD_PEAK = 20;//68; //38
+
 //value for changing the mic calibration
 uint8_t clkMIC  = THRESHOLD_PEAK;
 int     micThreshold  =  THRESHOLD_PEAK;
@@ -162,25 +179,39 @@ bool readInBytes = false;
 //incoming msg, keep it as an array in case we need to
 //read values bigger than a byte
 byte byteMSG8[] = {
-  B00010011
+  B10010011
 };
 
-int LIMIT_READ_COUNTER = 80;
+uint8_t inCommingMSg[2] = {B00010000, B00010000};
+
+/*
+   36 single sequence, waiting time 36 for the next one to finish its sequence,
+   72 in total, 8 steps for buffer.
+*/
+int LIMIT_READ_COUNTER = 99;
+
+int counterIteratios = 0;
+
+int resetCounter = 0;
+
+bool activateSend = false;
 
 void setup() {
 
   Serial.begin(115200);
 
-  setInitSequence();
+  if (sequenceState != TEST_MIC ) {
+    setInitSequence();
+  }
 
   pinMode(LED_PIN, OUTPUT);
   pinMode(SOL_ENABLE, OUTPUT);
 
   if (sequenceState == TEST_MIC) {
     //analogWrite(SOL_PIN, 255);
-    analogWrite(SOL_PHASE, 255);
-    digitalWrite(SOL_ENABLE, HIGH);
-    analogWrite(SOL_SLEEP, 255);
+    analogWrite(SOL_PHASE, 0);
+    digitalWrite(SOL_ENABLE, LOW);
+    analogWrite(SOL_SLEEP, 0);
   }
   digitalWrite(LED_PIN, HIGH);
   delay(100);
@@ -213,6 +244,7 @@ void setup() {
   if (DEBUG)Serial.println(solenoid_pwm);
 }
 
+
 void loop() {
 
   cTime = millis();
@@ -220,12 +252,33 @@ void loop() {
   timeKeeper.cycle(cTime);
   timeKeeperNRF.cycle(cTime);
 
+  //obtain the values from the pots
+  //float potCal_1 = analogRead(POT_CAL_01)/1024.0;
+  // float potCal_2 = analogRead(POT_CAL_02)/1024.0;
+  // float potCal_frq  = (analogRead(POT_POT)/1024.0); // 0 -.25
+  // float potCal_band = (analogRead(POT_CAL_01)/1024.0);
+
+  //bandPassFilter.setEMALow(potCal_1);
+  //bandPassFilter.setEMAHigh(potCal_2);
+  //bandPassFilter.setupFilter(potCal_frq/100.0, potCal_band/100.0);
+
+  //  micThreshold = analogRead(POT_CAL_01);
+
+  /*
+    Serial.print("low: ");
+    Serial.print(potCal_1);
+    Serial.print(" ");
+    Serial.print("high: ");
+    Serial.println(potCal_2);
+  */
+
   //collect signal readings with the interrupt function
 
   if (sequenceState == TEST_MIC) {
     bandPassFilter.filterSignal(true);
   } else {
     bandPassFilter.filterSignal();
+    counterIteratios++;
   }
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
@@ -233,24 +286,27 @@ void loop() {
 
 
   if (timeKeeperNRF.isTick() ) {
-    valueByte = checkServer(nrf24, clkTICK, clkModuleId, clkMode, clkValue, activateNRFMode); //10ms  -30count
+    valueByte = checkServer(nrf24, clkTICK, clkModuleId, clkMode, clkValue, activateNRFMode, inCommingMSg[0], SERVER_SLAVE); //10ms  -30count
 
     //Serial.println(valueByte);
 
     clockMode(clkTICK, clkMode, clkValue);
+
+
   }
 
-  acticateSequenceLoop();
+  activateSequenceLoop();
 
   //update times (now - prev)
   timeKeeper.updateTimes();
   timeKeeperNRF.updateTimes();
 
+
   //feedback
   if (sequenceState == RESET ||  sequenceState == ANALYZE || sequenceState == WAIT_START || sequenceState == CALIBRATE_TIME) {
     digitalWrite(LED_PIN, timeKeeper.checkTick());
-  }
 
+  }
   //start after 10 ms
   if (sequenceState == TEST_MIC || sequenceState == LISTEN_HEADER || sequenceState == LISTEN_SEQUENCE) {
     digitalWrite(LED_PIN, timeKeeper.checkHit());
@@ -258,7 +314,7 @@ void loop() {
 
 
   if (sequenceState == PULSE_PLAY || sequenceState == HEADER_PLAY || sequenceState == TEST_SOLENOID) {
-    if (timeKeeper.getTimeHit() > 10L ) {
+    if (timeKeeper.getTimeHit() > 40L ) {
       if (timeKeeper.checkHit()) {
 
         analogWrite(SOL_PHASE, 255);
@@ -276,5 +332,20 @@ void loop() {
       }
     }
   }
+
+  if (activateSend) {
+    nrf24.send((uint8_t*)inCommingMSg, sizeof(inCommingMSg));
+    nrf24.waitPacketSent();
+
+    nrf24.send((uint8_t*)inCommingMSg, sizeof(inCommingMSg));
+    nrf24.waitPacketSent();
+
+    activateSend = false;
+    setSequenceState(HEADER_PLAY);
+    if (DEBUG) Serial.println("PLAY HEADER ");
+
+  }
+
+
 
 }

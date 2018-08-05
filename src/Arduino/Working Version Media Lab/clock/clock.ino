@@ -25,7 +25,7 @@ unsigned long previousTime;
 int counter;
 bool sendActivation;
 
-bool LED_STATE; 
+bool LED_STATE;
 
 // incoming messeage from Serial
 String strBuf = "";
@@ -52,12 +52,23 @@ void setup() {
 }
 
 void loop() {
+
+  uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
+  uint8_t len = sizeof(buf);
+  if (nrf24.recv(buf, &len))
+  {
+    Serial.print("got request: ");
+    Serial.println(buf[0]);
+    dataOut[1] = buf[0];
+  }
+
   unsigned long currentTime = millis();
 
   if (timer(currentTime, previousTime, DURATION)) {
     previousTime = currentTime;
     LED_STATE = HIGH;
     isSend = true;
+
   }
 
   // this part changes the MODE
@@ -83,7 +94,7 @@ void loop() {
     counter ++;
 
     //sent it only once
-    if(dataOut[0] != B00000001){
+    if (dataOut[0] != B00000001) {
       Serial.println("back to default seq.");
       Serial.println("");
       initByteCommand();
@@ -105,36 +116,36 @@ void  msgToByteCommand (String msg) {
   // Serial.print("no: ");
 
   uint8_t  no = msg.substring(0, 3).toInt() << 1 ^ 0x1;
-	
+
   char mode = msg[3];
-  uint8_t modeInt = 1;  
+  uint8_t modeInt = 1;
 
   switch (mode) {
     case 'P': // PWM
-    modeInt = B00000001;
-    break;
+      modeInt = B00000001;
+      break;
     case 'M': // MICTHRESHOLD
-    modeInt = B00000101;
-    break;
+      modeInt = B00000101;
+      break;
     case 'R':
-    modeInt = B00001001;
-    break;
+      modeInt = B00001001;
+      break;
     case 'T':
-    modeInt = B00001101;
-    break;
+      modeInt = B00001101;
+      break;
     case 'S':
-    modeInt = B00010001;
-    break;
+      modeInt = B00010001;
+      break;
     default:
-    break;
+      break;
   }
 
-  if(no > 127) {
-  modeInt ^= 2;
-  } 
+  if (no > 127) {
+    modeInt ^= 2;
+  }
 
-  uint8_t  val = msg.substring(4, 7).toInt(); 
-  
+  uint8_t  val = msg.substring(4, 7).toInt();
+
   dataOut[0] = no;
   dataOut[1] = modeInt;
   dataOut[2] = val;

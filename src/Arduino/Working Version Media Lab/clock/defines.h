@@ -11,5 +11,5 @@
 #define LED_PIN_07 A5
 
 // clock interval in ms
-#define DURATION 150
+#define DURATION 250
 #define COUNTER_LIMIT 3

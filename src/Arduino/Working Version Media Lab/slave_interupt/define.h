@@ -13,11 +13,12 @@
 #define SOL_ENABLE 4
 #define SOL_SLEEP  6
 
+#define POT_POT    A1   
+#define POT_CAL_01 A2
+#define POT_CAL_02 A3
+
 //changed for the use of PWM (Analog Write)
 #define MIC_PIN A0
-
-
-
 
 /// Clock values
 #define TICK    B00000001
@@ -47,7 +48,7 @@
 // this is the time interval for each frame
 // this is one factor to determine the duration of
 // data collection from the mic
-#define TIME_MIN_INTERVAL 144
+#define TIME_MIN_INTERVAL 244
 
 /// sequences
 #define SEQITER 3
@@ -58,22 +59,18 @@
 //we might want to constain the number of bits to 8
 //this way we can use byte
 
-const unsigned long  HIT_INTERVAL          = 40L;
+const unsigned long  HIT_INTERVAL          = 75L;
 // this interval is for the outputs, LED and solenoid
 
-//threshold peak for the signal processing
-const int THRESHOLD_PEAK = 90;//68; //38
+
  
 const int DEFAULT_PWM  = 255;
 
 //buffer size of signal processing window
 //BUFFER_SIZE = 25 -> 5ms 45 ->10ms
-const int BUFFER_SIZE = 25;//25
+const int BUFFER_SIZE = 9;//25
 
-const float f_s   = 0.023; //0.023
-const float bw_s  = 0.025; //0.25
-const float EMA_a_low_s   = 0.18;  //0.18    //initialization of EMA alpha (cutoff-frequency)
-const float EMA_a_high_s  = 0.87;  //0.87
+
 
 ///  modes
 // we can do enum if we want
@@ -101,5 +98,7 @@ const float EMA_a_high_s  = 0.87;  //0.87
 #define RESET 13
 
 #define READ_INPUT 14
+
+#define SEND_INPUT 15
 
 #endif

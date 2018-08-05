@@ -37,20 +37,22 @@ void calibrateMic() {
 //listen to the incomming date from the microphone
 void listenSequence() {
 
-  if (DEBUG) Serial.print("LISTEN SEQUENCE");
-
   //get if from the bandpass filter
   micHit = bandPassFilter.isHit(micThreshold);
 
   if (DEBUG) printSequenceIndex();
 
-  recording[sequenceIndex][bitIndex] = micHit;
+  if (bitIndex < SEQBITS )
+    recording[sequenceIndex][bitIndex] = micHit;
+
   bitIndex++;
-  if (bitIndex >= SEQBITS) {
+  if (bitIndex > SEQBITS) {// >=
     setSequenceState(ANALYZE);
   }
 
   if (DEBUG) Serial.println(clockCounter);
+
+
 }
 
 
@@ -65,16 +67,16 @@ void analyzeSequence() {
   bitIndex = 0;
 
   if (sequenceIndex < SEQITER) {
-    if (DEBUG) Serial.print("WAIT ANALYZE  ");
+    if (DEBUG) Serial.print("WAIT.. ");
     sequenceState = LISTEN_SEQUENCE;
   } else {
-    if (DEBUG) Serial.print("ANALYZING  ");
+    if (DEBUG) Serial.print("FINAL  ");
     //
     // gets the average and defines what it heard to "playSequence"
     //
     for (itri = 0; itri < SEQBITS; itri++) {
       float average = 0.0;
-      for (itrj = 0; itrj < SEQITER; itrj ++) {
+      for (itrj = 0; itrj < SEQITER; itrj++) {
         average += recording[itrj][itri];
         if (DEBUG) {
           Serial.print(" ");
@@ -121,15 +123,17 @@ void analyzeSequence() {
 
 //play a pulse dependeing on the microphone readings
 void pulsePlay() {
-
-  if (DEBUG) Serial.print("PLAY  ");
   if (DEBUG) Serial.print(playSequence[bitIndex]);
+  if (DEBUG) Serial.print(" ");
+  if (DEBUG) Serial.print(bitIndex);
+  if (DEBUG) Serial.print("  ");
 
-  if (playSequence[bitIndex]) timeKeeper.hit();
+  if (playSequence[bitIndex] && bitIndex < SEQBITS ) timeKeeper.hit();
+
   bitIndex++;
-
-  if (bitIndex == SEQBITS) {
+  if (bitIndex > SEQBITS) { //==
     bitIndex = 0;
+    if (DEBUG) Serial.print("  go to wait play ");
     setSequenceState(WAIT_PLAY);
   }
 
@@ -139,9 +143,6 @@ void pulsePlay() {
 
 //wait play function between seequence readings
 void waitPlay() {
-
-  if (DEBUG)Serial.print("Waiting play ");
-
   bitIndex = 0;
   sequenceIndex++;
 
@@ -150,13 +151,9 @@ void waitPlay() {
     // yes, proceed to reset
 
     //if its the slave go to read input instead of reset values
-    if (SERVER_SLAVE == 1) {
-      setSequenceState(READ_INPUT);
-      readInBytes = false;
-      requestByte = true;
-    } else {
-      setSequenceState(RESET);
-    }
+
+    setSequenceState(RESET);
+
 
   } else {
     // nope go back playing
@@ -182,9 +179,9 @@ void resetLoop() {
 
   // starting from 0, so end is 60
 
-  if (DEBUG) Serial.print("L: RESET ");
 
   clockCounter = 0;
+  resetCounter = 0;
 
   if (useHeader) {
     setSequenceState(LISTEN_HEADER);
@@ -216,7 +213,7 @@ void readInputArray() {
       int val = Serial.readBytes(byteMSG8, 1);
 
       // Reset values when an array of bits is received
-      if (val > 0 ){ //|| DEBUG == true) {
+      if (val > 0 || DEBUG == true) {
         if (DEBUG) Serial.println("clean Serial");
 
 
@@ -232,9 +229,31 @@ void readInputArray() {
         }
 
         for (itri = 0; itri < 8; itri++) {
-           playSequence[itri] = (bitRead(byteMSG8[0], itri ) == 1 ? true : false);
-         // playSequence[itri] = (bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
+          playSequence[itri] = (bitRead((byte)byteMSG8[0], itri ) == 1 ? true : false);
+          //send it
+          // playSequence[itri] = (bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
         }
+
+        inCommingMSg[0] = byteMSG8[0];
+
+
+        if (SERVER_SLAVE == 2) {
+          Serial.print("sent  ");
+          Serial.println(inCommingMSg[0]);
+        }
+
+
+
+        if (DEBUG_IN) {
+          Serial.print("read in: ");
+          for (itri = 0; itri < 8; itri++) {
+            Serial.print( playSequence[itri] );
+            Serial.print(" " );
+            // playSequence[itri] = (bitRead(byteMSG8[0], 7 - itri ) == 1 ? true : false);
+          }
+          Serial.println(" - ");
+        }
+
 
         // 7 - itri
 
@@ -242,13 +261,14 @@ void readInputArray() {
         requestByte = false;
         bitIndex = 0;
         sequenceIndex = 0;
-        clockCounter   = 0;
+        clockCounter = 0;
 
-        if (useHeader) {
-          setSequenceState(HEADER_PLAY);
-        } else {
-          setSequenceState(LISTEN_SEQUENCE);
-        }
+        if (DEBUG) Serial.print(clockCounter);
+        if (DEBUG) Serial.print(" ");
+
+
+        setSequenceState(SEND_INPUT);
+
         //fill header
 
         for (itri = 0; itri < 3; itri++) {
@@ -270,16 +290,17 @@ void readInputArray() {
       //Serial.write('s');
 
       Serial.println("s");
-      
+
       requestByte = false;
       readInBytes = true;
     }
   }
+  if (DEBUG) Serial.print(clockCounter);
 }
 
 //---------------Main loop
 //----------------------------------------------------
-void acticateSequenceLoop() {
+void activateSequenceLoop() {
   if (!lock) {
     switch (sequenceState) {
       case STOP:
@@ -337,48 +358,81 @@ void acticateSequenceLoop() {
         waitStart();
         break;
 
+      /*
+        listens
+        1. listens for the right header
+        2. listens for the sequence
+      */
 
       case LISTEN_HEADER:
+        if (DEBUG) Serial.print("LISTEN HEADER ");
         listenHeader();
         break;
 
       case LISTEN_SEQUENCE:
-        /*
-          listens
-          1. listens for the right header
-          2. listens for the sequence
-        */
+        if (DEBUG) Serial.print("LISTEN SEQUENCE ");
         listenSequence();
         break;
 
       case ANALYZE:
+        if (DEBUG) Serial.print("ANALYZING  ");
         analyzeSequence(); // collects and analyses the readings,
         break;
 
-      case HEADER_PLAY:
-        headerPlay();
-        break;
-
       case PULSE_PLAY:
+        if (DEBUG) Serial.print("PULSE PLAY  ");
         pulsePlay(); // plays single pulse
         break;
 
+      case HEADER_PLAY:
+        if (DEBUG) Serial.print("HEADER PLAY  ");
+        headerPlay();
+        break;
+
+
+
       case WAIT_PLAY:
+        if (DEBUG)Serial.print("WAINTING PLAY ");
         waitPlay();
         break;
 
       case RESET:
+        if (DEBUG) Serial.print("L: RESET ");
         /*
           returns to PULSE_PLAY if there is iterations left to play
           (may not need this phase though)
         */
-        resetLoop();
+
+        //if its the slave go to read input instead of reset values
+        if (SERVER_SLAVE == 1 || SERVER_SLAVE == 2 ) {
+          if (resetCounter >= 10) {
+            setSequenceState(READ_INPUT);
+            readInBytes = false;
+            requestByte = true;
+            resetCounter = 0;
+          }
+        } else {
+          if (resetCounter >= 3) {
+            resetLoop();
+            resetCounter = 0;
+          }
+        }
+        resetCounter++;
         break;
       case READ_INPUT:
+        if (DEBUG) Serial.println("READ INPUT ");
         readInputArray();
+        break;
+      case SEND_INPUT:
+        if (DEBUG) Serial.println("SEND INPUT ");
+        activateSend = true;
         break;
 
     } // switch
+    //clean bandpass
+    //Serial.print("clean");
+    bandPassFilter.resetSignalMinMax();
+    bandPassFilter.resetBuffer();
     lock = !lock;
   }
 }

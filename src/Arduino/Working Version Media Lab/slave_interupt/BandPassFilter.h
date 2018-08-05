@@ -4,6 +4,11 @@
 #include "Arduino.h"
 #include "define.h"
 
+//https://www.sparkfun.com/products/9868
+//-3dB roll off at 100Hz and 15kHz
+
+//solenoid 10Khz
+
 class BandPassFilter {
   public:
 
@@ -58,8 +63,25 @@ class BandPassFilter {
       sum = 0;
       highpass = 0;
       bandpass = 0;
-
+      
       output = 0;
+      conv_output = 0;
+    }
+
+    void setupFilter(float freq, float bandW) {
+      f = freq; //0 -0.5
+      bw = bandW;
+
+      // Band-pass filter.
+      float r = 1 - ( 3 * bw );
+      float k = 1 - ( 2 * r * cos(2 * PI * f ) ) + ( r * r );
+      k = k / (2 - ( 2 * cos( 2 * PI * f ) ) );
+
+      a0 = 1 - k;
+      a1 = (2 * ( k - r ) ) * ( cos( 2 * PI * f ) );
+      a2 = ( r * r ) - k;
+      b1 = 2 * r * cos( 2 * PI * f );
+      b2 = 0 - ( r * r );
     }
 
     void fillWindow(unsigned long cTime, float sensorValue) {
@@ -70,10 +92,10 @@ class BandPassFilter {
         EMA_S_low  = (EMA_a_low  * sensorValue) + ((1 - EMA_a_low) * EMA_S_low);    //run the EMA
         EMA_S_high = (EMA_a_high * sensorValue) + ((1 - EMA_a_high) * EMA_S_high);
 
-        highpass = sensorValue - EMA_S_low;     //find the high-pass as before (for comparison)
+        highpass = EMA_S_high - sensorValue;// - EMA_S_low;     //find the high-pass as before (for comparison)
         bandpass = EMA_S_high  - EMA_S_low;
 
-        buf[ buffer_index ] = bandpass;//(float)sensorValue;
+        buf[ buffer_index ] = sensorValue;//bandpass;//(float)sensorValue;//bandpass;//(float)sensorValue;
         buffer_index++;
       }
     }
@@ -81,12 +103,28 @@ class BandPassFilter {
     void filterSignal(bool printOut = false) {
       if ( buffer_full == true ) {
         output = doFilter(); //convert to int
+        conv_output = output;
 
-        if (output > signalMax) signalMax = output;
-        if (output < signalMin) signalMin = output;
+        if (output > signalMax){ 
+          signalMax = output;
+          bufferMax[countBuffer] = signalMax;
+        }
+        if (output < signalMin){
+          signalMin = output;
+          bufferMin[ countBuffer ] = signalMin;
+        }
 
-        if (printOut)
-          Serial.println(output);
+        //Serial.println();
+        //Serial.print(countBuffer);
+        //Serial.print(" ");
+        //Serial.print(output);
+        //Serial.print(" ");
+        //Serial.print(signalMax);
+       // Serial.print(" ");
+       // Serial.println(signalMin);
+
+        // if (printOut)
+        //  Serial.println(output);
         // Serial.println(output);
         //Serial.println(cTime - pBTime); //avg 10 windows in 100
         //pBTime = millis();
@@ -94,6 +132,7 @@ class BandPassFilter {
         // Reset our buffer and interupt routine
         buffer_index = 0;
         buffer_full = false;
+        countBuffer++;
       }
     }
 
@@ -103,41 +142,72 @@ class BandPassFilter {
       // Convolute the input buffer with the filter kernel
       // We work from 2 because we read back by 2 elements.
       // out[0] and out[1] are never set, so we clear them.
-      out[0] = out[1] = 0;
-      sum = 0;
-      for ( itr = 2; itr < BUFFER_SIZE; itr++ ) {
+      /*
+        out[0] = out[1] = 0;
+        sum = 0;
+        for ( itr = 2; itr < BUFFER_SIZE; itr++ ) {
         out[itr] =  a0 * buf[itr];
         out[itr] += a1 * buf[itr - 1];
         out[itr] += a2 * buf[itr - 2];
         out[itr] += b1 * out[itr - 1];
         out[itr] += b2 * out[itr - 2];
 
-       if ( out[itr] < 0 ) out[itr] *= -1;
+        if ( out[itr] < 0 ) out[itr] *= -1;
         sum += out[itr];
-      }
+        }
 
-      sum /= (BUFFER_SIZE - 2);
-      //Serial.println(sum);
+        sum /= (BUFFER_SIZE - 2);
+        //Serial.println(sum);
+        return int(sum + 0.55);
+      */
+      sum = 0;
+      for ( itr = 0; itr < BUFFER_SIZE; itr++ ) {
+        sum += buf[itr];
+      }
+      sum /= float(BUFFER_SIZE);
       return int(sum + 0.55);
     }
 
 
     //return if there is hit
     bool isHit(int mic_Threshold) {
-      if (signalMax - signalMin > mic_Threshold) { //TODO create thresholdPeak dynamically
+      // if (conv_output >  mic_Threshold) {
+
+      int peak_peak = abs(signalMax - signalMin);
+      //Serial.println(peak_peak);
+      if (peak_peak > mic_Threshold) { //TODO create thresholdPeak dynamically
+
         // Serial.print(signalMax);
         // Serial.print(" ");
-        //  Serial.println(signalMin);
-        resetSignalMinMax();
+
+
         return true;
       }
       return false;
     }
 
     void resetSignalMinMax() {
-
+      countBuffer =0;
       signalMax = 0;
       signalMin = 1024;
+    }
+
+    void setEMALow(float ema_low) {
+      EMA_a_low = ema_low;
+    }
+
+    void setEMAHigh(float ema_high) {
+      EMA_a_high =  ema_high;
+    }
+
+    void resetBuffer() {
+      buffer_index = 0;
+      buffer_full = false;
+
+      for ( itr = 0; itr < BUFFER_SIZE; itr++ ) {
+        buf[itr] = 0;
+      }
+
     }
 
   private:
@@ -147,6 +217,10 @@ class BandPassFilter {
 
     //BUFFER_SIZE = 25 -> 5ms 45 ->10ms
     float buf[BUFFER_SIZE];  // Analog readings & stored here
+    
+    int bufferMax[30];
+    int bufferMin[30];
+    
     float out[BUFFER_SIZE];  // output of filter stored here.
     int buffer_index;         // Interupt increments buffer
     boolean buffer_full;      // Flag for when complete.
@@ -161,6 +235,7 @@ class BandPassFilter {
     int signalMin;
 
     int output;
+    int conv_output;
 
     //temporal values
     uint8_t itr;
@@ -168,6 +243,8 @@ class BandPassFilter {
     float highpass;
     float bandpass;
     unsigned long pBTime;
+
+    int countBuffer;
 
 };
 #endif
