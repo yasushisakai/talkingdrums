@@ -53,15 +53,6 @@ void setup() {
 
 void loop() {
 
-  uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
-  uint8_t len = sizeof(buf);
-  if (nrf24.recv(buf, &len))
-  {
-    Serial.print("got request: ");
-    Serial.println(buf[0]);
-    dataOut[1] = buf[0];
-  }
-
   unsigned long currentTime = millis();
 
   if (timer(currentTime, previousTime, DURATION)) {
