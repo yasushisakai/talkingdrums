@@ -63,7 +63,8 @@ void update() {
       try {
         n = s.getByte();
       } catch (Exception e) {
-        println("MESSAGE ERROR: "+ e);
+        // loop
+        // println("MESSAGE ERROR: "+ e);
         break;
       }
       mode = Mode.PUSH;
@@ -74,7 +75,7 @@ void update() {
       try {
         s = new SerialHandler(this);
       } catch (Exception e) {
-        println(e);  
+        println(e);
         break;
       }
       mode = Mode.IDLE;

@@ -42,7 +42,9 @@ class SerialHandler{
       byte[] incomming = new byte[]{0,0,0};
       incomming = this.port.readBytes(3);
       if(incomming[0] == RECEIVE && incomming[2] ==RETURN){
-        return (byte)incomming[1];
+        byte d = (byte) incomming[1];
+        println("got message: "+ formatByte(d));
+        return d;
       } else{
         throw new Exception("message wrong protocol");
       }
