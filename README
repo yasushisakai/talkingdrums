@@ -1,0 +1,18 @@
+sending and receiving protocol
+
+[command, value, B00001010]
+
+command
+0: 'ready': first module to sender to say module is ready for getting byte
+1: 'send' : message sent from sender to first module
+2: 'receive' : message sent from the last module to the receiver
+
+example:
+
+[B00000000, B00000000, B00001010]
+then
+[B00000001, B10101010, B00001010]
+.
+.
+.
+[B00000010, B10101010, B00001010]

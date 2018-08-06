@@ -55,12 +55,6 @@ void listenSequence() {
 
 }
 
-
-
-
-
-
-
 //analyze the for sequence
 void analyzeSequence() {
   sequenceIndex++;
