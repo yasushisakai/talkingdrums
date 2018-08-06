@@ -1,77 +1,118 @@
-import processing.serial.*;
-import http.requests.*;
-
-Serial port;
 byte n;
+SerialHandler s;
 
-
-enum Mode {
-  INITIAL,
-  RUNNING,
-  SERVER_STOPPED,
-  SERIAL_ERROR, 
+enum Mode{
+  FETCH,
+  IDLE,
+  READY,
+  ERROR_SERVER,
+  ERROR_SERIAL, 
 }
 
-Mode mode = Mode.INITIAL;
+Mode mode;
 
 void setup() {
-  fullScreen();
-  try {
-    port = new Serial(this, Serial.list()[Serial.list().length-1], 115200);
-  } catch (Exception e) {
-    mode = Mode.SERIAL_ERROR;
-  }
+  size(1024, 600);
 
-  n = (byte) 0;
+  try{
+    s = new SerialHandler(this);
+    mode = Mode.FETCH;
+  } catch (Exception e) {
+    mode = Mode.ERROR_SERIAL;
+  }
   
-  // super slow 
-  frameRate(0.055555); // approx. 18sec / frame
+  delay(2500);
+
 }
 
 void draw() {
-  int m = (n & 0xFF);
-  background(m);
-
-  try {
-    GetRequest get = new GetRequest(
-      "https://cityio.media.mit.edu/talkingdrums/image/get/next");
-    get.send();
-    JSONObject obj = parseJSONObject(get.getContent());
-    n = (byte) obj.getInt("value");
-
-    if(mode != Mode.SERIAL_ERROR) {
-      mode = Mode.RUNNING; 
-    }
-
-  } catch (Exception e){
-    // might be a json parseing error too
-    println("server not sending bytes, Exception: " + e);
-    mode = Mode.SERVER_STOPPED;
+  background(0);
+  update(); // logic
+  
+  // rendering
+  pushStyle();
+  switch (mode) {
+    case ERROR_SERVER:
+    case ERROR_SERIAL:
+      fill(255, 0, 0);
+      noStroke();
+      rect(0, 0, width, height);
+      fill(0);
+      text("error", 5, 15);
+    break;
+    case FETCH:
+      stroke(0, 0, 255);
+      noFill();
+      rect(0,0,width, height);
+      break;
+    case READY:
+      noStroke();
+      fill(255);
+      rect(0, 0, width, height);
+      break;
+    case IDLE:
+      stroke(255);
+      fill(int(n));
+      rect(10,10,10,10);
+    default:
+    break;
   }
-
-  if (mode == Mode.RUNNING) {
-    pushStyle();
-    fill(255, 0, 0);
-    text("sending: " + n, 15, 15);
-    popStyle();
-    sendMessage(n);
-  }
-
-  if(mode != Mode.RUNNING) {
-    pushStyle();
-    stroke(255, 0, 0);
-    rect(0, 0, width, height);
-    popStyle();
-    println("error code: " + mode);
-  }
+  popStyle();
 }
 
-void sendMessage(byte d) {
-  // String binStr = String.format("%8s", Integer.toBinaryString(d & 0xFF)).replace(' ','0');
-  // String message = "L: r=" + binStr;
-
-  // port.write(message);
-  //
-  port.write(d); // because the communication protocol is different in and out
-  println("Sent message: \""+ d + "\"");
+// conditional logic
+void update() {
+  boolean isReady = false;
+  if(mode != Mode.ERROR_SERIAL){  
+    if(s.checkReady()){
+      isReady = true;
+    }
+  }
+  switch(mode){
+    case ERROR_SERVER:
+      println("RECONNECTING to SERVER in 5sec");
+      delay(5000);
+    case FETCH:
+      try {
+        n = requestPixel();
+      } catch (Exception e) {
+        println("SERVER ERROR: "+ e);
+        mode = Mode.ERROR_SERVER;
+        break;
+      }
+      
+      println("next byte is " + formatByte(n));
+      
+      if(isReady){
+        mode = Mode.READY;
+      } else {
+        mode = Mode.IDLE;
+      }
+      break;
+    case ERROR_SERIAL :
+      println("RECONNECTING TO SERIAL");
+      delay(5000);
+      try {
+        s = new SerialHandler(this);
+      } catch (Exception e) {
+        println(e);  
+        break;
+      }
+      mode = Mode.FETCH;
+      break;
+    case READY:
+      println("SENDING: " + formatByte(n));
+      println();
+      s.sendByte(n);
+      mode = Mode.FETCH;
+      isReady = false;
+      break;
+    case IDLE:
+      if(isReady){
+        mode = Mode.READY;
+      }
+      break;
+    default:
+      break;
+  }
 }
