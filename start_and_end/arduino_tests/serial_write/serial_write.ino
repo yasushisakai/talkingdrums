@@ -1,34 +1,21 @@
-
 const long baud = 115200;
-uint8_t zero = B00000000;
-uint8_t mix = B10101010;
-uint8_t one = B11111111;
-
-int cnt;
-
 uint8_t value;
+uint8_t message [3];
 
 void setup() {
+  value = 0;
   Serial.begin(baud);
-  Serial.println();
-  value = zero;
-  cnt = 0;
+  delay(100);
 }
 
 void loop() {
-  switch(cnt % 3){
-      case 0:
-      value = zero;
-      break;
-      case 1:
-      value = one;
-      break;
-      case 2:
-      value = mix;
-      break;
- }
-  Serial.write(value);
+  
+  message[0] = 2; // B00000010
+  message[1] = value;
+  message[2] = 10; // B00001010
 
-  delay(18000);
+  Serial.write(message, 3);
+  delay(150000); 
 
+  value ++;
 }
