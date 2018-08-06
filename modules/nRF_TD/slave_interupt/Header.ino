@@ -72,13 +72,15 @@ void listenHeader() {
     //if the header is correct and the number of bitIndex == 9 then pass the play the sequence
 
 
-    if (DEBUG) Serial.print("B: ");
-    if (DEBUG) Serial.print(bitIndex);
-    if (DEBUG) Serial.print(" ");
-    if (DEBUG) Serial.print(micHit);
-    if (DEBUG) Serial.print(" ");
-    if (DEBUG) Serial.print(numHeaderBits);
-    if (DEBUG) Serial.print(" ");
+    if (DEBUG) {
+      Serial.print("B: ");
+      Serial.print(bitIndex);
+      Serial.print(" ");
+      Serial.print(micHit);
+      Serial.print(" ");
+      Serial.print(numHeaderBits);
+      Serial.print(" ");
+    }
 
     if (isHead && bitIndex == numHeaderBits) {
       //Serial.print("L: found head"); // notify head detection to ImageReciever
@@ -121,16 +123,18 @@ void listenHeader() {
 //header play
 void headerPlay() {
 
-  if (DEBUG) Serial.print("s ");
-  if (DEBUG) Serial.print(headerSequence[bitIndex]);
-  if (DEBUG) Serial.print(" ");
-  if (DEBUG) Serial.print(bitIndex);
-  if (DEBUG) Serial.print(" ");
-
-  if (headerSequence[bitIndex]){
-     timeKeeper.hit();
+  if (DEBUG) {
+    Serial.print("s ");
+    Serial.print(headerSequence[bitIndex]);
+    Serial.print(" ");
+    Serial.print(bitIndex);
+    Serial.print(" ");
   }
-  
+
+  if (headerSequence[bitIndex]) {
+    timeKeeper.hit();
+  }
+
   bitIndex++;
 
   if (bitIndex == 3 ) { //110
@@ -146,5 +150,7 @@ void headerPlay() {
 
   }
 
-  if (DEBUG) Serial.println(clockCounter);
+  if (DEBUG) {
+    Serial.println(clockCounter);
+  }
 }

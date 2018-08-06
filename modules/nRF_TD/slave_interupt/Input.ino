@@ -21,7 +21,7 @@ void readInputArray() {
       int val = Serial.readBytes(byteMSG8, 3);
 
       // Reset values when an array of bits is received
-      if (val > 0){//byteMSG8[0] == READ_BYTE) {
+      if (val == 3) { //byteMSG8[0] == READ_BYTE) {
 
         if (DEBUG) {
           Serial.print("GOT MSG...Number cycles ");
@@ -87,17 +87,21 @@ void readInputArray() {
     if (requestByte) {
       if (DEBUG) Serial.println("request bytes ");
 
-      //change to println() to enable easier read with readString() in processing
-      //Serial.write('s');
-
       byte value  = B00000000;
       byte readyValue[3] = {READY_BYTE, value, FINAL_BYTE};
-      Serial.write(readyValue, 3);
 
+      //write that we are ready to send
+      Serial.write(readyValue[0]);
+      Serial.write(readyValue[1]);
+      Serial.write(readyValue[2]);
+
+      //send and waiting response
       requestByte = false;
       readInBytes = true;
     }
   }
-  if (DEBUG) Serial.print(clockCounter);
+  if (DEBUG) {
+    Serial.print(clockCounter);
+  }
 }
 

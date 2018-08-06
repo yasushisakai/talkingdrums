@@ -21,7 +21,8 @@ void writeToReceiver(bool * outputSequence) {
     Serial.print("value Receiver ");
     Serial.println(value);
   }
-
+  
+  //print the final output
   byte receiverValue[3] = {WRITE_BYTE, value, FINAL_BYTE};
   Serial.write(receiverValue, 3);
 }

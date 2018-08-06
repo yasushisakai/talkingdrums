@@ -68,6 +68,7 @@ void analyzeSequence() {
 
   if (sequenceIndex < SEQITER) {
     if (DEBUG) Serial.print("WAIT.. ");
+
     sequenceState = LISTEN_SEQUENCE;
   } else {
     if (DEBUG) Serial.print("FINAL  ");
@@ -119,10 +120,12 @@ void analyzeSequence() {
 
 //play a pulse dependeing on the microphone readings
 void pulsePlay() {
-  if (DEBUG) Serial.print(playSequence[bitIndex]);
-  if (DEBUG) Serial.print(" ");
-  if (DEBUG) Serial.print(bitIndex);
-  if (DEBUG) Serial.print("  ");
+  if (DEBUG) {
+    Serial.print(playSequence[bitIndex]);
+    Serial.print(" ");
+    Serial.print(bitIndex);
+    Serial.print("  ");
+  }
 
   if (playSequence[bitIndex] && bitIndex < SEQBITS ) timeKeeper.hit();
 
