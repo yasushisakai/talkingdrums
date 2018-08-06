@@ -45,7 +45,7 @@ TimeKeeper timeKeeperNRF;
 bool isTestMic = true;
 
 //print debug information
-bool  DEBUG      = true;
+bool  DEBUG      = false;
 bool  DEBUG_IN   = false;
 
 bool const DEBUG_TIME = false;
@@ -165,7 +165,7 @@ bool readInBytes = false;
 //incoming msg, keep it as an array in case we need to
 //read values bigger than a byte
 byte byteMSG8[] = {
-  B10010011
+  B10000000, B00000000, B00001010
 };
 
 uint8_t inCommingMSg[2] = {B00010000, B00010000};

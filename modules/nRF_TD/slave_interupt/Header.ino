@@ -2,6 +2,7 @@
 void setInitSequence() {
   if (SERVER_SLAVE == 1 || SERVER_SLAVE == 2) {
     sequenceState = READ_INPUT;
+    clockCounter = 90;
   } else {
     sequenceState = WAIT_START;
   }

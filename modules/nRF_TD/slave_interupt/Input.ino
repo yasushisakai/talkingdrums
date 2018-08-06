@@ -16,16 +16,15 @@ void readInputArray() {
   if (clockCounter > LIMIT_READ_COUNTER) {
 
     if (readInBytes) {
-      if (DEBUG) Serial.println(" ");
-      if (DEBUG) Serial.println("incoming bytes");
+      if (DEBUG) Serial.println("Waiting incoming bytes....");
 
       int val = Serial.readBytes(byteMSG8, 3);
 
       // Reset values when an array of bits is received
-      if (val > 0 ) {
+      if (val > 0){//byteMSG8[0] == READ_BYTE) {
 
         if (DEBUG) {
-          Serial.print("Number cycles ");
+          Serial.print("GOT MSG...Number cycles ");
           Serial.println(clockCounter);
         }
 
@@ -86,7 +85,7 @@ void readInputArray() {
 
     //send byte request and read
     if (requestByte) {
-      if (DEBUG) Serial.println("request bytes");
+      if (DEBUG) Serial.println("request bytes ");
 
       //change to println() to enable easier read with readString() in processing
       //Serial.write('s');
