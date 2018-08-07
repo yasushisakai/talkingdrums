@@ -5,6 +5,7 @@ final byte READY = 0b00000000;
 final byte SEND = 0b00000001;
 final byte RECEIVE = 0b00000010;
 final int BAUD = 115200;
+final boolean DEBUG = true;
 
 class SerialHandler{
 
@@ -27,20 +28,32 @@ class SerialHandler{
     println("connected to: " + portName);
   }
 
-  public boolean checkReady() {
+  public boolean checkReady() throws Exception {
     while(this.port.available() > 0){
       byte[] incomming = new byte[]{0, 0, 0}; 
       incomming = this.port.readBytes(3);
       // printArray(incomming);
+      try{
       return incomming[0] == READY && incomming[2] == RETURN;
+      } catch (Exception e) {
+        return false;
+      }
     }
     return false;
   }
   
   public byte getByte() throws Exception{
     while(this.port.available() > 0){
-      byte[] incomming = new byte[]{0,0,0};
+      byte[] incomming = new byte[]{0, 0, 0};
       incomming = this.port.readBytes(3);
+      if(DEBUG){
+        printArray(incomming);
+      }
+      
+      if(incomming.length < 3) {
+        throw new Exception("index out of bounds: message length" + incomming.length);
+      }
+      
       if(incomming[0] == RECEIVE && incomming[2] ==RETURN){
         return (byte)incomming[1];
       } else{

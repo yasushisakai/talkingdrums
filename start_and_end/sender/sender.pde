@@ -63,9 +63,13 @@ void draw() {
 // conditional logic
 void update() {
   boolean isReady = false;
-  if(mode != Mode.ERROR_SERIAL){  
-    if(s.checkReady()){
-      isReady = true;
+  if(mode != Mode.ERROR_SERIAL){ 
+    try{
+      if(s.checkReady()){
+        isReady = true;
+      }
+    } catch (Exception e) {
+      println(e);  
     }
   }
   switch(mode){
