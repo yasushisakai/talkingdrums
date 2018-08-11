@@ -14,12 +14,13 @@ PixelImage pixImg;
 DisplayImg dislpayImg;
 
 void setup() {
-  size(1024, 600);
+  //size(1024, 600);
+  fullScreen();
   background(0);
   smooth(16);
   
   dislpayImg = new DisplayImg();
-  
+
 
   try {
     s = new SerialHandler(this);
@@ -40,6 +41,7 @@ void draw() {
   //background(0);
   update(); // logic
   
+  dislpayImg.update();
   dislpayImg.drawFullScreen();
 
   //renderingError(mode);
@@ -129,9 +131,5 @@ void keyPressed() {
   if (key == 'a') {
     println("update visualizer"); 
     pixImg.update(int(random(255)));
-  }
-
-  if (key == 'f') {
-    fullScreen();
   }
 }

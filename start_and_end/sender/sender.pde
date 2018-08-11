@@ -13,7 +13,8 @@ Mode mode;
 DisplayImg displayImg;
 
 void setup() {
-  size(1024, 600);
+  //size(1024, 600);
+  fullScreen();
   background(0);
   smooth(16);
 
