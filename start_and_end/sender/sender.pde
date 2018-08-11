@@ -35,37 +35,7 @@ void draw() {
   background(0);
   update(); // logic
 
-  displayImg.drawFullScreen();
-
-  // rendering
-  pushStyle();
-  switch (mode) {
-  case ERROR_SERVER:
-  case ERROR_SERIAL:
-    fill(255, 0, 0);
-    noStroke();
-    rect(0, 0, width, height);
-    fill(0);
-    text("error", 5, 15);
-    break;
-  case FETCH:
-    stroke(0, 0, 255);
-    noFill();
-    rect(0, 0, width, height);
-    break;
-  case READY:
-    noStroke();
-    fill(255);
-    rect(0, 0, width, height);
-    break;
-  case IDLE:
-    stroke(255);
-    fill(int(n));
-    rect(10, 10, 10, 10);
-  default:
-    break;
-  }
-  popStyle();
+   displayImg.drawFullScreen();
 }
 
 // conditional logic
@@ -136,4 +106,37 @@ void keyPressed() {
   if (key == 'f') {
     fullScreen();
   }
+}
+
+//display error mode
+void displayMode(Mode mode) {
+  // rendering
+  pushStyle();
+  switch (mode) {
+  case ERROR_SERVER:
+  case ERROR_SERIAL:
+    fill(255, 0, 0);
+    noStroke();
+    rect(0, 0, width, height);
+    fill(0);
+    text("error", 5, 15);
+    break;
+  case FETCH:
+    stroke(0, 0, 255);
+    noFill();
+    rect(0, 0, width, height);
+    break;
+  case READY:
+    noStroke();
+    fill(255);
+    rect(0, 0, width, height);
+    break;
+  case IDLE:
+    stroke(255);
+    fill(int(n));
+    rect(10, 10, 10, 10);
+  default:
+    break;
+  }
+  popStyle();
 }

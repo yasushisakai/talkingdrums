@@ -1,6 +1,6 @@
 class DisplayImg {
   PImage img;
-  String imgUrl = "https://cityio.media.mit.edu/talkingdrums/image/current/";
+  String imgUrl = "https://cityio.media.mit.edu/talkingdrums/image/original/";
   int pTime;
   int maxTime;
 
