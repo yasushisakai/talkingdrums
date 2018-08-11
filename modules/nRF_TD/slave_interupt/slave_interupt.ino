@@ -9,7 +9,7 @@
 
    Talking drums...
         ___           ___       ___           ___           ___
-       /\  \         /\__\     /\  \         /\__\         /\  \
+       /\  \         /\__\     /\  \         /\__\     dfv er    /\  \
       /::\  \       /:/  /    /::\  \       /:/  /        /::\  \
      /:/\ \  \     /:/  /    /:/\:\  \     /:/  /        /:/\:\  \
     _\:\~\ \  \   /:/  /    /::\~\:\  \   /:/__/  ___   /::\~\:\  \
@@ -28,8 +28,11 @@
    you might want to look at TimeKeeper.h for other const variables as well
 */
 
+///-------
 //define SERVER SLAVE
 #define SERVER_SLAVE 2
+
+#define DEBUG_SLAVE 0
 
 //1 -> server
 //2 -> sender
@@ -170,6 +173,9 @@ byte byteMSG8[] = {
 
 uint8_t inCommingMSg[2] = {B00010000, B00010000};
 
+uint8_t prevMsg = B00000000;
+uint8_t newMsg  = B00000000;
+
 /*
    36 single sequence, waiting time 36 for the next one to finish its sequence,
    72 in total, 8 steps for buffer.
@@ -249,20 +255,20 @@ void loop() {
 
   //  micThreshold = analogRead(POT_CAL_01);
 
-  
+
   //collect signal readings with the interrupt function
   if (sequenceState == TEST_MIC) {
     bandPassFilter.filterSignal(true);
   } else {
     bandPassFilter.filterSignal();
   }
-  
+
   // unlocks if we recieve a TICK from the server
   // and timeFrame is more than TIMEFRAMEINTERVAL (60ms)
   //only check server the last 10 ms of the global time.
 
   if (timeKeeperNRF.isTick() ) {
-    valueByte = checkServer(nrf24, clkTICK, clkModuleId, clkMode, clkValue, activateNRFMode, inCommingMSg[0], SERVER_SLAVE); //10ms  -30count
+    valueByte = checkServer(nrf24, clkTICK, clkModuleId, clkMode, clkValue, activateNRFMode); //10ms  -30count
 
     //Serial.println(valueByte);
     clockMode(clkTICK, clkMode, clkValue);
@@ -306,6 +312,7 @@ void loop() {
   }
 
   if (activateSend) {
+
     activateSend = false;
     setSequenceState(HEADER_PLAY);
     if (DEBUG) Serial.println("PLAY HEADER ");

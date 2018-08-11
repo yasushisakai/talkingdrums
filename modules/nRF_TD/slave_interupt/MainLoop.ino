@@ -52,7 +52,6 @@ void listenSequence() {
 
   if (DEBUG) Serial.println(clockCounter);
 
-
 }
 
 //analyze the for sequence
@@ -80,16 +79,13 @@ void analyzeSequence() {
         }
       }
       playSequence[itri] = average >= 0.5 * SEQITER;
+      
       if (DEBUG) Serial.println(playSequence[itri]);
     }
 
     sequenceIndex = 0;
-
-    if (useHeader) {
-      setSequenceState(HEADER_PLAY);
-    } else {
-      setSequenceState(PULSE_PLAY);
-    }
+    
+    setSequenceState(HEADER_PLAY);
 
     //make sure that we are going to play the header
     isHead = true;

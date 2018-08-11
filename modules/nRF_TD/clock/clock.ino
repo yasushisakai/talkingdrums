@@ -97,53 +97,6 @@ void loop() {
 
 }
 
-// an example of a string
-// 018P45
-// means
-// change no. 18's PWM to 25 out of 32
-// and the command will be
-// { B00100101, B11001001 }
-void  msgToByteCommand (String msg) {
-  // Serial.print("no: ");
-
-  uint8_t  no = msg.substring(0, 3).toInt() << 1 ^ 0x1;
-
-  char mode = msg[3];
-  uint8_t modeInt = 1;
-
-  switch (mode) {
-    case 'P': // PWM
-      modeInt = B00000001;
-      break;
-    case 'M': // MICTHRESHOLD
-      modeInt = B00000101;
-      break;
-    case 'R':
-      modeInt = B00001001;
-      break;
-    case 'T':
-      modeInt = B00001101;
-      break;
-    case 'S':
-      modeInt = B00010001;
-      break;
-    default:
-      break;
-  }
-
-  if (no > 127) {
-    modeInt ^= 2;
-  }
-
-  uint8_t  val = msg.substring(4, 7).toInt();
-
-  dataOut[0] = no;
-  dataOut[1] = modeInt;
-  dataOut[2] = val;
-
-  return;
-}
-
 void initByteCommand () {
   dataOut[0] = B00000001;
   dataOut[1] = B00000000;

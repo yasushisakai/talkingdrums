@@ -29,3 +29,7 @@ void sendPixel(byte d) throws Exception {
 String formatByte(byte b) {
   return String.format("%d(%8s)", int(b), Integer.toBinaryString(b & 0xFF)).replace(' ','0');
 }
+
+int byteToInt(byte b){
+  return (b & 0xFF);
+}
