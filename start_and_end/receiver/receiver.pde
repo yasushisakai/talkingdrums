@@ -11,12 +11,15 @@ enum Mode {
 Mode mode;
 
 PixelImage pixImg;
+DisplayImg dislpayImg;
 
 void setup() {
   size(1024, 600);
   background(0);
   smooth(16);
-  ;
+  
+  dislpayImg = new DisplayImg();
+  
 
   try {
     s = new SerialHandler(this);
@@ -35,10 +38,9 @@ void setup() {
 
 void draw() {
   //background(0);
-  //update(); // logic
-
-
-  pixImg.draw();
+  update(); // logic
+  
+  dislpayImg.drawFullScreen();
 
   //renderingError(mode);
 }
@@ -127,5 +129,9 @@ void keyPressed() {
   if (key == 'a') {
     println("update visualizer"); 
     pixImg.update(int(random(255)));
+  }
+
+  if (key == 'f') {
+    fullScreen();
   }
 }
