@@ -35,7 +35,7 @@ void draw() {
   background(0);
   update(); // logic
 
-   displayImg.drawFullScreen();
+  displayImg.drawFullScreen();
 }
 
 // conditional logic

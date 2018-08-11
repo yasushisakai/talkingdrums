@@ -21,6 +21,10 @@ class DisplayImg {
   }
 
   void drawFullScreen() {
-    image(img, 0, 0, width, height);
+    pushMatrix();
+    translate(width/2.0, height/2.0);
+    rotate(PI);
+    image(img, -width/2.0, -height/2.0, width, height);
+    popMatrix();
   }
 }
