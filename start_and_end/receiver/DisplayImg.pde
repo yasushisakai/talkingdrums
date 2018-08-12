@@ -14,7 +14,7 @@ class DisplayImg {
     catch (Exception e) {
       println("Error: get request in image");
     }
-    maxTime = 3000;
+    maxTime = 40000;
   }
 
   void update() {
@@ -23,7 +23,7 @@ class DisplayImg {
       try {
         img = loadImage(imgUrl, "png");
         gotImg = true;
-        println("GOT need Img");
+        println("GOT new Img");
       } 
       catch (Exception e) {
         println("Error: get request in Image");
