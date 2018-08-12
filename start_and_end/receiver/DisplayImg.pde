@@ -14,13 +14,15 @@ class DisplayImg {
     int cTime = millis();
     if ((cTime - pTime) > maxTime) {
       img = loadImage(imgUrl, "png");
-      
+
       //rest time
       pTime = cTime;
     }
   }
 
   void drawFullScreen() {
-    image(img, 0, 0, width, height);
+    if (img.width > 0 || img.height > 0 ) {
+      image(img, 0, 0, width, height);
+    }
   }
 }
