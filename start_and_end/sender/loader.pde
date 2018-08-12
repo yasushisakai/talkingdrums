@@ -8,8 +8,8 @@ PImage loadImageWithFallback (String whichImage) throws Exception {
     // second attempt to load from local
     try {
       img = loadImage(whichImage + ".png");
-    } catch (Exception e) {
-      throw e;
+    } catch (Exception e2) {
+      throw e2;
     }
   }
 
@@ -44,6 +44,7 @@ void getStatus () throws Exception {
   }
 
   try{
+    GetRequest get = new GetRequest(statusUrl);
     JSONObject status = parseJSONObject(get.getContent());
   }catch (Exception e){
     println("couldn't parse json");
@@ -72,11 +73,8 @@ PVector[] cntToXY (int cnt, int h) {
   int x = index * 2 / h;
   int y = index * 2 % h;
   pos[0] = new PVector(x, y);
-  int x = (index * 2 + 1) / h;
-  int y = (index * 2 + 1) % h;
-  pos[1] = new PVector(x, y);
+  int x2 = (index * 2 + 1) / h;
+  int y2 = (index * 2 + 1) % h;
+  pos[1] = new PVector(x2, y2);
   return pos;
 }
-
-
-
