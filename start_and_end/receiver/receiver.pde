@@ -18,6 +18,7 @@ void setup() {
   fullScreen();
   background(0);
   smooth(16);
+  noCursor();
   
   dislpayImg = new DisplayImg();
 
