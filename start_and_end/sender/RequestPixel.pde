@@ -1,8 +1,8 @@
 import http.requests.*;
 
-final String baseUrl = "https://cityio.media.mit.edu/talkingdrums/image";
-final String getNextUrl = String.format("%s%s",baseUrl,"/get/next");
-final String sendDataUrl = String.format("%s%s",baseUrl,"/send/");
+final String baseUrl = "https://cityio.media.mit.edu/talkingdrums/image/";
+final String getNextUrl = String.format("%s%s",baseUrl,"get/next/");
+final String sendDataUrl = String.format("%s%s",baseUrl,"send/");
 
 byte requestPixel () throws Exception{
   try {

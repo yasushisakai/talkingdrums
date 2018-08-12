@@ -1,19 +1,13 @@
-
-final String baseUrl = "https://cityio.media.mit.edu/talkingdrums/image/";
-
-final String currentPng = "current.png";
-final String originalPng = "original.png";
-
 PImage loadImageWithFallback (String whichImage) throws Exception {
 
   PImage img;
 
   try {
-    img = loadImage(baseUrl + whichImage);
+    img = loadImage(baseUrl + whichImage + "/");
   } catch (Exception e) {
     // second attempt to load from local
     try {
-      img = loadImage(whichImage);
+      img = loadImage(whichImage + ".png");
     } catch (Exception e) {
       throw e;
     }
@@ -21,13 +15,13 @@ PImage loadImageWithFallback (String whichImage) throws Exception {
 
   if(img.width < 0 || img.height < 0){
     try {
-      img = loadImage(whichImage);
+      img = loadImage(whichImage + ".png");
     } catch (Exception e) {
       throw e;
     }
   }
 
-  img.save(whichImage);
+  img.save(whichImage + ".png");
 
   return img;
 

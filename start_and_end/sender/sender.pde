@@ -1,12 +1,15 @@
 byte n;
 SerialHandler s;
 
-enum Mode {
-  FETCH, 
-    IDLE, 
-    READY, 
-    ERROR_SERVER, 
-    ERROR_SERIAL,
+PImage original;
+PImage current;
+
+enum Mode{
+  FETCH,
+  IDLE,
+  READY,
+  ERROR_SERVER,
+  ERROR_SERIAL, 
 }
 
 Mode mode;
@@ -28,7 +31,9 @@ void setup() {
     mode = Mode.ERROR_SERIAL;
   }
 
-  delay(2500);
+  original = loadImageWithFallback("original");
+  current = loadImageWithFallback("current");
+
 }
 
 void draw() {
@@ -36,7 +41,7 @@ void draw() {
   update(); // logic
 
   displayImg.drawFullScreen();
-}
+ }
 
 // conditional logic
 void update() {
@@ -63,24 +68,20 @@ void update() {
       println("SERVER ERROR: "+ e);
       mode = Mode.ERROR_SERVER;
       break;
-    }
-
-    println("next byte is " + formatByte(n));
-
-    if (isReady) {
-      mode = Mode.READY;
-    } else {
-      mode = Mode.IDLE;
-    }
-    break;
-  case ERROR_SERIAL :
-    println("RECONNECTING TO SERIAL");
-    delay(5000);
-    try {
-      s = new SerialHandler(this);
-    } 
-    catch (Exception e) {
-      println(e);  
+    case READY:
+      println("SENDING: " + formatByte(n));
+      println();
+      s.sendByte(n);
+      mode = Mode.FETCH;
+      isReady = false;
+      current = loadImageWithFallback("current");
+      break;
+    case IDLE:
+      if(isReady){
+        mode = Mode.READY;
+      }
+      break;
+    default:
       break;
     }
     mode = Mode.FETCH;
