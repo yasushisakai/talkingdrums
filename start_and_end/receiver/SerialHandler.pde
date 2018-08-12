@@ -31,7 +31,7 @@ class SerialHandler{
     while(this.port.available() > 0){
       byte[] incomming = new byte[]{0, 0, 0}; 
       incomming = this.port.readBytes(3);
-      // printArray(incomming);
+      printArray(incomming);
       return incomming[0] == READY && incomming[2] == RETURN;
     }
     return false;
@@ -42,6 +42,7 @@ class SerialHandler{
       byte[] incomming = new byte[]{0,0,0};
       incomming = this.port.readBytes(3);
       if(incomming[0] == RECEIVE && incomming[2] ==RETURN){
+        // printArray(incomming);
         byte d = (byte) incomming[1];
         println("got message: "+ formatByte(d));
         return d;

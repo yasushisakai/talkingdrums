@@ -13,8 +13,12 @@ class DisplayImg {
   void update() {
     int cTime = millis();
     if ((cTime - pTime) > maxTime) {
+      try{
       img = loadImage(imgUrl, "png");
-
+      } catch (Exception e) {
+        println("Erro: get request in image");
+      }
+      
       //rest time
       pTime = cTime;
     }
